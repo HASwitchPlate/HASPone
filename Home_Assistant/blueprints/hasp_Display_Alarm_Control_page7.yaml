@@ -1,0 +1,469 @@
+blueprint:
+  name: "HASP p[7].b[all] displays an alarm control panel"
+  description: |
+
+    # Description
+
+    Page 7 controls a selected alarm panel for code entry and arm/disarm.
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Alarm_Control_page7.png)
+
+    ## HASP Page and Button Reference
+
+    <details>
+
+    This automation is designed to work with the controls found on page 7:
+
+    | Page 7 |
+    |--------|
+    | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p7_12buttons.png) |
+
+    </details>
+
+  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Alarm_Control_page7.yaml"
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    alarmpanel:
+      name: "Alarm panel to control"
+      description: "Select an alarm panel to control"
+      selector:
+        entity:
+          domain: alarm_control_panel
+    codelength:
+      name: "Alarm code length"
+      description: "Select the alarm code length for your alarm (usually 4 digits)."
+      default: 4
+      selector:
+        number:
+          min: 2
+          max: 10
+          mode: slider
+    armservice:
+      name: "Alarm arm service"
+      description: 'Enter the alarm service call to issue when the ARM button is pressed.  Typically this is one of "alarm_arm_away", "alarm_arm_home", "alarm_arm_night", or "alarm_arm_custom_bypass".'
+      default: "alarm_arm_away"
+      selector:
+        text:
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  alarmpanel: !input alarmpanel
+  codelength: !input codelength
+  armservice: !input armservice
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspIP: '{{state_attr(haspsensor, "haspIP")}}'
+  haspClientId: '{{state_attr(haspsensor, "haspClientID")}}'
+  haspMac: '{{state_attr(haspsensor, "haspMac")}}'
+  haspManufacturer: '{{state_attr(haspsensor, "haspManufacturer")}}'
+  haspModel: '{{state_attr(haspsensor, "haspModel")}}'
+  sw_version: '{{state_attr(haspsensor, "espVersion")}}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  selectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  selectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  alarmstate: '{% if states(alarmpanel)|lower == "disarmed" %}disarmed{% elif states(alarmpanel)|lower == "arming" %}arming{% else %}armed{% endif %}'
+  alarmstate_text: '{% if alarmstate == "disarmed" %}not\\rarmed{% elif alarmstate == "arming" %}arming{% else %}armed{% endif %}'
+  alarmaction_text: '{% if alarmstate == "disarmed" %}arm{% else %}disarm{% endif %}'
+  armservice_name: '{{"alarm_control_panel." ~ armservice}}'
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: state
+    entity_id: !input alarmpanel
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+  - platform: mqtt
+    topic: "{{selectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{selectedbgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+      #########################################################################
+      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      - conditions:
+          - condition: template
+            value_template: "{{ (trigger is not defined) or ((trigger.platform == 'homeassistant') and (trigger.event == 'start')) or ((trigger.platform == 'mqtt') and (trigger.topic == jsontopic) and (trigger.payload_json.event == 'online'))}}"
+        sequence:
+          # Apply themes and set numbered button labels
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                [{%- for i in range(4,15) if not i == 13 -%}
+                "p[7].b[{{i}}].pco={{selectedfg}}",
+                "p[7].b[{{i}}].bco={{selectedbg}}",
+                "p[7].b[{{i}}].pco2={{unselectedfg}}",
+                "p[7].b[{{i}}].bco2={{unselectedbg}}",
+                "p[7].b[{{i}}].font=3",{%- endfor -%}
+                {%- for i in range(4,13) -%}
+                "p[7].b[{{i}}].txt=\"{{i-3}}\"",{%- endfor -%}
+                "p[7].b[14].txt=\"0\""]
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["p[7].b[13].font=6",
+                "p[7].b[15].font=6",
+                {%- if alarmstate == "disarmed" -%}
+                "p[7].b[13].pco={{selectedfg}}",
+                "p[7].b[13].bco={{selectedbg}}",
+                "p[7].b[13].pco2={{unselectedfg}}",
+                "p[7].b[13].bco2={{unselectedbg}}",
+                "p[7].b[15].pco={{selectedfg}}",
+                "p[7].b[15].bco={{selectedbg}}",
+                "p[7].b[15].pco2={{unselectedfg}}",
+                "p[7].b[15].bco2={{unselectedbg}}",
+                {%- else -%}
+                "p[7].b[13].pco={{unselectedfg}}",
+                "p[7].b[13].bco={{unselectedbg}}",
+                "p[7].b[13].pco2={{selectedfg}}",
+                "p[7].b[13].bco2={{selectedbg}}",
+                "p[7].b[15].pco={{unselectedfg}}",
+                "p[7].b[15].bco={{unselectedbg}}",
+                "p[7].b[15].pco2={{selectedfg}}",
+                "p[7].b[15].bco2={{selectedbg}}",
+                {%- endif -%}
+                "p[7].b[13].txt=\"{{alarmstate_text}}\"",
+                "p[7].b[15].txt=\"{{alarmaction_text}}\""]
+          - repeat:
+              count: "{{codelength}}"
+              sequence:
+                # create number objects for each digit in codelength
+                - service: mqtt.publish
+                  data:
+                    topic: "homeassistant/number/{{haspname}}/alarmcode_{{repeat.index}}/config"
+                    payload: >-
+                      {"name":"{{haspname}} alarmcode {{repeat.index}}",
+                      "command_topic":"hasp/{{haspname}}/alarmcode/{{repeat.index}}",
+                      "availability":{"topic":"hasp/{{haspname}}/alwayson","payload_available":"ON"},
+                      "optimistic":"true",
+                      "icon":"mdi:bell-plus-outline",
+                      "unique_id":"{{haspClientId}}-alarmcode_{{repeat.index}}",
+                      "device":{
+                      "identifiers":["{{haspClientId}}"],
+                      "name":"{{haspname}}",
+                      "manufacturer":"{{haspManufacturer}}",
+                      "model":"{{haspModel}}",
+                      "sw_version":{{sw_version}}
+                      }}
+          - delay: "00:00:01"
+          - repeat:
+              count: "{{codelength}}"
+              sequence:
+                # set initial bogus value for each digit in codelength
+                - service: number.set_value
+                  data:
+                    entity_id: "number.{{haspname}}_alarmcode_{{repeat.index}}"
+                    value: -1
+
+      #########################################################################
+      # Update alarm state if the selected alarm panel entity changes state
+      - conditions:
+          - condition: template
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == alarmpanel) }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                [{%- if alarmstate == "disarmed" -%}
+                "p[7].b[13].pco={{selectedfg}}",
+                "p[7].b[13].bco={{selectedbg}}",
+                "p[7].b[13].pco2={{unselectedfg}}",
+                "p[7].b[13].bco2={{unselectedbg}}",
+                "p[7].b[15].pco={{selectedfg}}",
+                "p[7].b[15].bco={{selectedbg}}",
+                "p[7].b[15].pco2={{unselectedfg}}",
+                "p[7].b[15].bco2={{unselectedbg}}",
+                {%- else -%}
+                "p[7].b[13].pco={{unselectedfg}}",
+                "p[7].b[13].bco={{unselectedbg}}",
+                "p[7].b[13].pco2={{selectedfg}}",
+                "p[7].b[13].bco2={{selectedbg}}",
+                "p[7].b[15].pco={{unselectedfg}}",
+                "p[7].b[15].bco={{unselectedbg}}",
+                "p[7].b[15].pco2={{selectedfg}}",
+                "p[7].b[15].bco2={{selectedbg}}",
+                {%- endif -%}
+                "p[7].b[13].txt=\"{{alarmstate_text}}\"",
+                "p[7].b[15].txt=\"{{alarmaction_text}}\""]
+
+      #########################################################################
+      # Handle MQTT message triggers
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Catch incoming JSON button presses
+              - conditions:
+                  - condition: template
+                    value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json is defined) and (trigger.payload_json.event_type is defined) and (trigger.payload_json.event_type == "button_short_press") }}'
+                sequence:
+                  - choose:
+                      #########################################################################
+                      # Catch a number button
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {% set page = trigger.payload_json.event.split("].b[")[0] | replace("p[","") | int %}
+                              {% set button = trigger.payload_json.event.split("].b[")[1] | replace("]","") | int %}
+                              {% if page == 7 and (button >= 4 and button <= 12) or button == 14%}{{true}}{% endif %}
+                        sequence:
+                          - repeat:
+                              count: "{{(codelength|int) - 1}}"
+                              sequence:
+                                # roll existing number entries forward into the next number
+                                - service: number.set_value
+                                  data:
+                                    entity_id: "number.{{haspname}}_alarmcode_{{(codelength|int) - repeat.index + 1}}"
+                                    value: '{{states("number." ~ haspname ~ "_alarmcode_" ~ ((codelength|int) - repeat.index))|int}}'
+                          - service: number.set_value
+                            data:
+                              entity_id: "number.{{haspname}}_alarmcode_1"
+                              value: >-
+                                {%- set button = trigger.payload_json.event.split("].b[")[1] | replace("]","") | int - 3 -%}
+                                {%- if button == 11 %}{% set button = 0 -%}{%- endif -%}
+                                {{button|int}}
+
+                      #########################################################################
+                      # Arm was pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON") and (alarmstate == "disarmed")}}'
+                        sequence:
+                          - service_template: "{{armservice_name}}"
+                            data:
+                              entity_id: !input alarmpanel
+                              code: >-
+                                {%- set code = namespace() -%}
+                                {%- set code.value = states("number.plate01_alarmcode_" ~ codelength)|int -%}
+                                {%- for i in range(1,codelength|int) -%}
+                                {%- set code.value =  code.value|int * 10 + (states("number.plate01_alarmcode_" ~ (codelength|int - i))|int) -%}
+                                {%- endfor -%}
+                                {{code.value|int}}
+                          - repeat:
+                              count: "{{codelength}}"
+                              sequence:
+                                # clear out code entry after arm attempt
+                                - service: number.set_value
+                                  data:
+                                    entity_id: "number.{{haspname}}_alarmcode_{{repeat.index}}"
+                                    value: -1
+
+                      #########################################################################
+                      # Disarm was pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: alarm_control_panel.alarm_disarm
+                            data:
+                              entity_id: !input alarmpanel
+                              code: >-
+                                {%- set code = namespace() -%}
+                                {%- set code.value = states("number.plate01_alarmcode_" ~ codelength)|int -%}
+                                {%- for i in range(1,codelength|int) -%}
+                                {%- set code.value =  code.value|int * 10 + (states("number.plate01_alarmcode_" ~ (codelength|int - i))|int) -%}
+                                {%- endfor -%}
+                                {{code.value|int}}
+                          - repeat:
+                              count: "{{codelength}}"
+                              sequence:
+                                # clear out code entry after disarm attempt
+                                - service: number.set_value
+                                  data:
+                                    entity_id: "number.{{haspname}}_alarmcode_{{repeat.index}}"
+                                    value: -1
+
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes.
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        [{%- for i in range(4,15) if not i == 13 -%}
+                        "p[7].b[{{i}}].pco={{selectedfg}}",{%- endfor -%}
+                        {%- if alarmstate == "disarmed" -%}
+                        "p[7].b[13].pco={{selectedfg}}",
+                        "p[7].b[15].pco={{selectedfg}}"
+                        {%- else -%}
+                        "p[7].b[13].pco2={{selectedfg}}",
+                        "p[7].b[15].pco2={{selectedfg}}"
+                        {%- endif -%}]
+
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        [{%- for i in range(4,15) if not i == 13 -%}
+                        "p[7].b[{{i}}].bco={{selectedbg}}",{%- endfor -%}
+                        {%- if alarmstate == "disarmed" -%}
+                        "p[7].b[13].bco={{selectedbg}}",
+                        "p[7].b[15].bco={{selectedbg}}"
+                        {%- else -%}
+                        "p[7].b[13].bco2={{selectedbg}}",
+                        "p[7].b[15].bco2={{selectedbg}}"
+                        {%- endif -%}]
+
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        [{%- for i in range(4,15) if not i == 13 -%}
+                        "p[7].b[{{i}}].pco2={{unselectedfg}}",{%- endfor -%}
+                        {%- if alarmstate == "disarmed" -%}
+                        "p[7].b[13].pco2={{unselectedfg}}",
+                        "p[7].b[15].pco2={{unselectedfg}}"
+                        {%- else -%}
+                        "p[7].b[13].pco={{unselectedfg}}",
+                        "p[7].b[15].pco={{unselectedfg}}"
+                        {%- endif -%}]
+
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        [{%- for i in range(4,15) if not i == 13 -%}
+                        "p[7].b[{{i}}].bco2={{unselectedbg}}",{%- endfor -%}
+                        {%- if alarmstate == "disarmed" -%}
+                        "p[7].b[13].bco2={{unselectedbg}}",
+                        "p[7].b[15].bco2={{unselectedbg}}"
+                        {%- else -%}
+                        "p[7].b[13].bco={{unselectedbg}}",
+                        "p[7].b[15].bco={{unselectedbg}}"
+                        {%- endif -%}]

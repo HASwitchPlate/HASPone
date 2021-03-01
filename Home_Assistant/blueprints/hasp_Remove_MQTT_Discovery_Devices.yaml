@@ -1,0 +1,139 @@
+blueprint:
+  name: "HASP Remove MQTT discovery messages"
+  description: "Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASP"
+  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Remove_MQTT_Discovery_Devices.yaml"
+  domain: automation
+  input:
+    haspname:
+      name: "HASP device name to remove"
+      description: "Enter the name of the HASP device to remove the MQTT discovery messages"
+
+mode: single
+max_exceeded: silent
+
+variables:
+  haspname: !input haspname
+
+trigger: []
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/status"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/command"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/command/page"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/state/page"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/sensor"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/state"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/brightness/state"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/binary_sensor/{{haspname}}/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/light/{{haspname}}/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{haspname}}/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{haspname}}/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/light/{{haspname}}/selectedforegroundcolor/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/light/{{haspname}}/selectedbackgroundcolor/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/light/{{haspname}}/unselectedforegroundcolor/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/light/{{haspname}}/unselectedbackgroundcolor/config"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/selectedforegroundcolor/switch"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/selectedforegroundcolor/rgb"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/selectedbackgroundcolor/switch"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/selectedbackgroundcolor/rgb"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/unselectedforegroundcolor/switch"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/unselectedforegroundcolor/rgb"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/unselectedbackgroundcolor/switch"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/light/unselectedbackgroundcolor/rgb"
+      payload: ""
+      retain: true
+  - service: mqtt.publish
+    data:
+      topic: "hasp/{{haspname}}/alwayson"
+      payload: ""
+      retain: true
