@@ -492,24 +492,24 @@ action:
                         state_color: true
 
                         entities:
-                          - entity: number.{{haspentities.activepage}}
+                          - entity: {{haspentities.activepage}}
                           - type: divider
-                          - entity: light.{{haspentities.backlight}}
+                          - entity: {{haspentities.backlight}}
                             secondary_info: brightness
                           - type: divider
-                          - entity: light.{{haspentities.selectedforeground}}
+                          - entity: {{haspentities.selectedforeground}}
                             icon: 'mdi:palette'
                             name: Selected Foreground Color
                             secondary_info: brightness
-                          - entity: light.{{haspentities.selectedbackground}}
+                          - entity: {{haspentities.selectedbackground}}
                             icon: 'mdi:palette'
                             name: Selected Background Color
                             secondary_info: brightness
-                          - entity: light.{{haspentities.unselectedforeground}}
+                          - entity: {{haspentities.unselectedforeground}}
                             icon: 'mdi:palette'
                             name: Unselected Foreground Color
                             secondary_info: brightness
-                          - entity: light.{{haspentities.unselectedbackground}}
+                          - entity: {{haspentities.unselectedbackground}}
                             icon: 'mdi:palette'
                             name: Unselected Background Color
                             secondary_info: brightness
