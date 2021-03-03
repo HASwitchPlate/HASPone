@@ -1,0 +1,535 @@
+blueprint:
+  name: "HASP p[x].b[y] displays a toggle button"
+  description: |
+
+    # Description
+
+    Press a button on the HASP to toggle the state of an entity.  The button colors will change in response to the on/off state or attribute of the selected entity.
+
+    There are a lot of options below! No worries, the defaults should work in a lot of cases.
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Toggle.gif)
+
+    ## Examples
+
+    <details>
+
+    ### Toggle play/pause on a media player
+
+    **Entity to toggle:** A media player that supports play and pause commands
+    **Entity state to be considered "on":** `playing`
+    **Service call to turn "on":** `media_player.media_play`
+    **Service call to turn "off":** `media_player.media_pause`
+    **Text to display when entity is "on":** ' Pause'
+    **Text to display when entity is "off":** ' Play'
+
+    ### Lock or unlock a door
+
+    **Entity to toggle:** A lock that supports lock and unlock commands
+    **Entity state to be considered "on":** `locked`
+    **Service call to turn "on":** `lock.lock`
+    **Service call to turn "off":** `lock.unlock`
+    **Text to display when entity is "on":** ' Locked'
+    **Text to display when entity is "off":** ' Unlocked'
+
+    ### Open or close a door
+
+    **Entity to toggle:** A cover entity that supports open and close commands
+    **Entity state to be considered "on":** `closed`
+    **Service call to turn "on":** `cover.close_cover`
+    **Service call to turn "off":** `cover.open_cover`
+    **Text to display when entity is "on":** ' Closed'
+    **Text to display when entity is "off":** ' Open'
+
+    </details>
+
+    ## HASP Page and Button Reference
+
+    The images below show each available HASP page along with the layout of available button objects.
+
+    <details>
+
+    | Page 0 | Pages 1-3 | Pages 4-5 |
+    |--------|-----------|-----------|
+    | ![Page 0](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p0_Init_Screen.png) | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p1-p3_4buttons.png) | ![Pages 4-5](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p4-p5_3sliders.png) |
+
+    | Page 6 | Page 7 | Page 8 |
+    |--------|--------|--------|
+    | ![Page 6](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p6_8buttons.png) | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p7_12buttons.png) | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+    | Page 9 | Page 10 | Page 11 |
+    |--------|---------|---------|
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button+1slider.png)
+
+    </details>
+
+    ## HASP Font Reference
+
+    <details>
+
+    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
+
+    | Font | Name              | Characters per line | Lines per button |
+    | :--- | :---------------- | :-------------------| :--------------- |
+    | 0    | Consolas 24       | 20 characters       | 2 lines          |
+    | 1    | Consolas 32       | 15 characters       | 2 lines          |
+    | 2    | Consolas 48       | 10 characters       | 1 line           |
+    | 3    | Consolas 80       | 6 characters        | 1 line           |
+    | 4    | Webdings 56       | 8 characters        | 1 line           |
+    | 5    | Noto Sans 24      | Proportional        | 2 lines          |
+    | 6    | Noto Sans 32      | Proportional        | 2 lines          |
+    | 7    | Noto Sans 48      | Proportional        | 1 line           |
+    | 8    | Noto Sans 64      | Proportional        | 1 line           |
+    | 9    | Noto Sans 80      | Proportional        | 1 line           |
+    | 10   | Noto Sans Bold 80 | Proportional        | 1 line           |
+
+    ### Icons
+
+    Fonts 5-10 also include [1400+ icons which you can copy and paste from here](https://htmlpreview.github.io/?https://github.com/aderusha/HASwitchPlate/blob/master/Documentation/Images/hasp-fontawesome5.html)
+
+    ### Font examples
+
+    ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_Fonts_8-10.png)
+
+    </details>
+
+    ## Nextion color codes
+
+    <details>
+
+    The Nextion environment utilizes RGB 565 encoding.  [Use this handy convertor](https://nodtem66.github.io/nextion-hmi-color-convert/index.html) to select your colors and convert to the RGB 565 format.
+
+    Here are some example colors:
+
+    | Color  | Code  |
+    |--------|-------|
+    | White  | 65535 |
+    | Black  | 0     |
+    | Grey   | 25388 |
+    | Red    | 63488 |
+    | Green  | 2016  |
+    | Blue   | 31    |
+    | Yellow | 65504 |
+    | Orange | 64512 |
+    | Brown  | 48192 |
+
+    </details>
+
+  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Toggle.yaml"
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    hasppage:
+      name: "HASP Page"
+      description: "Select the HASP page (1-11) for this toggle.  Refer to the HASP Page and Button reference above."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 11
+          mode: slider
+          unit_of_measurement: page
+    haspbutton:
+      name: "HASP Button"
+      description: "Select the HASP button for this toggle.  Refer to the HASP Page and Button reference above."
+      default: 4
+      selector:
+        number:
+          min: 4
+          max: 15
+          mode: slider
+          unit_of_measurement: button
+    entity:
+      name: "Entity to toggle"
+      description: "Select an entity for this button to toggle"
+      selector:
+        entity:
+    attribute:
+      name: "Entity attribute or state to monitor"
+      description: 'Enter "state" to track the state of an entity, or enter an attribute name if the entity has a specific attribute you want to track.  Most uses will leave this set to "state".'
+      default: "state"
+      selector:
+        text:
+    state_on:
+      name: 'Entity state to be considered "on"'
+      description: 'For most devices, this will be "on".  If the selected entity state or attribute does not match this value (case insensitive), it will be considered "off"'
+      default: "on"
+      selector:
+        text:
+    action_on:
+      name: 'Action to turn "on"'
+      description: "Select an action that will turn the selected device on."
+      default:
+      selector:
+        action:
+    action_off:
+      name: 'Action to turn "off"'
+      description: "Select an action that will turn the selected device off"
+      default:
+      selector:
+        action:
+    text_on:
+      name: 'Text to display when entity is "on"'
+      description: 'Enter text to be displayed on the button when the selected entity is in the "on" state.'
+      default: "Entity on"
+      selector:
+        text:
+    text_off:
+      name: 'Text to display when entity is "off"'
+      description: 'Enter text to be displayed on the button when the selected entity is in the "off" state.'
+      default: "Entity off"
+      selector:
+        text:
+    on_fgcolor:
+      name: '"on" foreground color'
+      description: 'Text foreground color when the selected entity is "on" in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    on_bgcolor:
+      name: '"on" background color'
+      description: 'Text background color when the selected entity is "on" in Nextion RGB565 format. -1 = Current theme selected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    off_fgcolor:
+      name: '"off" foreground color'
+      description: 'Text foreground color when the selected entity is "off" in Nextion RGB565 format. -1 = Current theme unselected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    off_bgcolor:
+      name: '"off" background color'
+      description: 'Text background color when the selected entity is "off" in Nextion RGB565 format. -1 = Current theme unselected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    font_select:
+      name: "Font"
+      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
+      default: "8 - Noto Sans 64"
+      selector:
+        select:
+          options:
+            - "0 - Consolas 24"
+            - "1 - Consolas 32"
+            - "2 - Consolas 48"
+            - "3 - Consolas 80"
+            - "4 - Webdings 56"
+            - "5 - Noto Sans 24"
+            - "6 - Noto Sans 32"
+            - "7 - Noto Sans 48"
+            - "8 - Noto Sans 64"
+            - "9 - Noto Sans 80"
+            - "10 - Noto Sans Bold 80"
+    xcen_select:
+      name: "Text horizontal alignment"
+      description: "Horizontal text alignment: 0=Left 1=Center 2=Right"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Left aligned"
+            - "1 - Centered"
+            - "2 - Right aligned"
+    ycen_select:
+      name: "Text vertical alignment"
+      description: "Vertical text alignment: 0=Top 1=Center 2=Bottom"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Top aligned"
+            - "1 - Centered"
+            - "2 - Bottom aligned"
+    wrap:
+      name: "Text wrap"
+      description: "Enable line-wrapping text if too long to fit in the button."
+      default: false
+      selector:
+        boolean:
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  entity: !input entity
+  attribute: !input attribute
+  state_on: !input state_on
+  action_on: !input action_on
+  action_off: !input action_off
+  text_on: !input text_on
+  text_off: !input text_off
+  on_fgcolor: !input on_fgcolor
+  on_bgcolor: !input on_bgcolor
+  off_fgcolor: !input off_fgcolor
+  off_bgcolor: !input off_bgcolor
+  font_select: !input font_select
+  font: '{{ font_select.split(" - ")[0] | int }}'
+  xcen_select: !input xcen_select
+  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  ycen_select: !input ycen_select
+  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  wrap: !input wrap
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  isbr: "{% if wrap == true %}1{% else %}0{% endif %}"
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  selectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  selectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  entity_attribute: '{% if attribute|lower == "state" %}{{states(entity)}}{% else %}{{state_attr(entity,attribute)}}{% endif %}'
+  entity_state: "{% if entity_attribute|lower == state_on %}{{true}}{% else %}{{false}}{% endif %}"
+  toggle_selectedfg: "{% if entity_state %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% endif %}"
+  toggle_selectedbg: "{% if entity_state %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% endif %}"
+  toggle_unselectedfg: "{% if not entity_state %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% endif %}"
+  toggle_unselectedbg: "{% if not entity_state %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% endif %}"
+  text: "{% if entity_state %}{{text_on}}{% else %}{{text_off}}{% endif %}"
+  button_trigger: "ON"
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  buttonjsonpayload: '{"event_type":"button_short_press","event":"{{haspobject}}","value":"ON"}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: state
+    entity_id: !input entity
+  - platform: homeassistant
+    event: start
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+    payload: "{{buttonjsonpayload}}"
+  - platform: mqtt
+    topic: "{{selectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{selectedbgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+      #########################################################################
+      # Apply text and style when "RUN ACTIONS" is pressed by the user
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{-
+                (trigger is not defined)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                [
+                "{{haspobject}}.font={{font}}",
+                "{{haspobject}}.xcen={{xcen}}",
+                "{{haspobject}}.ycen={{ycen}}",
+                "{{haspobject}}.isbr={{isbr}}",
+                "{{haspobject}}.pco={{toggle_selectedfg}}",
+                "{{haspobject}}.bco={{toggle_selectedbg}}",
+                "{{haspobject}}.pco2={{toggle_unselectedfg}}",
+                "{{haspobject}}.bco2={{toggle_unselectedbg}}",
+                "{{haspobject}}.txt=\"{{text}}\""
+                ]
+
+      #########################################################################
+      # Update display if our entity has changed state
+      - conditions: # Update display if our entity has changed state
+          - condition: template
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == entity) }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                [
+                "{{haspobject}}.pco={{toggle_selectedfg}}",
+                "{{haspobject}}.bco={{toggle_selectedbg}}",
+                "{{haspobject}}.pco2={{toggle_unselectedfg}}",
+                "{{haspobject}}.bco2={{toggle_unselectedbg}}",
+                "{{haspobject}}.txt=\"{{text}}\""
+                ]
+      #########################################################################
+      # Catch triggers fired by incoming MQTT messages
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Catch incoming JSON messages
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (trigger.topic == jsontopic) and trigger.payload_json is defined }}"
+                sequence:
+                  - choose:
+                      #########################################################################
+                      # Catch button, toggle entity OFF if currently ON
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == haspobject) and (trigger.payload_json.value == button_trigger) and (entity_state)}}"
+                        sequence: !input action_off
+                      #########################################################################
+                      # Catch button, toggle entity ON if currently OFF
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == haspobject) and (trigger.payload_json.value == button_trigger)}}"
+                        sequence: !input action_on
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco"
+                      payload: "{{toggle_selectedfg}}"
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco"
+                      payload: "{{toggle_selectedbg}}"
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco2"
+                      payload: "{{toggle_unselectedfg}}"
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco2"
+                      payload: "{{toggle_unselectedbg}}"

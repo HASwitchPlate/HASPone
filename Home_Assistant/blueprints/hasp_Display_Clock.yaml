@@ -24,7 +24,7 @@ blueprint:
 
     | Page 9 | Page 10 | Page 11 |
     |--------|---------|---------|
-    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button.png)
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button+1slider.png)
 
     </details>
 
@@ -78,6 +78,7 @@ blueprint:
           min: 1
           max: 11
           mode: slider
+          unit_of_measurement: page
     haspbutton:
       name: "HASP Button"
       description: "Select the HASP button (4-15) for the clock. Refer to the HASP Page and Button reference above."
@@ -87,6 +88,7 @@ blueprint:
           min: 4
           max: 15
           mode: slider
+          unit_of_measurement: button
     font_select:
       name: "Clock Font"
       description: "Select the font for the clock.  Refer to the HASP Font reference above."
@@ -261,10 +263,8 @@ trigger_variables:
 trigger:
   - platform: time_pattern
     seconds: 0
-  - platform: mqtt
-    topic: "{{jsontopic}}"
-    payload: "online"
-    value_template: "{{ value_json.event }}"
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: homeassistant
     event: start
   - platform: mqtt
@@ -275,7 +275,6 @@ trigger:
     topic: "{{unselectedfgtopic}}"
   - platform: mqtt
     topic: "{{unselectedbgtopic}}"
-
 
 condition:
   - condition: template
@@ -288,13 +287,13 @@ action:
       # Display clock and apply text style
       - conditions:
           - condition: template
-            value_template: >- 
+            value_template: >-
               {{-
                 (trigger is not defined)
               or
-               ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
               or
-               ((trigger.platform == 'mqtt') and (trigger.topic == jsontopic) and (trigger.payload_json.event == 'online'))
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
               -}}
         sequence:
           - service: mqtt.publish

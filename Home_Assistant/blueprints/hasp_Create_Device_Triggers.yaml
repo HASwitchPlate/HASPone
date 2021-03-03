@@ -24,7 +24,7 @@ blueprint:
 
     | Page 9 | Page 10 | Page 11 |
     |--------|---------|---------|
-    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button.png)
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button+1slider.png)
 
     </details>
 
@@ -63,7 +63,6 @@ variables:
         {{ break }}
       {%- endif -%}
     {%- endfor -%}
-  statetopic: '{{ "hasp/" ~ haspname ~ "/state" }}'
   haspsensor: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
@@ -78,13 +77,6 @@ variables:
 
 trigger_variables:
   haspdevice: !input haspdevice
-  haspname: >-
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
-        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
-      {%- endif -%}
-    {%- endfor -%}
   haspsensor: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
@@ -92,13 +84,10 @@ trigger_variables:
         {{ break }}
       {%- endif -%}
     {%- endfor -%}
-  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
 
 trigger:
-  - platform: mqtt
-    topic: "{{jsontopic}}"
-    payload: "online"
-    value_template: "{{ value_json.event }}"
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: homeassistant
     event: start
 

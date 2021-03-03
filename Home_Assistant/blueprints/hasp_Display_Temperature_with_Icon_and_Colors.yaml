@@ -61,6 +61,7 @@ blueprint:
           min: 1
           max: 3
           mode: slider
+          unit_of_measurement: page
     haspbutton:
       name: "HASP Button"
       description: "Select the HASP button (4-7) for the temperature. Refer to the HASP Page and Button reference above."
@@ -70,6 +71,7 @@ blueprint:
           min: 4
           max: 7
           mode: slider
+          unit_of_measurement: button
     weather_provider:
       name: "Weather provider"
       description: "Select the weather provider to obtain the current outdoor temperature.  If a temperature sensor is selected below, that will override this selection."
@@ -86,7 +88,7 @@ blueprint:
           domain: sensor
     temperature_attribute:
       name: "Temperature sensor state or attribute to monitor"
-      description: 'Enter "state" to track the state of the sensor above, or enter an attribute name if the sensor has a specific attribute you want to track.  Most uses will leave this set to "state".'
+      description: "Enter `state` to track the state of the sensor above, or enter an attribute name if the sensor has a specific attribute you want to track.  Most uses will leave this set to `state`."
       default: "state"
       selector:
         text:
@@ -227,7 +229,6 @@ variables:
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
-  # temperature: '{{state_attr(weather_provider, "temperature")|int}}'
   temperature: >-
     {%- if temperature_sensor|lower == "none" -%}
       {{- state_attr(weather_provider, "temperature") -}}
@@ -374,6 +375,8 @@ trigger_variables:
 trigger:
   - platform: state
     entity_id: !input weather_provider
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: homeassistant
     event: start
   - platform: mqtt
@@ -402,9 +405,9 @@ action:
               {{-
                 (trigger is not defined)
               or
-               ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
               or
-               ((trigger.platform == 'mqtt') and (trigger.topic == jsontopic) and (trigger.payload_json.event == 'online'))
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
               -}}
         sequence:
           - service: mqtt.publish

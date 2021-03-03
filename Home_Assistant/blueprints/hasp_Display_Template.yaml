@@ -1,26 +1,76 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the month + date with a calendar icon"
+  name: "HASP p[x].b[y] displays the output of a template"
   description: |
 
     # Description
 
-    A HASP button displays month + date on the right with a calendar icon on the left.
+    A button on the HASP will display the output of a template.  The template is updated when the state of a selected entity updates.
 
-    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Calendar_with_Icon.png)
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Template.png)
 
-    ## HASP Page and Button Reference
+    ## Examples
 
     <details>
 
-    This automation is designed to work with the full-width buttons found on pages 1-3
+    ### Show tomorrow's high/low temperature from Met.no
 
-    | Pages 1-3 |
-    |-----------|
-    | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p1-p3_4buttons.png) |
+    **Trigger entity:** The default Met.no provider from Home Assistant.  If you left your location named "Home", the entity should be `weather.home`
+    **Template:** `Tomorrow\\rHigh: {{state_attr(trigger_entity, "forecast")[0].temperature|int}} Low: {{state_attr(trigger_entity, "forecast")[0].templow|int}}`
+    **Font:** `6`
 
     </details>
 
-  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Calendar_with_Icon.yaml"
+    ## HASP Page and Button Reference
+
+    The images below show each available HASP page along with the layout of available button objects.
+
+    <details>
+
+    | Page 0 | Pages 1-3 | Pages 4-5 |
+    |--------|-----------|-----------|
+    | ![Page 0](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p0_Init_Screen.png) | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p1-p3_4buttons.png) | ![Pages 4-5](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p4-p5_3sliders.png) |
+
+    | Page 6 | Page 7 | Page 8 |
+    |--------|--------|--------|
+    | ![Page 6](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p6_8buttons.png) | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p7_12buttons.png) | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+    | Page 9 | Page 10 | Page 11 |
+    |--------|---------|---------|
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button+1slider.png)
+
+    </details>
+
+    ## HASP Font Reference
+
+    <details>
+
+    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
+
+    | Font | Name              | Characters per line | Lines per button |
+    | :--- | :---------------- | :-------------------| :--------------- |
+    | 0    | Consolas 24       | 20 characters       | 2 lines          |
+    | 1    | Consolas 32       | 15 characters       | 2 lines          |
+    | 2    | Consolas 48       | 10 characters       | 1 line           |
+    | 3    | Consolas 80       | 6 characters        | 1 line           |
+    | 4    | Webdings 56       | 8 characters        | 1 line           |
+    | 5    | Noto Sans 24      | Proportional        | 2 lines          |
+    | 6    | Noto Sans 32      | Proportional        | 2 lines          |
+    | 7    | Noto Sans 48      | Proportional        | 1 line           |
+    | 8    | Noto Sans 64      | Proportional        | 1 line           |
+    | 9    | Noto Sans 80      | Proportional        | 1 line           |
+    | 10   | Noto Sans Bold 80 | Proportional        | 1 line           |
+
+    ### Icons
+
+    Fonts 5-10 also include [1400+ icons which you can copy and paste from here](https://htmlpreview.github.io/?https://github.com/aderusha/HASwitchPlate/blob/master/Documentation/Images/hasp-fontawesome5.html)
+
+    ### Font examples
+
+    ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_Fonts_8-10.png)
+
+    </details>
+
+  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Template.yaml"
   domain: automation
   input:
     haspdevice:
@@ -33,24 +83,79 @@ blueprint:
           model: "HASPone v1.0.0"
     hasppage:
       name: "HASP Page"
-      description: "Select the HASP page (1-3) for the calendar. Refer to the HASP Page and Button reference above."
+      description: "Select the HASP page (1-11). Refer to the HASP Page and Button reference above."
       default: 1
       selector:
         number:
           min: 1
-          max: 3
+          max: 11
           mode: slider
           unit_of_measurement: page
     haspbutton:
       name: "HASP Button"
-      description: "Select the HASP button (4-7) for the calendar. Refer to the HASP Page and Button reference above."
+      description: "Select the HASP button (4-15) for the template display. Refer to the HASP Page and Button reference above."
       default: 4
       selector:
         number:
           min: 4
-          max: 7
+          max: 15
           mode: slider
           unit_of_measurement: button
+    trigger_entity:
+      name: "Select an entity to trigger template update"
+      description: "Update the displayed template when the state or attributes of the selected entity update."
+      selector:
+        entity:
+    template:
+      name: "Template to output"
+      description: "Enter a well-formed [Home Assistant template](https://www.home-assistant.io/docs/configuration/templating/) string.  The variable `trigger_entity` will contain the entity name selected above."
+      default: 'Forecast: {{state_attr("weather.home", "forecast")[0].condition|title}}'
+      selector:
+        text:
+    font_select:
+      name: "Font"
+      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
+      default: "8 - Noto Sans 64"
+      selector:
+        select:
+          options:
+            - "0 - Consolas 24"
+            - "1 - Consolas 32"
+            - "2 - Consolas 48"
+            - "3 - Consolas 80"
+            - "4 - Webdings 56"
+            - "5 - Noto Sans 24"
+            - "6 - Noto Sans 32"
+            - "7 - Noto Sans 48"
+            - "8 - Noto Sans 64"
+            - "9 - Noto Sans 80"
+            - "10 - Noto Sans Bold 80"
+    xcen_select:
+      name: "Text horizontal alignment"
+      description: "Horizontal text alignment: 0=Left 1=Center 2=Right"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Left aligned"
+            - "1 - Centered"
+            - "2 - Right aligned"
+    ycen_select:
+      name: "Text vertical alignment"
+      description: "Vertical text alignment: 0=Top 1=Center 2=Bottom"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Top aligned"
+            - "1 - Centered"
+            - "2 - Bottom aligned"
+    wrap:
+      name: "Text wrap"
+      description: "Enable line-wrapping text if too long to fit in the button."
+      default: false
+      selector:
+        boolean:
 
 mode: parallel
 max_exceeded: silent
@@ -66,23 +171,23 @@ variables:
     {%- endfor -%}
   hasppage: !input hasppage
   haspbutton: !input haspbutton
+  trigger_entity: !input trigger_entity
+  text: !input template
+  font_select: !input font_select
+  font: '{{ font_select.split(" - ")[0] | int }}'
+  xcen_select: !input xcen_select
+  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  ycen_select: !input ycen_select
+  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  wrap: !input wrap
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
-  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  isbr: "{% if wrap == true %}1{% else %}0{% endif %}"
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
-  activepage: >-
-    {%- set activepage = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
-        {%- set activepage.entity=entity -%}
-        {{ break }}
-      {%- endif -%}
-    {%- endfor -%}
-    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
   selectedfg: >-
     {%- set color = namespace() -%}
     {%- for entity in device_entities(haspdevice) -%}
@@ -135,14 +240,6 @@ variables:
     {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
     {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
-  text: '{{(now().strftime("%b "))~now().day}}'
-  font: 9
-  ypos: "{{(haspbutton|int - 4) * 67 + 2}}" # calculate the top pixel position based on the selected button
-  xpos: 0
-  icon: ""
-  iconwidth: 50
-  iconheight: 65
-  iconfont: 8
 
 trigger_variables:
   haspdevice: !input haspdevice
@@ -167,12 +264,12 @@ trigger_variables:
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
 
 trigger:
-  - platform: time
-    at: "00:00:00"
-  - platform: homeassistant
-    event: start
+  - platform: state
+    entity_id: !input trigger_entity
   - platform: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: homeassistant
+    event: start
   - platform: mqtt
     topic: "{{jsontopic}}"
   - platform: mqtt
@@ -192,10 +289,10 @@ action:
   - choose:
       #########################################################################
       # RUN ACTIONS or Home Assistant Startup or HASP Connect
-      # Apply styles, place text, and then place icon if our target page is currently active
+      # Display template and apply text style
       - conditions:
           - condition: template
-            value_template: >- 
+            value_template: >-
               {{-
                 (trigger is not defined)
               or
@@ -208,66 +305,57 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                ["{{haspobject}}.font={{font}}",
-                "{{haspobject}}.xcen=2",
-                "{{haspobject}}.ycen=1",
+                [
+                "{{haspobject}}.font={{font}}",
+                "{{haspobject}}.xcen={{xcen}}",
+                "{{haspobject}}.ycen={{ycen}}",
+                "{{haspobject}}.isbr={{isbr}}",
                 "{{haspobject}}.pco={{selectedfg}}",
                 "{{haspobject}}.bco={{selectedbg}}",
                 "{{haspobject}}.pco2={{unselectedfg}}",
                 "{{haspobject}}.bco2={{unselectedbg}}",
-                "{{haspobject}}.txt=\"{{text}} \""
-                {%- if activepage|int == hasppage|int -%}
-                ,"delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""
-                {%- endif -%}]
+                "{{haspobject}}.txt=\"{{text}}\""
+                ]
       #########################################################################
-      # Update the calendar text every day at midnight.  If the selected page is currently active, also place the icon.
-      - conditions: #
+      # Update display if our entity has changed state, or if the user presses the button
+      - conditions:
           - condition: template
-            value_template: '{{ trigger.platform == "time" }}'
+            value_template: >-
+              {{-
+                (
+                  (trigger.platform == "state")
+                and
+                 (trigger.entity_id == trigger_entity)
+                )
+              or
+                (
+                  (trigger.topic == jsontopic)
+                and
+                  (trigger.payload_json is defined)
+                and
+                  (trigger.payload_json.event_type is defined) 
+                and
+                  (trigger.payload_json.event_type == "button_short_press")
+                and
+                  (trigger.payload_json.event is defined) 
+                and
+                  (trigger.payload_json.event == haspobject)                
+                )
+              -}}
         sequence:
           - service: mqtt.publish
             data:
-              topic: "{{jsoncommandtopic}}"
-              payload: >-
-                ["{{haspobject}}.txt=\"{{text}} \""
-                {%- if activepage|int == hasppage|int -%}
-                ,"delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""
-                {%- endif -%}]
+              topic: "{{commandtopic}}.txt"
+              payload: '"{{text}}"'
       #########################################################################
-      # Catch MQTT events
+      # Catch triggers fired by incoming MQTT messages
       - conditions:
           - condition: template
             value_template: '{{ trigger.platform == "mqtt" }}'
         sequence:
           - choose:
               #########################################################################
-              # Catch incoming JSON messages
-              - conditions:
-                  - condition: template
-                    value_template: "{{ (trigger.topic == jsontopic) and trigger.payload_json is defined }}"
-                sequence:
-                  - choose:
-                      #########################################################################
-                      # Icon overlay
-                      - conditions: # Somebody pressed our button which hides the overlaid icon.  Put it back.
-                          - condition: template
-                            value_template: '{{ (trigger.topic == jsontopic ) and (trigger.payload_json.event == haspobject ) and (trigger.payload_json.value == "OFF") }}'
-                        sequence:
-                          - service: mqtt.publish
-                            data:
-                              topic: "{{jsoncommandtopic}}"
-                              payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""]'
-                      - conditions: # Page changed to our page, so place the icon on the screen.
-                          - condition: template
-                            value_template: '{{ (trigger.topic == jsontopic ) and (trigger.payload_json.event == "page" ) and (trigger.payload_json.value == hasppage|int) }}'
-                        sequence:
-                          - service: mqtt.publish
-                            data:
-                              topic: "{{jsoncommandtopic}}"
-                              payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""]'
-              #########################################################################
-              # Theme: Apply selected foreground color when it changes.
-              # Any change to the button will remove the overlaid icon.
+              # Theme: Apply selected foreground color on change
               - conditions:
                   - condition: template
                     value_template: "{{ trigger.topic == selectedfgtopic }}"
@@ -276,13 +364,6 @@ action:
                     data:
                       topic: "{{commandtopic}}.pco"
                       payload: "{{trigger.payload}}"
-                  - condition: template
-                    value_template: "{{ activepage|int == hasppage|int }}"
-                  - delay: "00:00:00.5"
-                  - service: mqtt.publish
-                    data:
-                      topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{trigger.payload}},0,1,1,3,\"{{icon}}\""]'
               #########################################################################
               # Theme: Apply selected background color on change
               - conditions:
@@ -293,13 +374,6 @@ action:
                     data:
                       topic: "{{commandtopic}}.bco"
                       payload: "{{trigger.payload}}"
-                  - condition: template
-                    value_template: "{{ activepage|int == hasppage|int }}"
-                  - delay: "00:00:00.5"
-                  - service: mqtt.publish
-                    data:
-                      topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""]'
               #########################################################################
               # Theme: Apply unselected foreground color on change
               - conditions:
@@ -310,13 +384,6 @@ action:
                     data:
                       topic: "{{commandtopic}}.pco2"
                       payload: "{{trigger.payload}}"
-                  - condition: template
-                    value_template: "{{ activepage|int == hasppage|int }}"
-                  - delay: "00:00:00.5"
-                  - service: mqtt.publish
-                    data:
-                      topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""]'
               #########################################################################
               # Theme: Apply unselected background color on change
               - conditions:
@@ -327,10 +394,3 @@ action:
                     data:
                       topic: "{{commandtopic}}.bco2"
                       payload: "{{trigger.payload}}"
-                  - condition: template
-                    value_template: "{{ activepage|int == hasppage|int }}"
-                  - delay: "00:00:00.5"
-                  - service: mqtt.publish
-                    data:
-                      topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\""]'

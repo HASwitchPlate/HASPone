@@ -40,6 +40,7 @@ blueprint:
           min: 4
           max: 5
           mode: slider
+          unit_of_measurement: page
     haspbutton:
       name: "HASP Button"
       description: "Select the HASP button (7-9) for the dimmer. Refer to the HASP Page and Button reference above."
@@ -49,6 +50,7 @@ blueprint:
           min: 7
           max: 9
           mode: slider
+          unit_of_measurement: button
     dimmer:
       name: "Light to control"
       description: "Select a light device which supports dimming"
@@ -259,6 +261,8 @@ trigger_variables:
 trigger:
   - platform: state
     entity_id: !input dimmer
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: homeassistant
     event: start
   - platform: mqtt
@@ -287,9 +291,9 @@ action:
               {{-
                 (trigger is not defined)
               or
-               ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
               or
-               ((trigger.platform == 'mqtt') and (trigger.topic == jsontopic) and (trigger.payload_json.event == 'online'))
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
               -}}
         sequence:
           - service: mqtt.publish

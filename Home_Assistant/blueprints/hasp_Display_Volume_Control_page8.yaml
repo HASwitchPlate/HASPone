@@ -1,0 +1,200 @@
+blueprint:
+  name: "HASP p[8].b[9] The slider button on page 8 displays a volume control"
+  description: |
+
+    # Description
+
+    The slider button on page 8 displays a volume control
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Volume_Control_page8.png)
+
+    ## HASP Page and Button reference
+
+    <details>
+
+    This automation is designed to work with the silder found on page 8:
+
+    | Page 8 |
+    |--------|
+    | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+
+    </details>
+
+  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Volume_Control_page8.yaml"
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    volumeentity:
+      name: "Media Player to control"
+      description: "Select a media player to control volume"
+      selector:
+        entity:
+          domain: media_player
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  volumeentity: !input volumeentity
+  volumeobject: "p[8].b[9]"
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" }}'
+  volumecommandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ volumeobject }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  unselectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  volume: '{% if state_attr(volumeentity, "volume_level")|lower == "none" %}0{% else %}{{(state_attr(volumeentity, "volume_level")*255)|int}}{% endif %}'
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  # jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  volumetopic: '{{ "hasp/" ~ haspname ~ "/state/p[8].b[9].val" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: state
+    entity_id: !input volumeentity
+  - platform: homeassistant
+    event: start
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: mqtt
+    topic: "{{volumetopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+      #########################################################################
+      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # Apply text and style
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{-
+                (trigger is not defined)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["{{volumeobject}}.pco={{unselectedfg}}",
+                "{{volumeobject}}.bco={{unselectedbg}}",
+                "{{volumeobject}}.val={{volume}}"]
+
+      #########################################################################
+      # Update display if our entity has changed state
+      - conditions: # volume has changed value, on/off state has also changed, and we're currently on the selected page
+          - condition: template
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == volumeentity) }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{volumecommandtopic}}.val"
+              payload: "{{volume}}"
+
+      #########################################################################
+      # Handle MQTT message triggers
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Catch incoming volume slider change message
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == volumetopic }}"
+                sequence:
+                  - service: media_player.volume_set
+                    entity_id: !input volumeentity
+                    data:
+                      volume_level: "{{ (trigger.payload | int) / 255 }}"
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{volumecommandtopic}}.pco"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{volumecommandtopic}}.bco"
+                      payload: "{{trigger.payload}}"

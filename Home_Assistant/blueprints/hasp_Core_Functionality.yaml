@@ -24,7 +24,7 @@ blueprint:
 
     | Page 9 | Page 10 | Page 11 |
     |--------|---------|---------|
-    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button.png)
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p11_1button+1slider.png)
 
     </details>
 
@@ -102,6 +102,7 @@ blueprint:
           min: 0
           max: 11
           mode: slider
+          unit_of_measurement: page
     page2text:
       name: "Page select button 2 text"
       description: "Enter text to appear on the center page select button #2. If page scrolling is enabled, use the Page Names list below."
@@ -135,6 +136,7 @@ blueprint:
           min: 0
           max: 11
           mode: slider
+          unit_of_measurement: page
     page3text:
       name: "Page select button 3 text"
       description: "Enter text to appear on the right-most page select button #3"
@@ -168,6 +170,7 @@ blueprint:
           min: 0
           max: 11
           mode: slider
+          unit_of_measurement: page
     page_scroll:
       name: "Enable page scrolling instead of page select"
       description: "If enabled, page buttons 1 and 3 will scroll up and down through available pages. The middle page button 2 will continue to select its assigned page number, but the label for page button 2 will be determined based on the Page Names defined below."
@@ -318,7 +321,13 @@ trigger_variables:
         {{ break }}
       {%- endif -%}
     {%- endfor -%}
-  statetopic: '{{ "hasp/" ~ haspname ~ "/state" }}'
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
@@ -326,10 +335,8 @@ trigger_variables:
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
 
 trigger:
-  - platform: mqtt
-    topic: "{{jsontopic}}"
-    payload: "online"
-    value_template: "{{ value_json.event }}"
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: homeassistant
     event: start
   - platform: mqtt
@@ -342,6 +349,10 @@ trigger:
     topic: "{{unselectedfgtopic}}"
   - platform: mqtt
     topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
 
 action:
   - choose:
@@ -637,7 +648,12 @@ action:
       # Push configuration to device when it connects or Home Assistant starts
       - conditions:
           - condition: template
-            value_template: "{{ is_state(haspsensor, 'ON') and ((trigger.platform == 'homeassistant') and (trigger.event == 'start')) or ((trigger.platform == 'mqtt') and (trigger.topic == jsontopic) and (trigger.payload_json.event == 'online'))}}"
+            value_template: >-
+              {{-
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
         sequence:
           - service: mqtt.publish # send page button text
             data:

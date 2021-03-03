@@ -46,6 +46,7 @@ blueprint:
           min: 2
           max: 10
           mode: slider
+          unit_of_measurement: digits
     armservice:
       name: "Alarm arm service"
       description: 'Enter the alarm service call to issue when the ARM button is pressed.  Typically this is one of "alarm_arm_away", "alarm_arm_home", "alarm_arm_night", or "alarm_arm_custom_bypass".'
@@ -172,6 +173,8 @@ trigger:
     entity_id: !input alarmpanel
   - platform: homeassistant
     event: start
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: mqtt
     topic: "{{jsontopic}}"
   - platform: mqtt
@@ -193,7 +196,14 @@ action:
       # RUN ACTIONS or Home Assistant Startup or HASP Connect
       - conditions:
           - condition: template
-            value_template: "{{ (trigger is not defined) or ((trigger.platform == 'homeassistant') and (trigger.event == 'start')) or ((trigger.platform == 'mqtt') and (trigger.topic == jsontopic) and (trigger.payload_json.event == 'online'))}}"
+            value_template: >- 
+              {{-
+                (trigger is not defined)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
         sequence:
           # Apply themes and set numbered button labels
           - service: mqtt.publish
@@ -247,7 +257,8 @@ action:
                       {"name":"{{haspname}} alarmcode {{repeat.index}}",
                       "command_topic":"hasp/{{haspname}}/alarmcode/{{repeat.index}}",
                       "availability":{"topic":"hasp/{{haspname}}/alwayson","payload_available":"ON"},
-                      "optimistic":"true",
+                      "retain":true,
+                      "optimistic":true,
                       "icon":"mdi:bell-plus-outline",
                       "unique_id":"{{haspClientId}}-alarmcode_{{repeat.index}}",
                       "device":{
@@ -342,7 +353,7 @@ action:
                       # Arm was pressed
                       - conditions:
                           - condition: template
-                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON") and (alarmstate == "disarmed")}}'
+                            value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON") and (alarmstate == "disarmed")}}'
                         sequence:
                           - service_template: "{{armservice_name}}"
                             data:
@@ -367,7 +378,7 @@ action:
                       # Disarm was pressed
                       - conditions:
                           - condition: template
-                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON")}}'
+                            value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON")}}'
                         sequence:
                           - service: alarm_control_panel.alarm_disarm
                             data:
