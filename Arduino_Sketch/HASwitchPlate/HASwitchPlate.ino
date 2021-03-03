@@ -1762,7 +1762,7 @@ void nextionUpdateProgress(const unsigned int &progress, const unsigned int &tot
 {
   uint8_t progressPercent = (float(progress) / float(total)) * 100;
   nextionSetAttr("p[0].b[4].val", String(progressPercent));
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void espWifiConnect()
