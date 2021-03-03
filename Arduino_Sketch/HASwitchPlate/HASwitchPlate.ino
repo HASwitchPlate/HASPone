@@ -159,10 +159,10 @@ WiFiClient telnetClient;                  // Telnet client
 MDNSResponder::hMDNSService hMDNSService; // mDNS
 EspSaveCrash SaveCrash;                   // Save crash details to flash
 
+// URL for auto-update check of "version.json"
+const char UPDATE_URL[] PROGMEM = "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/update/version.json";
 // Additional CSS style to match Hass theme
 const char HASP_STYLE[] PROGMEM = "<style>button{background-color:#03A9F4;}body{width:60%;margin:auto;}input:invalid{border:1px solid red;}input[type=checkbox]{width:20px;}.wrap{text-align:left;display:inline-block;min-width:260px;max-width:1000px}</style>";
-// URL for auto-update "version.json"
-const char UPDATE_URL[] PROGMEM = "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/update/version.json";
 // Default link to compiled Arduino firmware image
 String espFirmwareUrl = "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin";
 // Default link to compiled Nextion firmware images
@@ -1781,7 +1781,7 @@ void espWifiConnect()
   WiFi.mode(WIFI_STA);                // Set the radio to Station
 
   if (String(wifiSSID) == "")
-  { // If the sketch has not hard-coded wifiSSID, attempt to use saved creds or use WiFiManager to collect required information from the user.
+  { // If the sketch has no hard-coded wifiSSID, attempt to use saved creds or use WiFiManager to collect required information from the user.
 
     // First, check if we have saved wifi creds and try to connect manually.
     if (WiFi.SSID() != "")
@@ -3535,7 +3535,7 @@ void debugPrint(const String &debugText)
   }
 }
 
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void debugPrintCrash()
 {                                    // Debug output line of text to our debug targets
   SoftwareSerial debugSerial(-1, 1); // -1==nc for RX, 1==TX pin
