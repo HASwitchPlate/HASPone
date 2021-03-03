@@ -1,6 +1,6 @@
 # HA SwitchPlate HASPone
 
-The HA SwitchPlate is a DIY touchscreen controller you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi using [MQTT](https://en.wikipedia.org/wiki/MQTT) to display useful information and to control your smart devices.  The result is an attractive and highly-customizable controller for your home automation which you can build yourself!
+The HASPone is a DIY touchscreen controller you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi using [MQTT](https://en.wikipedia.org/wiki/MQTT) to display useful information and to control your smart devices.  The result is an attractive and highly-customizable home controller you can build yourself!
 
 ![HA SwitchPlate Models](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Three_Model_Variations.png?raw=true)
 
@@ -10,11 +10,11 @@ The HA SwitchPlate is a DIY touchscreen controller you can mount into a [standar
 
 ## Purchase an assembled unit
 
-As this build requires some specialist skills and tools, I will occasionally be [offering assembled devices for sale here](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/).
+This build requires some specialist skills and tools, so you can [buy an assembled device here](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/) if you just want to get started without the soldering iron.
 
 ## Build your own HASPone
 
-Check out the build guide in the HASPone wiki [here](https://github.com/HASwitchPlate/HASPone/wiki/Building-your-own-HASPone).
+[Check out the build guide in the HASPone wiki](https://github.com/HASwitchPlate/HASPone/wiki/Building-your-own-HASPone).
 
 ## Setup HASPone for Home Assistant
 
