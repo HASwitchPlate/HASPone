@@ -1,6 +1,6 @@
 # HA SwitchPlate HASPone
 
-The HA SwitchPlate is a DIY user-programmable LCD touchscreen you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi using [MQTT](https://en.wikipedia.org/wiki/MQTT) to display useful information and to control your smart devices.  The result is an attractive and highly-customizable controller for your home automation which you can build yourself!
+The HA SwitchPlate is a DIY touchscreen controller you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi using [MQTT](https://en.wikipedia.org/wiki/MQTT) to display useful information and to control your smart devices.  The result is an attractive and highly-customizable controller for your home automation which you can build yourself!
 
 ![HA SwitchPlate Models](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Three_Model_Variations.png?raw=true)
 
@@ -19,6 +19,10 @@ Check out the build guide in the HASPone wiki [here](https://github.com/HASwitch
 ## Setup HASPone for Home Assistant
 
 If you're purchased or built a HASPone, [now it's time to make it talk to Home Assistant](https://github.com/HASwitchPlate/HASPone/wiki/Configure-your-HASPone-for-Home-Assistant)
+
+## Have a question?
+
+Come talk to us in [the HASPone discussion forum](https://github.com/HASwitchPlate/HASPone/discussions) or [chat with us on Discord](https://discord.gg/FvDu8SXSvJ).
 
 ## Buy me a coffee
 
