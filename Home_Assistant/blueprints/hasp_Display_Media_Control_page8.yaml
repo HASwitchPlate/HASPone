@@ -6,7 +6,7 @@ blueprint:
 
     Page 8 controls a selected media player with artist and track info, track back/play|pause/track forward, and volume control
 
-    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Media_Control_page8.png)
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Media_Control_page8.png)
 
     ## HASP Page and Button reference
 
@@ -16,12 +16,12 @@ blueprint:
 
     | Page 8 |
     |--------|
-    | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/NextionUI_p8_5buttons+1slider.png) |
+    | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p8_5buttons+1slider.png) |
 
 
     </details>
 
-  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Media_Control_page8.yaml"
+  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Media_Control_page8.yaml"
   domain: automation
   input:
     haspdevice:

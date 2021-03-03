@@ -6,7 +6,7 @@ blueprint:
 
     A HASP button displays a dimmer control on page 4 and 5 with a toggle on/off icon to the left.
 
-    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/Blueprints/main/images/hasp_Display_Dimmer_with_Icon.png)
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Dimmer_with_Icon.png)
 
     ## HASP Page and Button reference
 
@@ -20,7 +20,7 @@ blueprint:
 
     </details>
 
-  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Dimmer_with_Icon.yaml"
+  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Dimmer_with_Icon.yaml"
   domain: automation
   input:
     haspdevice:
