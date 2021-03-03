@@ -1,6 +1,6 @@
 # HA SwitchPlate HASPone
 
-The HASPone is a DIY touchscreen controller you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi using [MQTT](https://en.wikipedia.org/wiki/MQTT) to display useful information and to control your smart devices.  The result is an attractive and highly-customizable home controller you can build yourself!
+The HASPone is a DIY touchscreen controller you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi+MQTT to display useful information and to control your smart devices.  The result is an attractive and highly-customizable home controller you can build yourself!
 
 ![HA SwitchPlate Models](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Three_Model_Variations.png?raw=true)
 
@@ -8,15 +8,15 @@ The HASPone is a DIY touchscreen controller you can mount into a [standard North
 
 ![Scene controller](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_SceneController.png?raw=true) ![Status display](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_Status.png?raw=true) ![Media control](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_Media.png?raw=true) ![Alarm Panel](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_AlarmPanel.png?raw=true) ![Slider/Dimmer Controls](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_Dimmers.png?raw=true) ![HVAC Controls](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_HVAC.png?raw=true) ![Light toggles](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_LightToggles.png?raw=true) ![Fan controller](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_FanControls.png?raw=true) ![WiFi Setup](https://github.com/HASwitchPlate/HASPone/blob/main/images/WiFi_Config_0.png?raw=true)
 
-## Purchase an assembled unit
+## [Purchase an assembled unit](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/)
 
-This build requires some specialist skills and tools, so you can [buy an assembled device here](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/) if you just want to get started without the soldering iron.
+This build requires some specialist skills and tools. [You can buy an assembled device here](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/) if you want to get started without picking up a soldering iron.
 
-## Build your own HASPone
+## [Build your own HASPone](https://github.com/HASwitchPlate/HASPone/wiki/Building-your-own-HASPone)
 
 [Check out the build guide in the HASPone wiki](https://github.com/HASwitchPlate/HASPone/wiki/Building-your-own-HASPone).
 
-## Setup HASPone for Home Assistant
+## [Setup HASPone for Home Assistant](https://github.com/HASwitchPlate/HASPone/wiki/Configure-your-HASPone-for-Home-Assistant)
 
 If you're purchased or built a HASPone, [now it's time to make it talk to Home Assistant](https://github.com/HASwitchPlate/HASPone/wiki/Configure-your-HASPone-for-Home-Assistant)
 
@@ -24,7 +24,7 @@ If you're purchased or built a HASPone, [now it's time to make it talk to Home A
 
 Come talk to us in [the HASPone discussion forum](https://github.com/HASwitchPlate/HASPone/discussions) or [chat with us on Discord](https://discord.gg/FvDu8SXSvJ).
 
-## Buy me a coffee
+## [Buy me a coffee](https://www.buymeacoffee.com/gW5rPpsKR)
 
 [![Buy me a coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/gW5rPpsKR)
 
