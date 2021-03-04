@@ -114,6 +114,99 @@ Page 8 controls a selected media player with artist and track info, track back/p
 
 A HASP button displays the current temperature on the right with a dynamic thermometer icon on the left and (optional) colors.
 
+---
 
+### Display Template
 
+[![Display Template](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Template.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Template.png)
+
+A button on the HASP will display the output of a template.  The template is updated when the state of a selected entity updates.
+
+---
+
+### Display Text
+
+[![Display Text](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Text.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Text.png)
+
+A button on the HASP will display text.  This can be useful when combined with other blueprints which perform an action, but don't apply a label to a button. Deploy both blueprints on the same button, and now you have a button that says things things and does things.
+
+---
+
+### Display Toggle
+
+[![Display Toggle](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Toggle.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Toggle.png)
+
+Press a button on the HASP to toggle the state of an entity.  The button colors and text can change in response to the on/off state or attribute of the selected entity.
+
+---
+
+### Display Volume Control on page 8
+
+[![Display Volume Control on page 8](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Volume_Control_page8.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Volume_Control_page8.png)
+
+The slider button on page 8 displays a volume control
+
+---
+
+### Display Weather Condition with Icon
+
+[![Display Weather Condition with Icon](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Weather_Condition_with_Icon.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Condition_with_Icon.png)
+
+A HASP button displays the current weather condition on the right with a matching icon on the left
+
+---
+
+### Display Weather Forecast
+
+[![Display Weather Forecast](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Weather_Forecast.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Forecast.png)
+
+A HASP button displays an attribute of a selected weather forecast. You can use this to display tomorrow's condition, or tonight's low temp. Available forecast conditions will vary by weather provider, check your selected provider's state under `Developer Tools` > `States` to get a sense of what your selected provider has to offer.
+
+---
+
+### Perform Action
+
+[![Perform Action](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Perform_Action.yaml)
+
+A button on the HASP will perform an action when pressed. Can be combined on a button with another blueprint which displays text.
+
+---
+
+### Remove MQTT Discovery Devices
+
+[![Remove MQTT Discovery Devices](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Remove_MQTT_Discovery_Devices.yaml)
+
+Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASP.
+
+---
+
+### HASP Theme Dark on Light
+
+[![HASP Theme Dark on Light](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Dark_on_Light.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Dark_on_Light.png)
+
+Press RUN ACTIONS to apply the theme Dark on Light to the selected HASP device
+
+---
+
+### HASP Theme Light on Dark
+
+[![HASP Theme Light on Dark](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Light_on_Dark.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Light_on_Dark.png)
+
+Press RUN ACTIONS to apply the theme Light on Dark to the selected HASP device
 

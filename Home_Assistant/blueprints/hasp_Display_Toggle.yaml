@@ -4,7 +4,7 @@ blueprint:
 
     # Description
 
-    Press a button on the HASP to toggle the state of an entity.  The button colors will change in response to the on/off state or attribute of the selected entity.
+    Press a button on the HASP to toggle the state of an entity.  The button colors and text can change in response to the on/off state or attribute of the selected entity.
 
     There are a lot of options below! No worries, the defaults should work in a lot of cases.
 
