@@ -271,10 +271,6 @@ action:
         sequence:
           - service: mqtt.publish
             data:
-              topic: "debug"
-              payload: "weather condition text: {{text}} states(weather_provider): {{states(weather_provider)}}"
-          - service: mqtt.publish
-            data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
                 ["{{haspobject}}.font={{font}}",
