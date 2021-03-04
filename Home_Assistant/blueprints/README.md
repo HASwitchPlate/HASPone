@@ -140,7 +140,7 @@ A button on the HASP will display text.  This can be useful when combined with o
 
 [![Display Toggle](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Toggle.yaml)
 
-![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Toggle.png)
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Toggle.gif)
 
 Press a button on the HASP to toggle the state of an entity.  The button colors and text can change in response to the on/off state or attribute of the selected entity.
 
