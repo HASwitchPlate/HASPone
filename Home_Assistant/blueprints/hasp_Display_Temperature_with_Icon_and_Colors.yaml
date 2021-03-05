@@ -190,6 +190,12 @@ blueprint:
       default: false
       selector:
         boolean:
+    roundtemp:
+      name: "Round sensor values to nearest integer"
+      description: "Enable this if you don't want decimal places involved"
+      default: true
+      selector:
+        boolean:
 
 mode: parallel
 max_exceeded: silent
@@ -225,17 +231,24 @@ variables:
   thermometer_full_threshold: !input thermometer_full_threshold
   thermometer_full_color: !input thermometer_full_color
   colortemp: !input colortemp
+  roundtemp: !input roundtemp
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
-  temperature: >-
+  temperature_value: >-
     {%- if temperature_sensor|lower == "none" -%}
       {{- state_attr(weather_provider, "temperature") -}}
     {%- elif temperature_attribute|lower == "state" -%}
       {{- states(temperature_sensor) -}}
     {%- else -%}
       {{- state_attr(temperature_sensor, temperature_attribute) -}}
+    {%- endif -%}
+  temperature: >-
+    {%- if roundtemp == true -%}
+      {{- temperature_value | round -}}
+    {%- else -%}
+      {{- temperature_value -}}
     {%- endif -%}
   icon: >-
     {%- set temp = temperature|int -%}
