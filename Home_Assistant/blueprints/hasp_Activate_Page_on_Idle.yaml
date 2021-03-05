@@ -74,6 +74,15 @@ variables:
   targetpage: !input targetpage
   idletime: !input idletime
   pagecommandtopic: '{{ "hasp/" ~ haspname ~ "/command/page" }}'
+  activepage: >-
+    {%- set activepage = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
+        {%- set activepage.entity=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
 
 trigger_variables:
   haspdevice: !input haspdevice
@@ -103,7 +112,20 @@ condition:
   - condition: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
   - condition: template
-    value_template: "{{ not( (trigger.payload_json.event is defined) and (trigger.payload_json.event == 'page') and (trigger.payload_json.value is defined) and (trigger.payload_json.value == targetpage) ) }}"
+    value_template: >-
+      {{-
+        not (
+          (trigger.payload_json.event is defined)
+          and
+          (trigger.payload_json.event == 'page')
+          and
+          (trigger.payload_json.value is defined)
+          and
+          (trigger.payload_json.value == targetpage)
+          and
+          ((targetpage|int) != (activepage|int))
+        )
+      -}}"
 
 action:
   - delay:
