@@ -1,0 +1,544 @@
+blueprint:
+  name: "HASP p[6].b[all] Page 6 displays Heatpump controls"
+  description: |
+
+    # Description
+
+    Page 6 controls a Heatpump. Display target and mode. Change temperature and mode
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Heatpump_Control_page9.png)
+
+    ## HASP Page and Button reference
+
+    <details>
+
+    This automation is designed to work with the heat pump controls found on page 6:
+
+    | page 6 |
+    |--------|
+    | ![page 6](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p6_8buttons.png) |
+
+
+    </details>
+
+    ## Nextion color codes
+
+    <details>
+
+    The Nextion environment utilizes RGB 565 encoding.  [Use this handy convertor](https://nodtem66.github.io/nextion-hmi-color-convert/index.html) to select your colors and convert to the RGB 565 format.
+
+    Here are some example colors:
+
+    | Color  | Code  |
+    |--------|-------|
+    | White  | 65535 |
+    | Black  | 0     |
+    | Grey   | 25388 |
+    | Red    | 63488 |
+    | Green  | 2016  |
+    | Blue   | 31    |
+    | Yellow | 65504 |
+    | Orange | 64512 |
+    | Brown  | 48192 |
+
+    </details>
+
+  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Heatpump_Control_page9.yaml"
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    heatpump:
+      name: "Heatpump to control"
+      description: "Select a heatpump to control"
+      selector:
+        entity:
+          domain: climate
+    suffix_select:
+      name: "Temperature display suffix"
+      description: "Suffix for temperature display."
+      default: "°"
+      selector:
+        select:
+          options:
+            - "No suffix"
+            - "°"
+            - "°F"
+            - "°C"
+    roundtemp:
+      name: "Round sensor values to nearest integer"
+      description: "Enable this if you don't want decimal places involved"
+      default: true
+      selector:
+        boolean:
+    on_fgcolor:
+      name: '"active" foreground color'
+      description: 'Text foreground color for the current operating mode, in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    on_bgcolor:
+      name: '"active" background color'
+      description: 'Text background color for the current operating mode, in Nextion RGB565 format. -1 = Current theme selected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    off_fgcolor:
+      name: '"inactive" foreground color'
+      description: 'Text foreground color for the modes that are not currently active, in Nextion RGB565 format. -1 = Current theme unselected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    off_bgcolor:
+      name: '"inactive" background color'
+      description: 'Text background color for the modes that are not currently active, in Nextion RGB565 format. -1 = Current theme unselected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  heatpump: !input heatpump
+  on_fgcolor: !input on_fgcolor
+  on_bgcolor: !input on_bgcolor
+  off_fgcolor: !input off_fgcolor
+  off_bgcolor: !input off_bgcolor
+  roundtemp: !input roundtemp
+  #button4attribute: !input button4attribute
+  #button5attribute: !input button5attribute
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" }}'
+  #volumecommandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ volumeobject ~ ".val" }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  selectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  selectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+
+  hp_is_heat: "{{is_state(heatpump, 'heat') }}"
+  hp_is_both: "{{is_state(heatpump, 'heat_cool') }}"
+  hp_is_cool: "{{is_state(heatpump, 'cool') }}"
+  hp_is_off: "{{is_state(heatpump, 'off') }}"
+
+  selectedfgh:   "{% if     hp_is_heat %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
+  selectedbgh:   "{% if     hp_is_heat %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
+  unselectedfgh: "{% if not hp_is_heat %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
+  unselectedbgh: "{% if not hp_is_heat %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
+  selectedfgb:   "{% if     hp_is_both %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
+  selectedbgb:   "{% if     hp_is_both %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
+  unselectedfgb: "{% if not hp_is_both %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
+  unselectedbgb: "{% if not hp_is_both %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
+  selectedfgc:   "{% if     hp_is_cool %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
+  selectedbgc:   "{% if     hp_is_cool %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
+  unselectedfgc: "{% if not hp_is_cool %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
+  unselectedbgc: "{% if not hp_is_cool %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
+  selectedfgo:   "{% if     hp_is_off  %}{{unselectedfg}}{% else %}{{selectedfg}}{% endif %}"
+  selectedbgo:   "{% if     hp_is_off  %}{{unselectedbg}}{% else %}{{selectedbg}}{% endif %}"
+  unselectedfgo: "{% if not hp_is_off  %}{{unselectedfg}}{% else %}{{selectedfg}}{% endif %}"
+  unselectedbgo: "{% if not hp_is_off  %}{{unselectedbg}}{% else %}{{selectedbg}}{% endif %}"
+
+  tgttemp: >-
+    {%- if roundtemp == true -%}
+      {{- state_attr(heatpump,'temperature')| round -}}
+    {%- else -%}
+      {{- state_attr(heatpump,'temperature') -}}
+    {%- endif -%}
+  currtemp: >-
+    {%- if roundtemp == true -%}
+      {{- state_attr(heatpump,'current_temperature')| round -}}
+    {%- else -%}
+      {{- state_attr(heatpump,'current_temperature') -}}
+    {%- endif -%}
+
+  temp_inc: "{{state_attr(heatpump,'temperature') + 1.0}}"
+  temp_dec: "{{state_attr(heatpump,'temperature') - 1.0}}"
+
+  suffix_select: !input suffix_select
+  suffixstring: "{% if suffix_select != 'No suffix' %}{{ suffix_select }}{% endif %}"
+  button4text: ' ' # Thermometer 3/4
+  button4font: 7
+  button5text: '' # Fire
+  button5font: 7
+  button6text: "{{tgttemp}}{{suffixstring}}"
+  button6font: 8
+  button7text: '/' # both
+  button7font: 7
+  button8text: ' ' # Thermometer 1/4
+  button8font: 7
+  button9text: '' # Cool
+  button9font: 7
+  button10text: '' # Power symbol
+  button10font: 7
+  button11text: "{{currtemp}}{{suffixstring}}"
+  button11font: 6
+#  button12text: >-
+#    {%- if hp_is_both -%}
+#      /
+#    {%- else -%}
+#      {{ states(heatpump) }}
+#    {%- endif -%}
+#  button12font: 8
+
+
+trigger_variables:
+  haspdevice: !input haspdevice
+#  heatpump: !input heatpump
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  toggle_hp_state: "{%- if hp_is_off -%}heat_cool{%- else -%}off{%- endif -%}"
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: state
+    entity_id: !input heatpump
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+  - platform: mqtt
+    topic: "{{selectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{selectedbgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+      #########################################################################
+      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # Apply styles and place text
+      - conditions:
+          - condition: template
+            value_template: >- 
+              {{-
+                (trigger is not defined)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["p[6].b[4].pco={{selectedfg}}","p[6].b[4].bco={{selectedbg}}","p[6].b[4].pco2={{unselectedfg}}","p[6].b[4].bco2={{unselectedbg}}","p[6].b[4].font={{button4font}}","p[6].b[4].txt=\"{{button4text}}\"",
+                "p[6].b[5].pco={{selectedfgh}}","p[6].b[5].bco={{selectedbgh}}","p[6].b[5].pco2={{unselectedfgh}}","p[6].b[5].bco2={{unselectedbgh}}","p[6].b[5].font={{button5font}}","p[6].b[5].txt=\"{{button5text}}\"",
+                "p[6].b[6].pco={{selectedfg}}","p[6].b[6].bco={{selectedbg}}","p[6].b[6].pco2={{unselectedfg}}","p[6].b[6].bco2={{unselectedbg}}","p[6].b[6].font={{button6font}}","p[6].b[6].txt=\"{{button6text}}\"",
+                "p[6].b[7].pco={{selectedfgb}}","p[6].b[7].bco={{selectedbgb}}","p[6].b[7].pco2={{unselectedfgb}}","p[6].b[7].bco2={{unselectedbgb}}","p[6].b[7].font={{button7font}}","p[6].b[7].txt=\"{{button7text}}\"",
+                "p[6].b[8].pco={{selectedfg}}","p[6].b[8].bco={{selectedbg}}","p[6].b[8].pco2={{unselectedfg}}","p[6].b[8].bco2={{unselectedbg}}","p[6].b[8].font={{button8font}}","p[6].b[8].txt=\"{{button8text}}\"",
+                "p[6].b[9].pco={{selectedfgc}}","p[6].b[9].bco={{selectedbgc}}","p[6].b[9].pco2={{unselectedfgc}}","p[6].b[9].bco2={{unselectedbgc}}","p[6].b[9].font={{button9font}}","p[6].b[9].txt=\"{{button9text}}\"",
+                "p[6].b[10].pco={{selectedfgo}}","p[6].b[10].bco={{selectedbgo}}","p[6].b[10].pco2={{unselectedfgo}}","p[6].b[10].bco2={{unselectedbgo}}","p[6].b[10].font={{button10font}}","p[6].b[10].txt=\"{{button10text}}\"",
+                "p[6].b[11].pco={{unselectedfg}}","p[6].b[11].bco={{unselectedbg}}","p[6].b[11].pco2={{selectedfg}}","p[6].b[11].bco2={{selectedbg}}","p[6].b[11].font={{button11font}}","p[6].b[11].txt=\"{{button11text}}\""]
+
+      #########################################################################
+      # Update volume if it has changed state
+#      - conditions: # volume has changed value
+#          - condition: template
+#            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == heatpump) and (trigger.from_state.attributes.volume_level != trigger.to_state.attributes.volume_level)}}'
+#        sequence:
+#          - service: mqtt.publish
+#            data:
+#              topic: "{{volumecommandtopic}}"
+#              payload: "{{volume}}"
+      #########################################################################
+      # Update button4attribute and button5attribute
+      - conditions:
+          - condition: template
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == heatpump) }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["p[6].b[5].pco={{selectedfgh}}","p[6].b[5].bco={{selectedbgh}}","p[6].b[5].pco2={{unselectedfgh}}","p[6].b[5].bco2={{unselectedbgh}}",
+                "p[6].b[6].font={{button6font}}","p[6].b[6].txt=\"{{button6text}}\"",
+                "p[6].b[7].pco={{selectedfgb}}","p[6].b[7].bco={{selectedbgb}}","p[6].b[7].pco2={{unselectedfgb}}","p[6].b[7].bco2={{unselectedbgb}}",
+                "p[6].b[9].pco={{selectedfgc}}","p[6].b[9].bco={{selectedbgc}}","p[6].b[9].pco2={{unselectedfgc}}","p[6].b[9].bco2={{unselectedbgc}}",
+                "p[6].b[10].pco={{selectedfgo}}","p[6].b[10].bco={{selectedbgo}}","p[6].b[10].pco2={{unselectedfgo}}","p[6].b[10].bco2={{unselectedbgo}}",
+                "p[6].b[11].font={{button11font}}","p[6].b[11].txt=\"{{button11text}}\""]
+
+      #########################################################################
+      # Handle MQTT message triggers
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+
+              #########################################################################
+              # Catch incoming JSON messages
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (trigger.topic == jsontopic) and trigger.payload_json is defined }}"
+                sequence:
+                  - choose:
+                      #########################################################################
+                      # Set the volume value when the HASP slider has moved
+#                      - conditions:
+#                          - condition: template
+#                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == volumeobject ~ ".val") }}'
+#                        sequence:
+#                          - service: media_player.volume_set
+#                            entity_id: !input heatpump
+#                            data:
+#                              volume_level: "{{trigger.payload_json.value/255}}"
+                      #########################################################################
+                      # Target Up was Pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[4]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: climate.set_temperature
+                            entity_id: !input heatpump
+                            data:
+                              temperature: "{{temp_inc}}"
+                      #########################################################################
+                      # Target Down was Pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[5]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: climate.set_temperature
+                            entity_id: !input heatpump
+                            data:
+                              temperature: "{{temp_dec}}"
+                      #########################################################################
+                      # Target Temperature was Pressed
+                      # p[6].b[6]
+                      #########################################################################
+                      # Current Temperature was Pressed
+                      # p[6].b[11]
+                      #########################################################################
+                      # Mode=Heat was Pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[5]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            entity_id: !input heatpump
+                            data: 
+                              hvac_mode: 'heat'
+                      #########################################################################
+                      # Mode=Both was Pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[7]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            entity_id: !input heatpump
+                            data:
+                              hvac_mode: 'heat_cool'
+                      #########################################################################
+                      # Mode=Cool was Pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[9]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            entity_id: !input heatpump
+                            data:
+                              hvac_mode: 'cool'
+                      #########################################################################
+                      # Mode=Off was Pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[10]") and (trigger.payload_json.value == "ON")}}'
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            entity_id: !input heatpump
+                            data:
+                              hvac_mode: 'off'
+                      #########################################################################
+                      # Mode Itself was Pressed, toggle auto/off
+#                      - conditions:
+#                          - condition: template
+#                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[12]") and (trigger.payload_json.value == "ON")}}'
+#                        sequence:
+#                          - service: climate.set_hvac_mode
+#                            entity_id: !input heatpump
+#                            data:
+#                              hvac_mode: "{{toggle_hp_state}}"
+
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes.
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        ["p[6].b[4].pco={{selectedfg}}",
+                        "p[6].b[5].pco={{selectedfgh}}",
+                        "p[6].b[6].pco={{selectedfg}}",
+                        "p[6].b[7].pco={{selectedfgb}}",
+                        "p[6].b[8].pco={{selectedfg}}",
+                        "p[6].b[9].pco={{selectedfgc}}",
+                        "p[6].b[10].pco={{selectedfgo}}",
+                        "p[6].b[11].pco={{unselectedfg}}"]
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        ["p[6].b[4].bco={{selectedbg}}",
+                        "p[6].b[5].bco={{selectedbgh}}",
+                        "p[6].b[6].bco={{selectedbg}}",
+                        "p[6].b[7].bco={{selectedbgb}}",
+                        "p[6].b[8].bco={{selectedbg}}",
+                        "p[6].b[9].bco={{selectedbgc}}",
+                        "p[6].b[10].bco={{selectedbgo}}",
+                        "p[6].b[11].bco={{unselectedbg}}"]
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        ["p[6].b[4].pco2={{unselectedfg}}",
+                        "p[6].b[5].pco2={{unselectedfgh}}",
+                        "p[6].b[6].pco2={{unselectedfg}}",
+                        "p[6].b[7].pco2={{unselectedfgb}}",
+                        "p[6].b[8].pco2={{unselectedfg}}",
+                        "p[6].b[9].pco2={{unselectedfgc}}",
+                        "p[6].b[10].pco2={{unselectedfgo}}",
+                        "p[6].b[11].pco2={{selectedfg}}"]
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        ["p[6].b[4].bco2={{unselectedbg}}",
+                        "p[6].b[5].bco2={{unselectedbgh}}",
+                        "p[6].b[6].bco2={{unselectedbg}}",
+                        "p[6].b[7].bco2={{unselectedbgb}}",
+                        "p[6].b[8].bco2={{unselectedbg}}",
+                        "p[6].b[9].bco2={{unselectedbgc}}",
+                        "p[6].b[10].bco2={{unselectedbgo}}",
+                        "p[6].b[11].bco2={{selectedbg}}"]
