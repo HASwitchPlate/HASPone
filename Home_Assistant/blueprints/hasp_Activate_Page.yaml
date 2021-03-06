@@ -106,7 +106,7 @@ trigger_variables:
   hasppage: !input hasppage
   haspbutton: !input haspbutton
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
-  buttonjsonpayload: '{"event_type":"button_short_press","event":"{{haspobject}}","value":"ON"}'
+  buttonjsonpayload: '{"event_type":"button_short_press","event":"{{haspobject}}","value":"OFF"}'
 
 trigger:
   - platform: mqtt
