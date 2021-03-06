@@ -115,7 +115,6 @@ blueprint:
 
     </details>
 
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Toggle.yaml"
   domain: automation
   input:
     haspdevice:

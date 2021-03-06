@@ -1,7 +1,6 @@
 blueprint:
   name: "HASP Remove MQTT discovery messages"
   description: "Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASP"
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Remove_MQTT_Discovery_Devices.yaml"
   domain: automation
   input:
     haspname:

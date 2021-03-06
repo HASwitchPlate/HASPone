@@ -19,7 +19,6 @@ blueprint:
     | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) |
 
     </details>
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Weather_Condition_with_Icon.yaml"
   domain: automation
   input:
     haspdevice:

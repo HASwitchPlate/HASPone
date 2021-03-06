@@ -8,7 +8,6 @@ blueprint:
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Dark_on_Light.png)
 
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Theme_Dark_on_Light.yaml"
   domain: automation
   input:
     haspdevice:

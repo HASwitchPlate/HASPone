@@ -26,7 +26,6 @@ blueprint:
 
     </details>
 
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Activate_Page.yaml"
   domain: automation
   input:
     haspdevice:

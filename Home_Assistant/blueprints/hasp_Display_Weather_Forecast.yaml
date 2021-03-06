@@ -58,7 +58,6 @@ blueprint:
     ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
 
     </details>
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Weather_Forecast.yaml"
   domain: automation
   input:
     haspdevice:
