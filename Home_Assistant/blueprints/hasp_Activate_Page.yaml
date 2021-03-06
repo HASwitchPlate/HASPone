@@ -63,7 +63,7 @@ blueprint:
       default: 1
       selector:
         number:
-          min: 1
+          min: 0
           max: 11
           mode: slider
           unit_of_measurement: page
