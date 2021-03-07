@@ -20,6 +20,7 @@ blueprint:
 
     </details>
 
+  source_url: "https://github.com/HASwitchPlate/Blueprints/blob/main/hasp_Display_Alarm_Control_page7.yaml"
   domain: automation
   input:
     haspdevice:
@@ -195,7 +196,7 @@ action:
       # RUN ACTIONS or Home Assistant Startup or HASP Connect
       - conditions:
           - condition: template
-            value_template: >- 
+            value_template: >-
               {{-
                 (trigger is not defined)
               or
@@ -315,6 +316,10 @@ action:
           - condition: template
             value_template: '{{ trigger.platform == "mqtt" }}'
         sequence:
+          - service: mqtt.publish
+            data:
+              topic: "debug"
+              payload: "trigger: {{trigger}}"
           - choose:
               #########################################################################
               # Catch incoming JSON button presses
@@ -359,9 +364,9 @@ action:
                               entity_id: !input alarmpanel
                               code: >-
                                 {%- set code = namespace() -%}
-                                {%- set code.value = states("number.plate01_alarmcode_" ~ codelength)|int -%}
+                                {%- set code.value = states("number." ~ haspname ~ "_alarmcode_" ~ codelength)|int -%}
                                 {%- for i in range(1,codelength|int) -%}
-                                {%- set code.value =  code.value|int * 10 + (states("number.plate01_alarmcode_" ~ (codelength|int - i))|int) -%}
+                                {%- set code.value =  code.value|int * 10 + (states("number." ~ haspname ~ "_alarmcode_" ~ (codelength|int - i))|int) -%}
                                 {%- endfor -%}
                                 {{code.value|int}}
                           - repeat:
@@ -384,9 +389,9 @@ action:
                               entity_id: !input alarmpanel
                               code: >-
                                 {%- set code = namespace() -%}
-                                {%- set code.value = states("number.plate01_alarmcode_" ~ codelength)|int -%}
+                                {%- set code.value = states("number." ~ haspname ~ "_alarmcode_" ~ codelength)|int -%}
                                 {%- for i in range(1,codelength|int) -%}
-                                {%- set code.value =  code.value|int * 10 + (states("number.plate01_alarmcode_" ~ (codelength|int - i))|int) -%}
+                                {%- set code.value =  code.value|int * 10 + (states("number." ~ haspname ~ "_alarmcode_" ~ (codelength|int - i))|int) -%}
                                 {%- endfor -%}
                                 {{code.value|int}}
                           - repeat:
