@@ -6,7 +6,6 @@ blueprint:
 
     Dim the screen backlight after a specified period of inactivity.
 
-  source_url: "https://github.com/HASwitchPlate/HASPone/Blueprints/blob/main/hasp_Dim_Screen_on_Idle.yaml"
   domain: automation
   input:
     haspdevice:

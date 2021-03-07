@@ -43,7 +43,6 @@ blueprint:
 
     </details>
 
-  source_url: "https://github.com/HASwitchPlate/HASPone/blob/main/Home_Assistant/blueprints/hasp_Display_Heatpump_Control_page9.yaml"
   domain: automation
   input:
     haspdevice:
