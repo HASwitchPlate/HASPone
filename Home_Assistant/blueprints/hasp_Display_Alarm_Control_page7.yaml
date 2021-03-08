@@ -316,10 +316,6 @@ action:
           - condition: template
             value_template: '{{ trigger.platform == "mqtt" }}'
         sequence:
-          - service: mqtt.publish
-            data:
-              topic: "debug"
-              payload: "trigger: {{trigger}}"
           - choose:
               #########################################################################
               # Catch incoming JSON button presses
