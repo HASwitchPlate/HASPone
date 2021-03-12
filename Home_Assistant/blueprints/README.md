@@ -132,7 +132,7 @@ A button on the HASP will display the output of a template.  The template is upd
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Text.png)
 
-A button on the HASP will display text.  This can be useful when combined with other blueprints which perform an action, but don't apply a label to a button. Deploy both blueprints on the same button, and now you have a button that says things things and does things.
+A button on the HASP will display text.  This can be useful when combined with other blueprints which perform an action, but don't apply a label to a button. Deploy both blueprints on the same button, and now you have a button that says things and does things.
 
 ---
 
