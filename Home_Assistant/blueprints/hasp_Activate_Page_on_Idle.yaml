@@ -124,7 +124,7 @@ condition:
           and
           ((targetpage|int) != (activepage|int))
         )
-      -}}"
+      -}}
 
 action:
   - delay:
