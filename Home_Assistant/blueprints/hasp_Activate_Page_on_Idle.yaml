@@ -1,5 +1,5 @@
 blueprint:
-  name: "HASP p[x].b[y] activates a selected page after a specified period of inactivity"
+  name: "HASP p[x].sec[x] activates a selected page after a specified period of inactivity"
   description: |
 
     # Description
