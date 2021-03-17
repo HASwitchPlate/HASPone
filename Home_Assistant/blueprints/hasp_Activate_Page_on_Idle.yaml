@@ -113,23 +113,36 @@ condition:
   - condition: template
     value_template: >-
       {{-
-        not (
-          (trigger.payload_json.event is defined)
-          and
-          (trigger.payload_json.event == 'page')
-          and
-          (trigger.payload_json.value is defined)
-          and
-          (trigger.payload_json.value == targetpage)
-          and
-          ((targetpage|int) != (activepage|int))
-        )
+        (trigger.payload_json.event is defined)
+      and
+        (trigger.payload_json.event == 'page')
+      and
+        (trigger.payload_json.value is defined)
+      and
+        (trigger.payload_json.value != targetpage)
       -}}
 
 action:
   - delay:
       seconds: "{{idletime|int}}"
+
+  - condition: template
+    value_template: >-
+      {%- set currentpage = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
+          {%- set currentpage.entity=entity -%}
+          {{ break }}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- if states(currentpage.entity) == targetpage -%}
+        {{false}}
+      {%- else -%}
+        {{true}}
+      {%- endif -%}
+
   - service: mqtt.publish
     data:
       topic: "{{pagecommandtopic}}"
       payload: "{{targetpage}}"
+      retain: true
