@@ -1,0 +1,98 @@
+blueprint:
+  name: "HASP Theme Light on Dark Blue"
+  description: |
+
+    ## Description
+
+    Press RUN ACTIONS to apply the theme Light on Dark Blue to the selected HASP device
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Light_on_Dark.png)
+
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+
+mode: single
+max_exceeded: silent
+
+variables:
+  haspdevice: !input haspdevice
+  selectedfg_entity: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  selectedbg_entity: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  unselectedfg_entity: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  unselectedbg_entity: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  selected_foreground_brightness: "255"
+  selected_foreground_color: "[255, 255, 255]"
+  selected_background_brightness: "1"
+  selected_background_color: "[0, 0, 255]"
+  unselected_foreground_brightness: "224"
+  unselected_foreground_color: "[255, 255, 255]"
+  unselected_background_brightness: "64"
+  unselected_background_color: "[0, 0, 255]"
+
+trigger: []
+
+action:
+  - service: light.turn_on
+    data:
+      entity_id: "{{selectedfg_entity}}"
+      rgb_color: "{{selected_foreground_color}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{selectedfg_entity}}"
+      brightness: "{{selected_foreground_brightness}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{selectedbg_entity}}"
+      rgb_color: "{{selected_background_color}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{selectedbg_entity}}"
+      brightness: "{{selected_background_brightness}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{unselectedfg_entity}}"
+      rgb_color: "{{unselected_foreground_color}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{unselectedfg_entity}}"
+      brightness: "{{unselected_foreground_brightness}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{unselectedbg_entity}}"
+      rgb_color: "{{unselected_background_color}}"
+  - service: light.turn_on
+    data:
+      entity_id: "{{unselectedbg_entity}}"
+      brightness: "{{unselected_background_brightness}}"
