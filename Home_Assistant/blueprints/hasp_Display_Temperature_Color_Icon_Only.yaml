@@ -1,0 +1,457 @@
+blueprint:
+  name: "HASP p[x].b[y] displays the current temperature, coloured icon only"
+  description: |
+
+    # Description
+
+    A HASP button displays the current temperature as an icon that is optionally coloured.
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_Color_Icon_Only.png)
+
+    ## HASP Page and Button reference
+
+    <details>
+
+    This automation is designed to work with the full-width buttons found on pages 1-3
+
+    | Pages 1-3 |
+    |-----------|
+    | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) |
+
+    </details>
+
+    ## Nextion color codes
+
+    <details>
+
+    The Nextion environment utilizes RGB 565 encoding.  [Use this handy convertor](https://nodtem66.github.io/nextion-hmi-color-convert/index.html) to select your colors and convert to the RGB 565 format.
+
+    Here are some example colors:
+
+    | Color  | Code  |
+    |--------|-------|
+    | White  | 65535 |
+    | Black  | 0     |
+    | Grey   | 25388 |
+    | Red    | 63488 |
+    | Green  | 2016  |
+    | Blue   | 31    |
+    | Yellow | 65504 |
+    | Orange | 64512 |
+    | Brown  | 48192 |
+
+    </details>
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    hasppage:
+      name: "HASP Page"
+      description: "Select the HASP page (1-3) for the temperature. Refer to the HASP Page and Button reference above."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 11
+          mode: slider
+          unit_of_measurement: page
+    haspbutton:
+      name: "HASP Button"
+      description: "Select the HASP button (4-7) for the temperature. Refer to the HASP Page and Button reference above."
+      default: 4
+      selector:
+        number:
+          min: 4
+          max: 15
+          mode: slider
+          unit_of_measurement: button
+    weather_provider:
+      name: "Weather provider"
+      description: "Select the weather provider to obtain the current outdoor temperature.  If a temperature sensor is selected below, that will override this selection."
+      default:
+      selector:
+        entity:
+          domain: weather
+    temperature_sensor:
+      name: "Temperature sensor"
+      description: "Select a temperature sensor.  If selected, this state of this sensor will be displayed instead of the weather provider selected above."
+      default:
+      selector:
+        entity:
+          domain: sensor
+    temperature_attribute:
+      name: "Temperature sensor state or attribute to monitor"
+      description: "Enter `state` to track the state of the sensor above, or enter an attribute name if the sensor has a specific attribute you want to track.  Most uses will leave this set to `state`."
+      default: "state"
+      selector:
+        text:
+    thermometer_empty_color:
+      name: "Thermometer empty color"
+      description: 'Icon color for an empty thermometer in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme foreground color, or 2047 = Ice blue'
+      default: 2047
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    thermometer_quarter_threshold:
+      name: "Thermometer one quarter threshold"
+      description: "Temperatures above this threshold will show a one-quarter full thermometer.  Below, show an empty thermometer."
+      default: 0
+      selector:
+        number:
+          min: -20
+          max: 125
+          mode: slider
+    thermometer_quarter_color:
+      name: "Thermometer one quarter color"
+      description: "Icon color for a one-quarter full thermometer in Nextion RGB565 format. -1 = Current theme foreground color, or 31 = Blue"
+      default: 31
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    thermometer_half_threshold:
+      name: "Thermometer half threshold"
+      description: "Temperatures above this threshold will show a half full thermometer.  This value must be higher than the value selected above."
+      default: 32
+      selector:
+        number:
+          min: -10
+          max: 125
+          mode: slider
+    thermometer_half_color:
+      name: "Thermometer half color"
+      description: "Icon color for a half full thermometer in Nextion RGB565 format. -1 = Current theme foreground color, or 1536 = Green"
+      default: 1536
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    thermometer_three_quarter_threshold:
+      name: "Thermometer three quarter threshold"
+      description: "Temperatures above this threshold will show a three-quarters full thermometer.  This value must be higher than the value selected above."
+      default: 80
+      selector:
+        number:
+          min: 0
+          max: 125
+          mode: slider
+    thermometer_three_quarter_color:
+      name: "Thermometer three quarter color"
+      description: "Icon color for a three-quarter full thermometer in Nextion RGB565 format. -1 = Current theme foreground color, or 64512 = Orange"
+      default: 64512
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    thermometer_full_threshold:
+      name: "Thermometer full threshold"
+      description: "Temperatures above this threshold will show a full thermometer.  This value must be higher than the value selected above."
+      default: 95
+      selector:
+        number:
+          min: 10
+          max: 125
+          mode: slider
+    thermometer_full_color:
+      name: "Thermometer full color"
+      description: "Icon color for a full thermometer in Nextion RGB565 format. -1 = Current theme foreground color, or 63488 = Red"
+      default: 63488
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  weather_provider: !input weather_provider
+  temperature_sensor: !input temperature_sensor
+  temperature_attribute: !input temperature_attribute
+  thermometer_empty_color: !input thermometer_empty_color
+  thermometer_quarter_threshold: !input thermometer_quarter_threshold
+  thermometer_quarter_color: !input thermometer_quarter_color
+  thermometer_half_threshold: !input thermometer_half_threshold
+  thermometer_half_color: !input thermometer_half_color
+  thermometer_three_quarter_threshold: !input thermometer_three_quarter_threshold
+  thermometer_three_quarter_color: !input thermometer_three_quarter_color
+  thermometer_full_threshold: !input thermometer_full_threshold
+  thermometer_full_color: !input thermometer_full_color
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  temperature_value: >-
+    {%- if temperature_sensor|lower == "none" -%}
+      {{- state_attr(weather_provider, "temperature") -}}
+    {%- elif temperature_attribute|lower == "state" -%}
+      {{- states(temperature_sensor) -}}
+    {%- else -%}
+      {{- state_attr(temperature_sensor, temperature_attribute) -}}
+    {%- endif -%}
+  icon: >-
+    {%- set temp = temperature_value|int -%}
+    {%- if temp <= thermometer_quarter_threshold|int -%}
+      
+    {%- elif temp < thermometer_half_threshold|int -%}
+      
+    {% elif temp < thermometer_three_quarter_threshold|int -%}
+      
+    {%- elif temp < thermometer_full_threshold|int -%}
+      
+    {%- else -%}
+      
+    {%- endif -%}
+  text: "{{temperature_value}}"
+  font: 8
+  ypos: "{{(haspbutton|int - 4) * 67 + 2}}"
+  xpos: 0
+  iconwidth: 40
+  iconheight: 65
+  iconfont: 8
+  xcen: 1
+  ycen: 1
+  activepage: >-
+    {%- set activepage = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
+        {%- set activepage.entity=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  selectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  selectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  tempcolor: >-
+    {%- set temp = temperature_value|int -%}
+    {%- if temp <= thermometer_quarter_threshold|int -%}
+      {%- set color = thermometer_empty_color -%}
+    {%- elif temp < thermometer_half_threshold|int -%}
+      {%- set color = thermometer_quarter_color -%}
+    {%- elif temp < thermometer_three_quarter_threshold|int -%}
+      {%- set color = thermometer_half_color -%}
+    {%- elif temp < thermometer_full_threshold|int -%}
+      {%- set color = thermometer_three_quarter_color -%}
+    {%- else -%}
+      {%- set color = thermometer_full_color -%}
+    {%- endif -%}
+    {%- if color|int < 0 -%}
+      {{- selectedfg -}}
+    {%- else -%}
+      {{- color -}}
+    {%- endif -%}
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+        {{ break }}
+      {%- endif -%}
+    {%- endfor -%}
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: state
+    entity_id: !input weather_provider
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+  - platform: mqtt
+    topic: "{{selectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{selectedbgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+      #########################################################################
+      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # Apply styles, place text, and then place icon if our target page is currently active
+      - conditions:
+          - condition: template
+            value_template: >- 
+              {{-
+                (trigger is not defined)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["{{haspobject}}.font={{font}}",
+                "{{haspobject}}.xcen={{xcen}}",
+                "{{haspobject}}.ycen={{ycen}}",
+                "{{haspobject}}.pco={{tempcolor}}",
+                "{{haspobject}}.bco={{selectedbg}}",
+                "{{haspobject}}.pco2={{unselectedfg}}",
+                "{{haspobject}}.bco2={{unselectedbg}}",
+                "{{haspobject}}.txt=\"{{icon}}\""]
+      #########################################################################
+      # Update temperature if our weather provider changed state
+      - conditions:
+          - condition: template
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == weather_provider) }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["{{haspobject}}.pco={{tempcolor}}",
+                "{{haspobject}}.txt=\"{{icon}}\""]
+      #########################################################################
+      # Catch triggers fired by incoming MQTT messages
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes.
+              # Any change to the button will remove the overlaid icon.
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco2"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco2"
+                      payload: "{{trigger.payload}}"
