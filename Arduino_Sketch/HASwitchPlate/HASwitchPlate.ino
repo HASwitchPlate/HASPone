@@ -812,7 +812,6 @@ void nextionHandleInput()
       nextionProcessInput();
     }
 
-    webServer.handleClient(); // webServer loop
     telnetHandleClient();     // telnet client loop
     yield();
   }
