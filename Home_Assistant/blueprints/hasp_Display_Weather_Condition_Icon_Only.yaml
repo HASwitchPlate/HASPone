@@ -139,7 +139,7 @@ variables:
   xpos: 0
   iconwidth: 65
   iconheight: 65
-  iconfont: 8
+  iconfont: 7
   xcen: 1
   ycen: 1
   activepage: >-
@@ -272,7 +272,7 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                ["{{haspobject}}.font={{font}}",
+                ["{{haspobject}}.font={{iconfont}}",
                 "{{haspobject}}.xcen={{xcen}}",
                 "{{haspobject}}.ycen={{ycen}}",
                 "{{haspobject}}.pco={{selectedfg}}",
@@ -293,3 +293,51 @@ action:
                 ["{{haspobject}}.pco={{selectedfg}}",
                 "{{haspobject}}.font={{font}}",
                 "{{haspobject}}.txt=\"{{icon}} \""]
+      #########################################################################
+      # Catch triggers fired by incoming MQTT messages
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes.
+              # Any change to the button will remove the overlaid icon.
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco2"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco2"
+                      payload: "{{trigger.payload}}"
