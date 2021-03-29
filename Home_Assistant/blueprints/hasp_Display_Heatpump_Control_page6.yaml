@@ -406,7 +406,7 @@ action:
                       # Target Down was Pressed
                       - conditions:
                           - condition: template
-                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[5]") and (trigger.payload_json.value == "ON")}}'
+                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == "p[6].b[8]") and (trigger.payload_json.value == "ON")}}'
                         sequence:
                           - service: climate.set_temperature
                             entity_id: !input heatpump
