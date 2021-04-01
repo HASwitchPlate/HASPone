@@ -62,7 +62,7 @@ char nextionBaud[7] = "115200";
 #include <SoftwareSerial.h>
 #include <ESP8266Ping.h>
 
-const float haspVersion = 1.00;                       // Current HASP software release version
+const float haspVersion = 1.01;                       // Current HASP software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -85,6 +85,7 @@ bool debugTelnetEnabled = false;                      // Enable telnet debug out
 bool nextionBufferOverrun = false;                    // Set to true if an overrun error was encountered
 bool nextionAckEnable = false;                        // Wait for each Nextion command to be acked before continuing
 bool nextionAckReceived = false;                      // Ack was received
+bool rebootOnp0b1 = false;                            // When true, reboot device on button press ofr p[0].b[1]
 const unsigned long nextionAckTimeout = 1000;         // Timeout to wait for an ack before throwing error
 unsigned long nextionAckTimer = 0;                    // Timer to track Nextion ack
 const unsigned long telnetInputMax = 128;             // Size of user input buffer for user telnet session
@@ -317,7 +318,7 @@ void mqttConnect()
   static bool mqttFirstConnect = true; // For the first connection, we want to send an OFF/ON state to
                                        // trigger any automations, but skip that if we reconnect while
                                        // still running the sketch
-
+  rebootOnp0b1 = true;
   static uint8_t mqttReconnectCount = 0;
   unsigned long mqttConnectTimer = 0;
   const unsigned long mqttConnectTimeout = 5000;
@@ -513,6 +514,7 @@ void mqttConnect()
       }
     }
   }
+  rebootOnp0b1 = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -811,9 +813,6 @@ void nextionHandleInput()
       nextionAckReceived = true;
       nextionProcessInput();
     }
-
-    webServer.handleClient(); // webServer loop
-    telnetHandleClient();     // telnet client loop
     yield();
   }
   if (millis() > handlerTimeout)
@@ -1059,12 +1058,16 @@ void nextionProcessInput()
         mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
         debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
       }
-
       if (beepEnabled)
       {
         beepOnTime = 500;
         beepOffTime = 100;
         beepCounter = 1;
+      }
+      if (rebootOnp0b1 && (nextionPage == "0") && (nextionButtonID == "1"))
+      {
+        debugPrintln(String(F("HMI IN: p[0].b[1] pressed during HASP configuration, rebooting.")));
+        espReset();
       }
     }
     if (nextionButtonAction == 0x00)
@@ -1767,6 +1770,7 @@ void nextionUpdateProgress(const unsigned int &progress, const unsigned int &tot
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void espWifiConnect()
 { // Connect to WiFi
+  rebootOnp0b1 = true;
 
   nextionSetAttr("p[0].b[1].font", "6");
   if (lcdVersion < 1 || lcdVersion > 2)
@@ -1789,7 +1793,7 @@ void espWifiConnect()
       nextionSetAttr("p[0].b[1].txt", "\"WiFi Connecting...\\r " + String(WiFi.SSID()) + "\"");
       unsigned long connectTimer = millis() + 5000;
       debugPrintln(String(F("WIFI: Connecting to previously-saved SSID: ")) + String(WiFi.SSID()));
-      WiFi.begin(WiFi.SSID(), WiFi.psk());
+      WiFi.begin();
       while ((WiFi.status() != WL_CONNECTED) && (millis() < connectTimer))
       {
         yield();
@@ -1806,7 +1810,7 @@ void espWifiConnect()
         delay(100);
         WiFi.mode(WIFI_STA); // toggle it back on again
         connectTimer = millis() + connectTime;
-        WiFi.begin(WiFi.SSID(), WiFi.psk());
+        WiFi.begin();
         while ((WiFi.status() != WL_CONNECTED) && (millis() < connectTimer))
         {
           yield();
@@ -1924,6 +1928,8 @@ void espWifiConnect()
   {
     nextionSendCmd("page " + String(nextionActivePage));
   }
+
+  rebootOnp0b1 = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3301,7 +3307,7 @@ bool updateCheck()
 { // firmware update check
   WiFiClientSecure wifiUpdateClientSecure;
   HTTPClient updateClient;
-  debugPrintln(String(F("UPDATE: Checking update URL: ")) + String(UPDATE_URL));
+  debugPrintln(String(F("UPDATE: Checking update URL: ")) + FPSTR(UPDATE_URL));
 
   wifiUpdateClientSecure.setInsecure();
   wifiUpdateClientSecure.setBufferSizes(512, 512);
