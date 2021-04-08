@@ -148,7 +148,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\.") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   hasppage: !input hasppage
@@ -176,7 +175,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -189,7 +187,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -202,7 +199,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -215,7 +211,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -230,14 +225,12 @@ trigger_variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\.") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   haspsensor: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
