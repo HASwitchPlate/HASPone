@@ -250,7 +250,6 @@ variables:
     {%- endfor -%}
     {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
   statetopic: '{{ "hasp/" ~ haspname ~ "/state" }}'
-  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
   haspsensor: >-
