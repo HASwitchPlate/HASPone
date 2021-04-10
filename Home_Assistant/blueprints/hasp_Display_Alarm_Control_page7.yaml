@@ -192,7 +192,7 @@ action:
               {{-
                 (trigger is not defined)
               or
-                (trigger.platform|lower == 'none')
+                (trigger.platform is none)
               or
                 ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
               or

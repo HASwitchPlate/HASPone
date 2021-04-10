@@ -353,7 +353,7 @@ action:
       # Create required helpers and apply HASP defaults when "RUN ACTIONS" is pressed by the user
       - conditions:
           - condition: template
-            value_template: "{{ (trigger is not defined) or (trigger.platform|lower == 'none') }}"
+            value_template: "{{ (trigger is not defined) or (trigger.platform is none) }}"
         sequence:
           # Push discovery messages for RGB lights used to configure themes
           - service: mqtt.publish
