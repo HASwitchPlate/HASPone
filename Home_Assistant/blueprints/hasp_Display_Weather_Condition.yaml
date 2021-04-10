@@ -269,6 +269,8 @@ action:
               {{-
                 (trigger is not defined)
               or
+                (trigger.platform|lower == 'none')
+              or
                 ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
               or
                 ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
