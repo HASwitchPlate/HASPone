@@ -2,7 +2,9 @@ blueprint:
   name: "HASP Core functionality"
   description: |
 
-    # Description
+    ## Blueprint Version: `1.02`
+
+    ## Description
 
     Provides core HASP functionality. Deploy one copy of this blueprint for each HASP device.
 
@@ -222,7 +224,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\.") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   page1text: !input page1text
@@ -247,19 +248,16 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
         {%- set activepage.entity=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
   statetopic: '{{ "hasp/" ~ haspname ~ "/state" }}'
-  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
   haspsensor: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   haspIP: '{{state_attr(haspsensor, "haspIP")}}'
@@ -317,14 +315,12 @@ trigger_variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\.") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   haspsensor: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
@@ -359,87 +355,8 @@ action:
       # Create required helpers and apply HASP defaults when "RUN ACTIONS" is pressed by the user
       - conditions:
           - condition: template
-            value_template: "{{ trigger is not defined }}"
+            value_template: "{{ (trigger is not defined) or (trigger.platform is none) }}"
         sequence:
-          # Push discovery messages for RGB lights used to configure themes
-          - service: mqtt.publish
-            data:
-              topic: "homeassistant/light/{{haspname}}/selectedforegroundcolor/config"
-              payload: >-
-                {"name":"{{haspname}} selected foreground color",
-                "command_topic":"hasp/{{haspname}}/light/selectedforegroundcolor/switch",
-                "state_topic":"hasp/{{haspname}}/alwayson",
-                "rgb_command_topic":"hasp/{{haspname}}/light/selectedforegroundcolor/rgb",
-                "rgb_command_template": {% raw %}"{{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}",{% endraw %}
-                "retain":false,
-                "unique_id":"{{haspClientId}}-selectedforegroundcolor",
-                "device":{"identifiers":["{{haspClientId}}"],
-                "name":"{{haspname}}",
-                "manufacturer":"{{haspManufacturer}}",
-                "model":"{{haspModel}}",
-                "sw_version":{{sw_version}}
-                }}
-              retain: true
-          - service: mqtt.publish
-            data:
-              topic: "homeassistant/light/{{haspname}}/selectedbackgroundcolor/config"
-              payload: >-
-                {"name":"{{haspname}} selected background color",
-                "command_topic":"hasp/{{haspname}}/light/selectedbackgroundcolor/switch",
-                "state_topic":"hasp/{{haspname}}/alwayson",
-                "rgb_command_topic":"hasp/{{haspname}}/light/selectedbackgroundcolor/rgb",
-                "rgb_command_template": {% raw %}"{{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}",{% endraw %}
-                "retain":false,
-                "unique_id":"{{haspClientId}}-selectedbackgroundcolor",
-                "device":{
-                "identifiers":["{{haspClientId}}"],
-                "name":"{{haspname}}",
-                "manufacturer":"{{haspManufacturer}}",
-                "model":"{{haspModel}}",
-                "sw_version":{{sw_version}}
-                }}
-              retain: true
-          - service: mqtt.publish
-            data:
-              topic: "homeassistant/light/{{haspname}}/unselectedforegroundcolor/config"
-              payload: >-
-                {"name":"{{haspname}} unselected foreground color",
-                "command_topic":"hasp/{{haspname}}/light/unselectedforegroundcolor/switch",
-                "state_topic":"hasp/{{haspname}}/alwayson",
-                "rgb_command_topic":"hasp/{{haspname}}/light/unselectedforegroundcolor/rgb",
-                "rgb_command_template": {% raw %}"{{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}",{% endraw %}
-                "retain":false,
-                "unique_id":"{{haspClientId}}-unselectedforegroundcolor",
-                "device":{"identifiers":["{{haspClientId}}"],
-                "name":"{{haspname}}",
-                "manufacturer":"{{haspManufacturer}}",
-                "model":"{{haspModel}}",
-                "sw_version":{{sw_version}}
-                }}
-              retain: true
-          - service: mqtt.publish
-            data:
-              topic: "homeassistant/light/{{haspname}}/unselectedbackgroundcolor/config"
-              payload: >-
-                {"name":"{{haspname}} unselected background color",
-                "command_topic":"hasp/{{haspname}}/light/unselectedbackgroundcolor/switch",
-                "state_topic":"hasp/{{haspname}}/alwayson",
-                "rgb_command_topic":"hasp/{{haspname}}/light/unselectedbackgroundcolor/rgb",
-                "rgb_command_template": {% raw %}"{{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}",{% endraw %}
-                "retain":false,
-                "unique_id":"{{haspClientId}}-unselectedbackgroundcolor",
-                "device":{"identifiers":["{{haspClientId}}"],
-                "name":"{{haspname}}",
-                "manufacturer":"{{haspManufacturer}}",
-                "model":"{{haspModel}}",
-                "sw_version":{{sw_version}}
-                }}
-              retain: true
-          - service: mqtt.publish
-            data:
-              topic: "hasp/{{haspname}}/alwayson"
-              payload: "ON"
-              retain: true
           # Send page select button config
           - service: mqtt.publish
             data:
@@ -448,6 +365,7 @@ action:
                 [{% for p in range(1,12) %}"p[{{p}}].b[1].font={{page1font}}","p[{{p}}].b[1].txt=\"{{page1text}}\"",{% endfor %}
                 {% for p in range(1,12) %}"p[{{p}}].b[2].font={{page2font}}","p[{{p}}].b[2].txt=\"{% if page_scroll %}{{page_names.get("page" ~ p)}}{% else %}{{page2text}}{% endif %}\"",{% endfor %}
                 {% for p in range(1,12) %}"p[{{p}}].b[3].font={{page3font}}","p[{{p}}].b[3].txt=\"{{page3text}}\""{% if not loop.last %},{% endif %}{% endfor %}]
+
           - choose:
               #########################################################################
               # Create a notification with the lovelace entity card YAML
@@ -455,7 +373,6 @@ action:
                   - condition: template
                     value_template: "{{ show_lovelace }}"
                 sequence:
-                  - delay: "00:00:01"
                   - service: persistent_notification.create
                     data:
                       title: "{{haspname}} Lovelace Card"
@@ -551,14 +468,12 @@ action:
                     data:
                       topic: "hasp/{{haspname}}/state/page"
                       payload: "0"
-                  - delay: "00:00:01"
                   - service: light.turn_on
                     data:
                       entity_id: >-
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       rgb_color: "{{default_selected_foreground_color}}"
@@ -568,7 +483,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       brightness: "{{default_selected_foreground_brightness}}"
@@ -578,7 +492,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       rgb_color: "{{default_selected_background_color}}"
@@ -588,7 +501,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       brightness: "{{default_selected_background_brightness}}"
@@ -598,7 +510,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       rgb_color: "{{default_unselected_foreground_color}}"
@@ -608,7 +519,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       brightness: "{{default_unselected_foreground_brightness}}"
@@ -618,7 +528,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       rgb_color: "{{default_unselected_background_color}}"
@@ -628,7 +537,6 @@ action:
                         {%- for entity in device_entities(haspdevice) -%}
                           {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
                             {{ entity }}
-                            {{ break }}
                           {%- endif -%}
                         {%- endfor -%}
                       brightness: "{{default_unselected_background_brightness}}"
@@ -642,6 +550,86 @@ action:
                       topic: "hasp/{{haspname}}/command/page"
                       payload: "{% if page_scroll %}{{page2page}}{% else %}{{page1page}}{% endif %}"
                       retain: true
+          - service: mqtt.publish # apply selected foreground color to page select buttons
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                {%- set color = namespace() -%}
+                {%- for entity in device_entities(haspdevice) -%}
+                  {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+                    {%- set color.source=entity -%}
+                  {%- endif -%}
+                {%- endfor -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco2={{colorcode}}",{%- endfor -%}{%- endif -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[3].pco2={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
+          - service: mqtt.publish # apply selected background color to page select buttons
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                {%- set color = namespace() -%}
+                {%- for entity in device_entities(haspdevice) -%}
+                  {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+                    {%- set color.source=entity -%}
+                  {%- endif -%}
+                {%- endfor -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco2={{colorcode}}",{%- endfor -%}{%- endif -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].bco2={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
+          - service: mqtt.publish # apply unselected foreground color to page select buttons
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                {%- set color = namespace() -%}
+                {%- for entity in device_entities(haspdevice) -%}
+                  {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+                    {%- set color.source=entity -%}
+                  {%- endif -%}
+                {%- endfor -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco={{colorcode}}",{%- endfor -%}{%- endif -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].pco={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
+          - service: mqtt.publish # apply unselected background color to page select buttons
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                {%- set color = namespace() -%}
+                {%- for entity in device_entities(haspdevice) -%}
+                  {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+                    {%- set color.source=entity -%}
+                  {%- endif -%}
+                {%- endfor -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco={{colorcode}}",{%- endfor -%}{%- endif -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].bco={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
 
       #########################################################################
       # Push configuration to device when it connects or Home Assistant starts
@@ -669,7 +657,6 @@ action:
                 {%- for entity in device_entities(haspdevice) -%}
                   {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
                     {%- set color.source=entity -%}
-                    {{ break }}
                   {%- endif -%}
                 {%- endfor -%}
                 {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -690,7 +677,6 @@ action:
                 {%- for entity in device_entities(haspdevice) -%}
                   {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
                     {%- set color.source=entity -%}
-                    {{ break }}
                   {%- endif -%}
                 {%- endfor -%}
                 {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -711,7 +697,6 @@ action:
                 {%- for entity in device_entities(haspdevice) -%}
                   {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
                     {%- set color.source=entity -%}
-                    {{ break }}
                   {%- endif -%}
                 {%- endfor -%}
                 {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -732,7 +717,6 @@ action:
                 {%- for entity in device_entities(haspdevice) -%}
                   {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
                     {%- set color.source=entity -%}
-                    {{ break }}
                   {%- endif -%}
                 {%- endfor -%}
                 {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
