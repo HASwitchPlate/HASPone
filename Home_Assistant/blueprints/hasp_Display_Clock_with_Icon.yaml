@@ -65,7 +65,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\.") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   hasppage: !input hasppage
@@ -80,7 +79,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
         {%- set activepage.entity=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
@@ -93,7 +91,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -106,7 +103,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -119,7 +115,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -132,7 +127,6 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
         {%- set color.source=entity -%}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
     {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
@@ -155,14 +149,12 @@ trigger_variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\.") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   haspsensor: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
@@ -203,6 +195,8 @@ action:
             value_template: >- 
               {{-
                 (trigger is not defined)
+              or
+                (trigger.platform is none)
               or
                 ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
               or

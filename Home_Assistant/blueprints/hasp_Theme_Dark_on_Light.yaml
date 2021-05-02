@@ -28,28 +28,24 @@ variables:
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   selectedbg_entity: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   unselectedfg_entity: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   unselectedbg_entity: >-
     {%- for entity in device_entities(haspdevice) -%}
       {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
         {{ entity }}
-        {{ break }}
       {%- endif -%}
     {%- endfor -%}
   selected_foreground_brightness: "1"

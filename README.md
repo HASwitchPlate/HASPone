@@ -18,7 +18,11 @@ This build requires some specialist skills and tools. [You can buy an assembled 
 
 ## [Setup HASPone for Home Assistant](https://github.com/HASwitchPlate/HASPone/wiki/Configure-your-HASPone-for-Home-Assistant)
 
-If you're purchased or built a HASPone, [now it's time to make it talk to Home Assistant](https://github.com/HASwitchPlate/HASPone/wiki/Configure-your-HASPone-for-Home-Assistant)
+If you're purchased or built a HASPone, [now it's time to make it talk to Home Assistant](https://github.com/HASwitchPlate/HASPone/wiki/Configure-your-HASPone-for-Home-Assistant).
+
+Here's a quick look at the setup process:
+
+[![HASPone first-time setup](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASPone_first_time_setup_YouTube.png?raw=true)](https://youtu.be/zi784hr69QA)
 
 ## Have a question?
 
