@@ -430,6 +430,15 @@ action:
                             name: Unselected Background Color
                             secondary_info: brightness
                           - type: divider
+                          - type: attribute
+                            entity: {{haspsensor}}
+                            attribute: espVersion
+                            name: {{haspname}} ESP firmware
+                          - type: attribute
+                            entity: {{haspsensor}}
+                            attribute: lcdVersion
+                            name: {{haspname}} LCD firmware
+                          - type: divider
                         footer:
                           type: buttons
                           entities:
