@@ -62,7 +62,7 @@ char nextionBaud[7] = "115200";
 #include <SoftwareSerial.h>
 #include <ESP8266Ping.h>
 
-const float haspVersion = 1.01;                       // Current HASP software release version
+const float haspVersion = 1.02;                       // Current HASP software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -770,6 +770,34 @@ void mqttDiscovery()
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
+  // AlwaysOn topic for RGB lights
+  mqttClient.publish((String(F("hasp/")) + String(haspNode) + String(F("/alwayson"))), "ON", true, 1);
+  debugPrintln(String(F("MQTT OUT: 'hasp/"))+ String(haspNode) + String(F("/alwayson' : 'ON'")));
+
+  // rgb light discovery for selectedforegroundcolor
+  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/selectedforegroundcolor/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" selected foreground color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedforegroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
+
+  // rgb light discovery for selectedbackgroundcolor
+  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/selectedbackgroundcolor/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" selected background color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedbackgroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
+
+  // rgb light discovery for unselectedforegroundcolor
+  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/unselectedforegroundcolor/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" unselected foreground color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedforegroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
+
+  // rgb light discovery for unselectedbackgroundcolor
+  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/unselectedbackgroundcolor/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" unselected background color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedbackgroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
+
   if (motionEnabled)
   { // binary_sensor for motion
     String macAddress = String(espMac[0], HEX) + String(F(":")) + String(espMac[1], HEX) + String(F(":")) + String(espMac[2], HEX) + String(F(":")) + String(espMac[3], HEX) + String(F(":")) + String(espMac[4], HEX) + String(F(":")) + String(espMac[5], HEX);
@@ -1125,7 +1153,7 @@ void nextionProcessInput()
     xCoord = xCoord * 256 + nextionReturnBuffer[2];
     uint16_t yCoord = nextionReturnBuffer[3];
     yCoord = yCoord * 256 + nextionReturnBuffer[4];
-    String xyCoord = String(xCoord) + ',' + String(yCoord);
+    String xyCoord = String(xCoord) + String(',') + String(yCoord);
     byte nextionTouchAction = nextionReturnBuffer[5];
     if (nextionTouchAction == 0x01)
     {
@@ -2294,6 +2322,7 @@ void configClearSaved()
   debugPrintln(F("RESET: Formatting SPIFFS"));
   SPIFFS.format();
   debugPrintln(F("RESET: Clearing WiFiManager settings..."));
+  WiFi.disconnect();
   WiFiManager wifiManager;
   wifiManager.resetSettings();
   EEPROM.begin(512);
