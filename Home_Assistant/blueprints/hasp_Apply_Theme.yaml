@@ -1,13 +1,10 @@
 blueprint:
-  name: "HASP p[x].b[y] displays text"
+  name: "HASP p[x].b[y] has theme applied"
   description: |
 
     ## Description
 
-    A button on the HASP will display text.  This can be useful when combined with other blueprints which perform an action, but don't apply a label to a button.
-    Deploy both blueprints on the same button, and now you have a button that says things things and does things.
-
-    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Text.png)
+    A button on the HASP will have the current device theme applied.  Useful in combination with manual automations which might be applying text to a given button.
 
     ## HASP Page and Button Reference
 
@@ -26,36 +23,6 @@ blueprint:
     | Page 9 | Page 10 | Page 11 |
     |--------|---------|---------|
     | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p11_1button+1slider.png)
-
-    </details>
-
-    ## HASP Font Reference
-
-    <details>
-
-    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
-
-    | Font | Name              | Characters per line | Lines per button |
-    | :--- | :---------------- | :-------------------| :--------------- |
-    | 0    | Consolas 24       | 20 characters       | 2 lines          |
-    | 1    | Consolas 32       | 15 characters       | 2 lines          |
-    | 2    | Consolas 48       | 10 characters       | 1 line           |
-    | 3    | Consolas 80       | 6 characters        | 1 line           |
-    | 4    | Webdings 56       | 8 characters        | 1 line           |
-    | 5    | Noto Sans 24      | Proportional        | 2 lines          |
-    | 6    | Noto Sans 32      | Proportional        | 2 lines          |
-    | 7    | Noto Sans 48      | Proportional        | 1 line           |
-    | 8    | Noto Sans 64      | Proportional        | 1 line           |
-    | 9    | Noto Sans 80      | Proportional        | 1 line           |
-    | 10   | Noto Sans Bold 80 | Proportional        | 1 line           |
-
-    ### Icons
-
-    Fonts 5-10 also include [1400+ icons which you can copy and paste from here](https://htmlpreview.github.io/?https://github.com/HASwitchPlate/HASPone/blob/main/images/hasp-fontawesome5.html)
-
-    ### Font examples
-
-    ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
 
     </details>
 
@@ -81,7 +48,7 @@ blueprint:
           unit_of_measurement: page
     haspbutton:
       name: "HASP Button"
-      description: "Select the HASP button (4-15) for the text display. Refer to the HASP Page and Button reference above."
+      description: "Select the HASP button (4-15) to be themed. Refer to the HASP Page and Button reference above."
       default: 4
       selector:
         number:
@@ -89,56 +56,42 @@ blueprint:
           max: 15
           mode: slider
           unit_of_measurement: button
-    text:
-      name: "Text to display"
-      description: "Enter text to be displayed on the HASP."
-      default: "Text to display"
+    selected_fgcolor:
+      name: "Selected foreground color"
+      description: 'Selected foreground color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected foreground color.'
+      default: -1
       selector:
-        text:
-    font_select:
-      name: "Font"
-      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
-      default: "8 - Noto Sans 64"
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    selected_bgcolor:
+      name: "Selected background color"
+      description: 'Selected background color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected background color.'
+      default: -1
       selector:
-        select:
-          options:
-            - "0 - Consolas 24"
-            - "1 - Consolas 32"
-            - "2 - Consolas 48"
-            - "3 - Consolas 80"
-            - "4 - Webdings 56"
-            - "5 - Noto Sans 24"
-            - "6 - Noto Sans 32"
-            - "7 - Noto Sans 48"
-            - "8 - Noto Sans 64"
-            - "9 - Noto Sans 80"
-            - "10 - Noto Sans Bold 80"
-    xcen_select:
-      name: "Text horizontal alignment"
-      description: "Horizontal text alignment: 0=Left 1=Center 2=Right"
-      default: "1 - Centered"
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_fgcolor:
+      name: "Unselected foreground color"
+      description: 'Unselected foreground color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme unselected foreground color.'
+      default: -1
       selector:
-        select:
-          options:
-            - "0 - Left aligned"
-            - "1 - Centered"
-            - "2 - Right aligned"
-    ycen_select:
-      name: "Text vertical alignment"
-      description: "Vertical text alignment: 0=Top 1=Center 2=Bottom"
-      default: "1 - Centered"
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_bgcolor:
+      name: "Unselected background color"
+      description: 'Unselected background color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme unselected background color.'
+      default: -1
       selector:
-        select:
-          options:
-            - "0 - Top aligned"
-            - "1 - Centered"
-            - "2 - Bottom aligned"
-    wrap:
-      name: "Text wrap"
-      description: "Enable line-wrapping text if too long to fit in the button."
-      default: false
-      selector:
-        boolean:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
 
 mode: parallel
 max_exceeded: silent
@@ -153,18 +106,9 @@ variables:
     {%- endfor -%}
   hasppage: !input hasppage
   haspbutton: !input haspbutton
-  text: !input text
-  font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int }}'
-  xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
-  ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
-  wrap: !input wrap
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
-  isbr: "{% if wrap == true %}1{% else %}0{% endif %}"
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'

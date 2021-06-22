@@ -18,11 +18,11 @@ blueprint:
           model: "HASPone v1.0.0"
     darkvalue:
       name: "Brightness to set on idle"
-      description: "Select the brightness value to become when idle"
+      description: "Select the brightness value to become when idle. 0 will turn the backlight off entirely."
       default: 20
       selector:
         number:
-          min: 1
+          min: 0
           max: 100
           mode: slider
           unit_of_measurement: percent
@@ -40,7 +40,7 @@ blueprint:
     brightvalue:
       name: "Brightness to set on activity"
       description: "Select the brightness value to become when activity is sensed."
-      default: 60
+      default: 100
       selector:
         number:
           min: 1
