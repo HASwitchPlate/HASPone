@@ -198,6 +198,7 @@ variables:
   hp_is_both: "{{is_state(heatpump, 'heat_cool') }}"
   hp_is_cool: "{{is_state(heatpump, 'cool') }}"
   hp_is_off: "{{is_state(heatpump, 'off') }}"
+  toggle_hp_state: "{%- if hp_is_off -%}heat_cool{%- else -%}off{%- endif -%}"
 
   selectedfg7:    "{% if     hp_is_heat %}{% if on_fgcolor|int >= 0 %}{{on_fgcolor}}{% else %}{{unselectedfg}}{% endif %}{% else %}{% if off_fgcolor|int >= 0 %}{{off_fgcolor}}{% else %}{{selectedfg}}{% endif %}{% endif %}"
   selectedbg7:    "{% if     hp_is_heat %}{% if on_bgcolor|int >= 0 %}{{on_bgcolor}}{% else %}{{unselectedbg}}{% endif %}{% else %}{% if off_bgcolor|int >= 0 %}{{off_bgcolor}}{% else %}{{selectedbg}}{% endif %}{% endif %}"
@@ -274,7 +275,6 @@ trigger_variables:
         {{ entity }}
       {%- endif -%}
     {%- endfor -%}
-  toggle_hp_state: "{%- if hp_is_off -%}heat_cool{%- else -%}off{%- endif -%}"
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
