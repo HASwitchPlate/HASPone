@@ -2777,12 +2777,12 @@ void webHandleSaveConfig()
     beepEnabled = false;
   }
   if ((webServer.arg("ignoreTouchWhenOff") == String("on")) && !ignoreTouchWhenOff)
-  { // mdnsEnabled was disabled but should now be enabled
+  { // ignoreTouchWhenOff was disabled but should now be enabled
     shouldSaveConfig = true;
     ignoreTouchWhenOff = true;
   }
   else if ((webServer.arg("ignoreTouchWhenOff") == String("")) && ignoreTouchWhenOff)
-  { // mdnsEnabled was enabled but should now be disabled
+  { // ignoreTouchWhenOff was enabled but should now be disabled
     shouldSaveConfig = true;
     ignoreTouchWhenOff = false;
   }
