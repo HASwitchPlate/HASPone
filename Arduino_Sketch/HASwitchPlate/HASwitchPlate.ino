@@ -91,6 +91,7 @@ unsigned long nextionAckTimer = 0;                    // Timer to track Nextion 
 const unsigned long telnetInputMax = 128;             // Size of user input buffer for user telnet session
 bool motionEnabled = false;                           // Motion sensor is enabled
 bool mdnsEnabled = true;                              // mDNS enabled
+bool ignoreTouchWhenOff = false;                      // Ignore touch events when backlight is off and instead send mqtt msg
 bool beepEnabled = false;                             // Keypress beep enabled
 unsigned long beepOnTime = 1000;                      // milliseconds of on-time for beep
 unsigned long beepOffTime = 1000;                     // milliseconds of off-time for beep
@@ -131,6 +132,7 @@ String mqttLightStateTopic;                           // MQTT topic for outgoing
 String mqttLightBrightCommandTopic;                   // MQTT topic for incoming panel backlight dimmer commands
 String mqttLightBrightStateTopic;                     // MQTT topic for outgoing panel backlight dimmer state
 String mqttMotionStateTopic;                          // MQTT topic for outgoing motion sensor state
+String mqttEventWhileScreenOffTopic;                  // MQTT topic for dropped outgoing panel interactions
 String nextionModel;                                  // Record reported model number of LCD panel
 const byte nextionSuffix[] = {0xFF, 0xFF, 0xFF};      // Standard suffix for Nextion commands
 uint32_t tftFileSize = 0;                             // Filesize for TFT firmware upload
@@ -377,6 +379,7 @@ void mqttConnect()
   mqttLightBrightCommandTopic = "hasp/" + String(haspNode) + "/brightness/set";
   mqttLightBrightStateTopic = "hasp/" + String(haspNode) + "/brightness/state";
   mqttMotionStateTopic = "hasp/" + String(haspNode) + "/motion/state";
+  mqttEventWhileScreenOffTopic = "hasp/" + String(haspNode) + "/eventwhilescreenoff";
 
   const String mqttCommandSubscription = mqttCommandTopic + "/#";
   const String mqttGroupCommandSubscription = mqttGroupCommandTopic + "/#";
@@ -872,7 +875,15 @@ void nextionProcessInput()
 
   debugPrintln(String(F("HMI IN: [")) + String(nextionReturnIndex) + String(F(" bytes]: ")) + printHex8(nextionReturnBuffer, nextionReturnIndex));
 
-  if (nextionReturnBuffer[0] == 0x00 && nextionReturnBuffer[1] == 0x00 && nextionReturnBuffer[2] == 0x00)
+  // only process touch events if screen backlight is on and configured to do so. otherwise drop it and send a
+  // message to mqtt so HA can determine what to do. 0x65 seems to be the only event type that needs to be dropped
+  if (ignoreTouchWhenOff && !lcdBacklightOn && nextionReturnBuffer[0] == 0x65)
+  { // screen backlight off, send msg to ha.
+    String mqttButtonEvent =  "Touch event dropped per configuration as the backlight off";
+    mqttClient.publish(mqttEventWhileScreenOffTopic, mqttButtonEvent);
+    debugPrintln(String(F("MQTT OUT: '")) + mqttEventWhileScreenOffTopic + String(F("' : '")) + mqttButtonEvent + String(F("'")));
+  }
+  else if (nextionReturnBuffer[0] == 0x00 && nextionReturnBuffer[1] == 0x00 && nextionReturnBuffer[2] == 0x00)
   { // Nextion Startup
     debugPrintln(String(F("HMI IN: [Nextion Startup] 0x00 0x00 0x00")));
     if (mqttClient.connected())
@@ -2231,6 +2242,17 @@ void configRead()
               beepEnabled = false;
             }
           }
+          if (!jsonConfigValues["ignoreTouchWhenOff"].isNull())
+          {
+            if (jsonConfigValues["ignoreTouchWhenOff"])
+            {
+              ignoreTouchWhenOff = true;
+            }
+            else
+            {
+              ignoreTouchWhenOff = false;
+            }
+          }
           String jsonConfigValuesStr;
           serializeJson(jsonConfigValues, jsonConfigValuesStr);
           debugPrintln(String(F("SPIFFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
@@ -2282,6 +2304,7 @@ void configSave()
   jsonConfigValues["debugTelnetEnabled"] = debugTelnetEnabled;
   jsonConfigValues["mdnsEnabled"] = mdnsEnabled;
   jsonConfigValues["beepEnabled"] = beepEnabled;
+  jsonConfigValues["ignoreTouchWhenOff"] = ignoreTouchWhenOff;
 
   debugPrintln(String(F("SPIFFS: mqttServer = ")) + String(mqttServer));
   debugPrintln(String(F("SPIFFS: mqttPort = ")) + String(mqttPort));
@@ -2299,6 +2322,7 @@ void configSave()
   debugPrintln(String(F("SPIFFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
   debugPrintln(String(F("SPIFFS: mdnsEnabled = ")) + String(mdnsEnabled));
   debugPrintln(String(F("SPIFFS: beepEnabled = ")) + String(beepEnabled));
+  debugPrintln(String(F("SPIFFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
 
   File configFile = SPIFFS.open("/config.json", "w");
   if (!configFile)
@@ -2500,6 +2524,11 @@ void webHandleRoot()
   }
   webServer.sendContent(F("><br/><b>mDNS enabled:</b><input id='mdnsEnabled' name='mdnsEnabled' type='checkbox'"));
   if (mdnsEnabled)
+  {
+    webServer.sendContent(F(" checked='checked'"));
+  }
+  webServer.sendContent(F("><br/><b>Ignore touchevents when backlight is off:</b><input id='ignoreTouchWhenOff' name='ignoreTouchWhenOff' type='checkbox'"));
+  if (ignoreTouchWhenOff)
   {
     webServer.sendContent(F(" checked='checked'"));
   }
@@ -2746,6 +2775,16 @@ void webHandleSaveConfig()
   { // beepEnabled was enabled but should now be disabled
     shouldSaveConfig = true;
     beepEnabled = false;
+  }
+  if ((webServer.arg("ignoreTouchWhenOff") == String("on")) && !ignoreTouchWhenOff)
+  { // mdnsEnabled was disabled but should now be enabled
+    shouldSaveConfig = true;
+    ignoreTouchWhenOff = true;
+  }
+  else if ((webServer.arg("ignoreTouchWhenOff") == String("")) && ignoreTouchWhenOff)
+  { // mdnsEnabled was enabled but should now be disabled
+    shouldSaveConfig = true;
+    ignoreTouchWhenOff = false;
   }
 
   if (shouldSaveConfig)
