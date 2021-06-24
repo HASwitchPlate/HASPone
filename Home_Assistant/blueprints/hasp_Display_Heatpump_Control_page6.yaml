@@ -274,7 +274,6 @@ trigger_variables:
         {{ entity }}
       {%- endif -%}
     {%- endfor -%}
-  toggle_hp_state: "{%- if hp_is_off -%}heat_cool{%- else -%}off{%- endif -%}"
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
