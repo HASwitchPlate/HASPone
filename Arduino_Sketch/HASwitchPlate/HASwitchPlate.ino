@@ -131,7 +131,6 @@ String mqttLightStateTopic;                           // MQTT topic for outgoing
 String mqttLightBrightCommandTopic;                   // MQTT topic for incoming panel backlight dimmer commands
 String mqttLightBrightStateTopic;                     // MQTT topic for outgoing panel backlight dimmer state
 String mqttMotionStateTopic;                          // MQTT topic for outgoing motion sensor state
-String mqttEventWhileScreenOffTopic;                  // MQTT topic for dropped outgoing panel interactions
 String nextionModel;                                  // Record reported model number of LCD panel
 const byte nextionSuffix[] = {0xFF, 0xFF, 0xFF};      // Standard suffix for Nextion commands
 uint32_t tftFileSize = 0;                             // Filesize for TFT firmware upload
@@ -219,7 +218,9 @@ void setup()
   webServer.on("/firmware", webHandleFirmware);
   webServer.on("/espfirmware", webHandleEspFirmware);
   webServer.on(
-      "/lcdupload", HTTP_POST, []() { webServer.send(200); }, webHandleLcdUpload);
+      "/lcdupload", HTTP_POST, []()
+      { webServer.send(200); },
+      webHandleLcdUpload);
   webServer.on("/tftFileSize", webHandleTftFileSize);
   webServer.on("/lcddownload", webHandleLcdDownload);
   webServer.on("/lcdOtaSuccess", webHandleLcdUpdateSuccess);
@@ -378,7 +379,6 @@ void mqttConnect()
   mqttLightBrightCommandTopic = "hasp/" + String(haspNode) + "/brightness/set";
   mqttLightBrightStateTopic = "hasp/" + String(haspNode) + "/brightness/state";
   mqttMotionStateTopic = "hasp/" + String(haspNode) + "/motion/state";
-  mqttEventWhileScreenOffTopic = "hasp/" + String(haspNode) + "/eventwhilescreenoff";
 
   const String mqttCommandSubscription = mqttCommandTopic + "/#";
   const String mqttGroupCommandSubscription = mqttGroupCommandTopic + "/#";
@@ -774,7 +774,7 @@ void mqttDiscovery()
 
   // AlwaysOn topic for RGB lights
   mqttClient.publish((String(F("hasp/")) + String(haspNode) + String(F("/alwayson"))), "ON", true, 1);
-  debugPrintln(String(F("MQTT OUT: 'hasp/"))+ String(haspNode) + String(F("/alwayson' : 'ON'")));
+  debugPrintln(String(F("MQTT OUT: 'hasp/")) + String(haspNode) + String(F("/alwayson' : 'ON'")));
 
   // rgb light discovery for selectedforegroundcolor
   mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/selectedforegroundcolor/config"));
@@ -874,15 +874,7 @@ void nextionProcessInput()
 
   debugPrintln(String(F("HMI IN: [")) + String(nextionReturnIndex) + String(F(" bytes]: ")) + printHex8(nextionReturnBuffer, nextionReturnIndex));
 
-  // only process touch events if screen backlight is on and configured to do so. otherwise drop it and send a
-  // message to mqtt so HA can determine what to do. 0x65 seems to be the only event type that needs to be dropped
-  if (ignoreTouchWhenOff && !lcdBacklightOn && nextionReturnBuffer[0] == 0x65)
-  { // screen backlight off, send msg to ha.
-    String mqttButtonEvent =  "Touch event dropped per configuration as the backlight off";
-    mqttClient.publish(mqttEventWhileScreenOffTopic, mqttButtonEvent);
-    debugPrintln(String(F("MQTT OUT: '")) + mqttEventWhileScreenOffTopic + String(F("' : '")) + mqttButtonEvent + String(F("'")));
-  }
-  else if (nextionReturnBuffer[0] == 0x00 && nextionReturnBuffer[1] == 0x00 && nextionReturnBuffer[2] == 0x00)
+  if (nextionReturnBuffer[0] == 0x00 && nextionReturnBuffer[1] == 0x00 && nextionReturnBuffer[2] == 0x00)
   { // Nextion Startup
     debugPrintln(String(F("HMI IN: [Nextion Startup] 0x00 0x00 0x00")));
     if (mqttClient.connected())
@@ -1089,12 +1081,22 @@ void nextionProcessInput()
       debugPrintln(String(F("HMI IN: [Button ON] 'p[")) + nextionPage + "].b[" + nextionButtonID + "]'");
       if (mqttClient.connected())
       {
-        String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
-        mqttClient.publish(mqttButtonTopic, "ON");
-        debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'ON'");
-        String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_press\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
-        mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
-        debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        // Only process touch events if screen backlight is on and configured to do so.
+        if (ignoreTouchWhenOff && !lcdBacklightOn)
+        {
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_press_disabled\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        }
+        else
+        {
+          String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
+          mqttClient.publish(mqttButtonTopic, "ON");
+          debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'ON'");
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_press\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        }
       }
       if (beepEnabled)
       {
@@ -1108,25 +1110,35 @@ void nextionProcessInput()
         espReset();
       }
     }
-    if (nextionButtonAction == 0x00)
+    else if (nextionButtonAction == 0x00)
     {
       debugPrintln(String(F("HMI IN: [Button OFF] 'p[")) + nextionPage + "].b[" + nextionButtonID + "]'");
       if (mqttClient.connected())
       {
-        String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
-        mqttClient.publish(mqttButtonTopic, "OFF");
-        debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'OFF'");
-        String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_release\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"OFF\"}"));
-        mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
-        debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
-        // Now see if this object has a .val that might have been updated.  Works for sliders,
-        // two-state buttons, etc, returns 0 for normal buttons
-        mqttGetSubtopic = "/p[" + nextionPage + "].b[" + nextionButtonID + "].val";
-        mqttGetSubtopicJSON = "p[" + nextionPage + "].b[" + nextionButtonID + "].val";
-        // This right here is dicey.  We're done w/ this command so reset the index allowing this to be kinda-reentrant
-        // because the call to nextionGetAttr is going to call us back.
-        nextionReturnIndex = 0;
-        nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
+        // Only process touch events if screen backlight is on and configured to do so.
+        if (ignoreTouchWhenOff && !lcdBacklightOn)
+        {
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_release_disabled\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        }
+        else
+        {
+          String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
+          mqttClient.publish(mqttButtonTopic, "OFF");
+          debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'OFF'");
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_release\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"OFF\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+          // Now see if this object has a .val that might have been updated.  Works for sliders,
+          // two-state buttons, etc, returns 0 for normal buttons
+          mqttGetSubtopic = "/p[" + nextionPage + "].b[" + nextionButtonID + "].val";
+          mqttGetSubtopicJSON = "p[" + nextionPage + "].b[" + nextionButtonID + "].val";
+          // This right here is dicey.  We're done w/ this command so reset the index allowing this to be kinda-reentrant
+          // because the call to nextionGetAttr is going to call us back.
+          nextionReturnIndex = 0;
+          nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
+        }
       }
     }
   }
@@ -2010,39 +2022,41 @@ void espSetupOta()
   ArduinoOTA.setPassword(configPassword);
   ArduinoOTA.setRebootOnSuccess(false);
 
-  ArduinoOTA.onStart([]() {
-    debugPrintln(F("ESP OTA: update start"));
-    nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r\\r \"");
-    nextionSendCmd("page 0");
-    nextionSendCmd("vis 4,1");
-  });
-  ArduinoOTA.onEnd([]() {
-    debugPrintln(F("ESP OTA: update complete"));
-    nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r Complete!\\rRestarting.\"");
-    nextionSendCmd("vis 4,1");
-    delay(1000);
-    espReset();
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    nextionUpdateProgress(progress, total);
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    debugPrintln(String(F("ESP OTA: ERROR code ")) + String(error));
-    if (error == OTA_AUTH_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Auth Failed"));
-    else if (error == OTA_BEGIN_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Begin Failed"));
-    else if (error == OTA_CONNECT_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Connect Failed"));
-    else if (error == OTA_RECEIVE_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Receive Failed"));
-    else if (error == OTA_END_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - End Failed"));
-    nextionSendCmd("vis 4,0");
-    nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\r FAILED\\rerror: " + String(error) + "\"");
-    delay(1000);
-    nextionSendCmd("page " + String(nextionActivePage));
-  });
+  ArduinoOTA.onStart([]()
+                     {
+                       debugPrintln(F("ESP OTA: update start"));
+                       nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r\\r \"");
+                       nextionSendCmd("page 0");
+                       nextionSendCmd("vis 4,1");
+                     });
+  ArduinoOTA.onEnd([]()
+                   {
+                     debugPrintln(F("ESP OTA: update complete"));
+                     nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r Complete!\\rRestarting.\"");
+                     nextionSendCmd("vis 4,1");
+                     delay(1000);
+                     espReset();
+                   });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
+                        { nextionUpdateProgress(progress, total); });
+  ArduinoOTA.onError([](ota_error_t error)
+                     {
+                       debugPrintln(String(F("ESP OTA: ERROR code ")) + String(error));
+                       if (error == OTA_AUTH_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Auth Failed"));
+                       else if (error == OTA_BEGIN_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Begin Failed"));
+                       else if (error == OTA_CONNECT_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Connect Failed"));
+                       else if (error == OTA_RECEIVE_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Receive Failed"));
+                       else if (error == OTA_END_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - End Failed"));
+                       nextionSendCmd("vis 4,0");
+                       nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\r FAILED\\rerror: " + String(error) + "\"");
+                       delay(1000);
+                       nextionSendCmd("page " + String(nextionActivePage));
+                     });
   ArduinoOTA.begin();
   debugPrintln(F("ESP OTA: Over the Air firmware update ready"));
 }
