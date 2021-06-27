@@ -127,7 +127,6 @@ String mqttGroupCommandTopic;                         // MQTT topic for incoming
 String mqttStatusTopic;                               // MQTT topic for publishing device connectivity state
 String mqttSensorTopic;                               // MQTT topic for publishing device information in JSON format
 String mqttLightCommandTopic;                         // MQTT topic for incoming panel backlight on/off commands
-String mqttBeepCommandTopic;                          // MQTT topic for error beep
 String mqttLightStateTopic;                           // MQTT topic for outgoing panel backlight on/off state
 String mqttLightBrightCommandTopic;                   // MQTT topic for incoming panel backlight dimmer commands
 String mqttLightBrightStateTopic;                     // MQTT topic for outgoing panel backlight dimmer state
