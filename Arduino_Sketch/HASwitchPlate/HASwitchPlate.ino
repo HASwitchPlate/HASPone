@@ -62,7 +62,7 @@ char nextionBaud[7] = "115200";
 #include <SoftwareSerial.h>
 #include <ESP8266Ping.h>
 
-const float haspVersion = 1.02;                       // Current HASP software release version
+const float haspVersion = 1.03;                       // Current HASP software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
