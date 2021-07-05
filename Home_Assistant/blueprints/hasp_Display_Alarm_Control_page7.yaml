@@ -47,14 +47,32 @@ blueprint:
           max: 10
           mode: slider
           unit_of_measurement: digits
-    armservice:
-      name: "Alarm arm service"
-      description: 'Enter the alarm service call to issue when the ARM button is pressed.  Typically this is one of "alarm_arm_away", "alarm_arm_home", "alarm_arm_night", or "alarm_arm_custom_bypass".'
+    b13armservice:
+      name: "Lower-left arm service"
+      description: "Select the alarm arm service to call when system is armed with the lower-left button"
+      default: "alarm_arm_home"
+      selector:
+        select:
+          options:
+            - "alarm_arm_home"
+            - "alarm_arm_away"
+            - "alarm_arm_night"
+            - "alarm_arm_vacation"
+            - "alarm_arm_custom_bypass"
+    b15armservice:
+      name: "Lower-right arm service"
+      description: "Select the alarm arm service to call when system is armed with the lower-right button"
       default: "alarm_arm_away"
       selector:
-        text:
+        select:
+          options:
+            - "alarm_arm_home"
+            - "alarm_arm_away"
+            - "alarm_arm_night"
+            - "alarm_arm_vacation"
+            - "alarm_arm_custom_bypass"
 
-mode: parallel
+mode: queued
 max_exceeded: silent
 
 variables:
@@ -67,7 +85,8 @@ variables:
     {%- endfor -%}
   alarmpanel: !input alarmpanel
   codelength: !input codelength
-  armservice: !input armservice
+  b13armservice: !input b13armservice
+  b15armservice: !input b15armservice
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
@@ -135,10 +154,49 @@ variables:
     {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
     {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
-  alarmstate: '{% if states(alarmpanel)|lower == "disarmed" %}disarmed{% elif states(alarmpanel)|lower == "arming" %}arming{% else %}armed{% endif %}'
-  alarmstate_text: '{% if alarmstate == "disarmed" %}not\\rarmed{% elif alarmstate == "arming" %}arming{% else %}armed{% endif %}'
-  alarmaction_text: '{% if alarmstate == "disarmed" %}arm{% else %}disarm{% endif %}'
-  armservice_name: '{{"alarm_control_panel." ~ armservice}}'
+
+  b13text: >-
+    {%- if states(alarmpanel) == "disarmed" -%}
+      {%- if b13armservice == "alarm_arm_home" -%}
+        arm\\rhome
+      {%- elif b13armservice == "alarm_arm_away" -%}
+        arm\\raway
+      {%- elif b13armservice == "alarm_arm_night" -%}
+        arm\\rnight
+      {%- elif b13armservice == "alarm_arm_vacation" -%}
+        arm\\rvaca
+      {%- elif b13armservice == "alarm_arm_custom_bypass" -%}
+        arm\\rbypass
+      {%- endif -%}
+    {%- elif states(alarmpanel) == "arming" -%}
+      arming
+    {%- elif states(alarmpanel) == "armed_home" -%}
+      armed\\rhome
+    {%- elif states(alarmpanel) == "armed_away" -%}
+      armed\\raway
+    {%- elif states(alarmpanel) == "armed_night" -%}
+      armed\\rnight
+    {%- elif states(alarmpanel) == "armed_vacation" -%}
+      armed\\rvaca
+    {%- elif states(alarmpanel) == "armed_custom_bypass" -%}
+      armedbypass
+    {%- endif -%}
+  b15text: >-
+    {%- if states(alarmpanel) == "disarmed" -%}
+      {%- if b15armservice == "alarm_arm_home" -%}
+        arm\\rhome
+      {%- elif b15armservice == "alarm_arm_away" -%}
+        arm\\raway
+      {%- elif b15armservice == "alarm_arm_night" -%}
+        arm\\rnight
+      {%- elif b15armservice == "alarm_arm_vacation" -%}
+        arm\\rvaca
+      {%- elif b15armservice == "alarm_arm_custom_bypass" -%}
+        arm\\rbypass
+      {%- endif -%}
+    {%- else -%}
+      disarm
+    {%- endif -%}
 
 trigger_variables:
   haspdevice: !input haspdevice
@@ -219,7 +277,7 @@ action:
               payload: >-
                 ["p[7].b[13].font=6",
                 "p[7].b[15].font=6",
-                {%- if alarmstate == "disarmed" -%}
+                {%- if states(alarmpanel) == "disarmed" -%}
                 "p[7].b[13].pco={{selectedfg}}",
                 "p[7].b[13].bco={{selectedbg}}",
                 "p[7].b[13].pco2={{unselectedfg}}",
@@ -238,8 +296,8 @@ action:
                 "p[7].b[15].pco2={{selectedfg}}",
                 "p[7].b[15].bco2={{selectedbg}}",
                 {%- endif -%}
-                "p[7].b[13].txt=\"{{alarmstate_text}}\"",
-                "p[7].b[15].txt=\"{{alarmaction_text}}\""]
+                "p[7].b[13].txt=\"{{b13text}}\"",
+                "p[7].b[15].txt=\"{{b15text}}\""]
           - repeat:
               count: "{{codelength}}"
               sequence:
@@ -282,7 +340,7 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                [{%- if alarmstate == "disarmed" -%}
+                [{%- if states(alarmpanel) == "disarmed" -%}
                 "p[7].b[13].pco={{selectedfg}}",
                 "p[7].b[13].bco={{selectedbg}}",
                 "p[7].b[13].pco2={{unselectedfg}}",
@@ -301,8 +359,8 @@ action:
                 "p[7].b[15].pco2={{selectedfg}}",
                 "p[7].b[15].bco2={{selectedbg}}",
                 {%- endif -%}
-                "p[7].b[13].txt=\"{{alarmstate_text}}\"",
-                "p[7].b[15].txt=\"{{alarmaction_text}}\""]
+                "p[7].b[13].txt=\"{{b13text}}\"",
+                "p[7].b[15].txt=\"{{b15text}}\""]
 
       #########################################################################
       # Handle MQTT message triggers
@@ -344,12 +402,36 @@ action:
                                 {{button|int}}
 
                       #########################################################################
-                      # Arm was pressed
+                      # b13 arm was pressed
                       - conditions:
                           - condition: template
-                            value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON") and (alarmstate == "disarmed")}}'
+                            value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[13]") and (trigger.payload_json.value == "ON") and (states(alarmpanel) == "disarmed")}}'
                         sequence:
-                          - service_template: "{{armservice_name}}"
+                          - service_template: "{{'alarm_control_panel.' ~ b13armservice}}"
+                            data:
+                              entity_id: !input alarmpanel
+                              code: >-
+                                {%- set code = namespace() -%}
+                                {%- set code.value = states("number." ~ haspname ~ "_alarmcode_" ~ codelength)|int -%}
+                                {%- for i in range(1,codelength|int) -%}
+                                {%- set code.value =  code.value|int * 10 + (states("number." ~ haspname ~ "_alarmcode_" ~ (codelength|int - i))|int) -%}
+                                {%- endfor -%}
+                                {{code.value|int}}
+                          - repeat:
+                              count: "{{codelength}}"
+                              sequence:
+                                # clear out code entry after arm attempt
+                                - service: number.set_value
+                                  data:
+                                    entity_id: "number.{{haspname}}_alarmcode_{{repeat.index}}"
+                                    value: -1
+                      #########################################################################
+                      # b15 arm was pressed
+                      - conditions:
+                          - condition: template
+                            value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON") and (states(alarmpanel) == "disarmed")}}'
+                        sequence:
+                          - service_template: "{{'alarm_control_panel.' ~ b15armservice}}"
                             data:
                               entity_id: !input alarmpanel
                               code: >-
@@ -405,7 +487,7 @@ action:
                       payload: >-
                         [{%- for i in range(4,15) if not i == 13 -%}
                         "p[7].b[{{i}}].pco={{selectedfg}}",{%- endfor -%}
-                        {%- if alarmstate == "disarmed" -%}
+                        {%- if states(alarmpanel) == "disarmed" -%}
                         "p[7].b[13].pco={{selectedfg}}",
                         "p[7].b[15].pco={{selectedfg}}"
                         {%- else -%}
@@ -425,7 +507,7 @@ action:
                       payload: >-
                         [{%- for i in range(4,15) if not i == 13 -%}
                         "p[7].b[{{i}}].bco={{selectedbg}}",{%- endfor -%}
-                        {%- if alarmstate == "disarmed" -%}
+                        {%- if states(alarmpanel) == "disarmed" -%}
                         "p[7].b[13].bco={{selectedbg}}",
                         "p[7].b[15].bco={{selectedbg}}"
                         {%- else -%}
@@ -445,7 +527,7 @@ action:
                       payload: >-
                         [{%- for i in range(4,15) if not i == 13 -%}
                         "p[7].b[{{i}}].pco2={{unselectedfg}}",{%- endfor -%}
-                        {%- if alarmstate == "disarmed" -%}
+                        {%- if states(alarmpanel) == "disarmed" -%}
                         "p[7].b[13].pco2={{unselectedfg}}",
                         "p[7].b[15].pco2={{unselectedfg}}"
                         {%- else -%}
@@ -465,7 +547,7 @@ action:
                       payload: >-
                         [{%- for i in range(4,15) if not i == 13 -%}
                         "p[7].b[{{i}}].bco2={{unselectedbg}}",{%- endfor -%}
-                        {%- if alarmstate == "disarmed" -%}
+                        {%- if states(alarmpanel) == "disarmed" -%}
                         "p[7].b[13].bco2={{unselectedbg}}",
                         "p[7].b[15].bco2={{unselectedbg}}"
                         {%- else -%}
