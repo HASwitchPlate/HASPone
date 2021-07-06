@@ -339,8 +339,9 @@ action:
         sequence:
           - service: mqtt.publish
             data:
-              topic: "{{commandtopic}}.txt"
-              payload: '"{{text}}"'
+              topic: "{{jsoncommandtopic}}"
+              payload: '["{{haspobject}}.txt=\"{{text}}\""]'
+
       #########################################################################
       # Catch triggers fired by incoming MQTT messages
       - conditions:
