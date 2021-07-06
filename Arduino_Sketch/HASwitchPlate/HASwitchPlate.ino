@@ -119,7 +119,6 @@ bool mqttPingCheck = false;                           // MQTT broker ping check 
 bool mqttPortCheck = false;                           // MQTT broke port check result
 String mqttClientId;                                  // Auto-generated MQTT ClientID
 String mqttGetSubtopic;                               // MQTT subtopic for incoming commands requesting .val
-String mqttGetSubtopicJSON;                           // MQTT object buffer for JSON status when requesting .val
 String mqttStateTopic;                                // MQTT topic for outgoing panel interactions
 String mqttStateJSONTopic;                            // MQTT topic for outgoing panel interactions in JSON format
 String mqttCommandTopic;                              // MQTT topic for incoming panel commands
@@ -1133,7 +1132,6 @@ void nextionProcessInput()
           // Now see if this object has a .val that might have been updated.  Works for sliders,
           // two-state buttons, etc, returns 0 for normal buttons
           mqttGetSubtopic = "/p[" + nextionPage + "].b[" + nextionButtonID + "].val";
-          mqttGetSubtopicJSON = "p[" + nextionPage + "].b[" + nextionButtonID + "].val";
           // This right here is dicey.  We're done w/ this command so reset the index allowing this to be kinda-reentrant
           // because the call to nextionGetAttr is going to call us back.
           nextionReturnIndex = 0;
@@ -1243,7 +1241,7 @@ void nextionProcessInput()
         String mqttReturnTopic = mqttStateTopic + mqttGetSubtopic;
         mqttClient.publish(mqttReturnTopic, getString);
         debugPrintln(String(F("MQTT OUT: '")) + mqttReturnTopic + String(F("' : '")) + getString + String(F("'")));
-        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopicJSON + String(F("\",\"value\":\"")) + getString + String(F("\"}"));
+        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopic.substring(1) + String(F("\",\"value\":\"")) + getString + String(F("\"}"));
         mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
         debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
         mqttGetSubtopic = "";
@@ -1298,7 +1296,7 @@ void nextionProcessInput()
         String mqttReturnTopic = mqttStateTopic + mqttGetSubtopic;
         mqttClient.publish(mqttReturnTopic, getString);
         debugPrintln(String(F("MQTT OUT: '")) + mqttReturnTopic + String(F("' : '")) + getString + String(F("'")));
-        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopicJSON + String(F("\",\"value\":")) + getString + String(F("}"));
+        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopic.substring(1) + String(F("\",\"value\":")) + getString + String(F("}"));
         mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
         debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
       }
