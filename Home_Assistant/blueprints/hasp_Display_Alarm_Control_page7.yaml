@@ -71,6 +71,12 @@ blueprint:
           max: 10
           mode: slider
           unit_of_measurement: digits
+    discoveryprefix:
+      name: "Home Assistant MQTT discovery prefix"
+      description: 'In nearly all cases this should be "homeassistant"'
+      default: "homeassistant"
+      selector:
+        text:
 
 mode: queued
 max_exceeded: silent
@@ -87,6 +93,7 @@ variables:
   codelength: !input codelength
   b13armservice: !input b13armservice
   b15armservice: !input b15armservice
+  discoveryprefix: !input discoveryprefix
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
@@ -304,7 +311,7 @@ action:
                 # create number objects for each digit in codelength
                 - service: mqtt.publish
                   data:
-                    topic: "homeassistant/number/{{haspname}}/alarmcode_{{repeat.index}}/config"
+                    topic: "{{discoveryprefix}}/number/{{haspname}}/alarmcode_{{repeat.index}}/config"
                     payload: >-
                       {"name":"{{haspname}} alarmcode {{repeat.index}}",
                       "command_topic":"hasp/{{haspname}}/alarmcode/{{repeat.index}}",
