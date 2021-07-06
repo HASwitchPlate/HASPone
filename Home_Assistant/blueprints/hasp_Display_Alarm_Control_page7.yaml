@@ -37,16 +37,6 @@ blueprint:
       selector:
         entity:
           domain: alarm_control_panel
-    codelength:
-      name: "Alarm code length"
-      description: "Select the alarm code length for your alarm (usually 4 digits)."
-      default: 4
-      selector:
-        number:
-          min: 2
-          max: 10
-          mode: slider
-          unit_of_measurement: digits
     b13armservice:
       name: "Lower-left arm service"
       description: "Select the alarm arm service to call when system is armed with the lower-left button"
@@ -71,6 +61,16 @@ blueprint:
             - "alarm_arm_night"
             - "alarm_arm_vacation"
             - "alarm_arm_custom_bypass"
+    codelength:
+      name: "Alarm code length"
+      description: "Select the alarm code length for your alarm (usually 4 digits)."
+      default: 4
+      selector:
+        number:
+          min: 2
+          max: 10
+          mode: slider
+          unit_of_measurement: digits
 
 mode: queued
 max_exceeded: silent
