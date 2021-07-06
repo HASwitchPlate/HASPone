@@ -184,6 +184,14 @@ A button on the HASP will perform an action when pressed. Can be combined on a b
 
 ---
 
+### Apply Theme
+
+[![Apply Theme](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Apply_Theme.yaml)
+
+A button on the HASP will have the current device theme or custom colors applied.
+
+---
+
 ### Remove MQTT Discovery Devices
 
 [![Remove MQTT Discovery Devices](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Remove_MQTT_Discovery_Devices.yaml)
