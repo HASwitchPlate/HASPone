@@ -1,10 +1,10 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the current temperature with icon and colors"
+  name: "HASP p[x].b[y] displays the current weather temperature with icon and colors"
   description: |
 
     # Description
 
-    A HASP button displays the current temperature on the right with a dynamic thermometer icon on the left and (optional) colors.
+    A HASP button displays the current weather temperature on the right with a dynamic thermometer icon on the left and (optional) colors.
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_with_Icon_and_Colors.png)
 
@@ -73,24 +73,11 @@ blueprint:
           unit_of_measurement: button
     weather_provider:
       name: "Weather provider"
-      description: "Select the weather provider to obtain the current outdoor temperature.  If a temperature sensor is selected below, that will override this selection."
+      description: "Select the weather provider to obtain the current outdoor temperature."
       default:
       selector:
         entity:
           domain: weather
-    temperature_sensor:
-      name: "Temperature sensor"
-      description: "Select a temperature sensor.  If selected, this state of this sensor will be displayed instead of the weather provider selected above."
-      default:
-      selector:
-        entity:
-          domain: sensor
-    temperature_attribute:
-      name: "Temperature sensor state or attribute to monitor"
-      description: "Enter `state` to track the state of the sensor above, or enter an attribute name if the sensor has a specific attribute you want to track.  Most uses will leave this set to `state`."
-      default: "state"
-      selector:
-        text:
     suffix_select:
       name: "Temperature display suffix"
       description: "Suffix for temperature display."
@@ -215,8 +202,6 @@ variables:
   hasppage: !input hasppage
   haspbutton: !input haspbutton
   weather_provider: !input weather_provider
-  temperature_sensor: !input temperature_sensor
-  temperature_attribute: !input temperature_attribute
   suffix_select: !input suffix_select
   thermometer_empty_color: !input thermometer_empty_color
   thermometer_quarter_threshold: !input thermometer_quarter_threshold
@@ -233,19 +218,11 @@ variables:
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
-  temperature_value: >-
-    {%- if temperature_sensor|lower == "none" -%}
-      {{- state_attr(weather_provider, "temperature") -}}
-    {%- elif temperature_attribute|lower == "state" -%}
-      {{- states(temperature_sensor) -}}
-    {%- else -%}
-      {{- state_attr(temperature_sensor, temperature_attribute) -}}
-    {%- endif -%}
   temperature: >-
     {%- if roundtemp == true -%}
-      {{- temperature_value | round -}}
+      {{- state_attr(weather_provider, "temperature") | round -}}
     {%- else -%}
-      {{- temperature_value -}}
+      {{- state_attr(weather_provider, "temperature") -}}
     {%- endif -%}
   icon: >-
     {%- set temp = temperature|int -%}

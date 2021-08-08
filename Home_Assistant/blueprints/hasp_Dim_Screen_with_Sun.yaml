@@ -1,0 +1,126 @@
+blueprint:
+  name: "HASP dims the backlight with the sun"
+  description: |
+
+    # Description
+
+    Dim the HASPone backlight in response to the sun going up and down.
+
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    brightday:
+      name: "Daytime brightness value"
+      description: "Select the brightness value to be set during full daylight."
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: slider
+          unit_of_measurement: "%"
+    brightnight:
+      name: "Nighttime brightness value"
+      description: "Select the brightness value to be set during the night."
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 100
+          mode: slider
+          unit_of_measurement: "%"
+    elevationday:
+      name: "Daytime sun elevation"
+      description: "Sun elevation to begin transition at night and to end transition in the morning.  Value must be greater than the nighttime elevation set below."
+      default: 6
+      selector:
+        number:
+          min: -90
+          max: 90
+          step: 1
+          mode: slider
+          unit_of_measurement: "°"
+    elevationnight:
+      name: "Nighttime sun elevation"
+      description: "Sun elevation to end transition at night and to begin transition in the morning.  Value must be less than the daytime elevation set above."
+      default: -6
+      selector:
+        number:
+          min: -90
+          max: 90
+          step: 1
+          mode: slider
+          unit_of_measurement: "°"
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  brightday: !input brightday
+  brightnight: !input brightnight
+  elevationday: !input elevationday
+  elevationnight: !input elevationnight
+  lightcommandtopic: "{{ 'hasp/' ~ haspname ~ '/brightness/set' }}"
+
+trigger:
+  - platform: state
+    entity_id: sun.sun
+    attribute: elevation
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - condition: template
+    value_template: "{{ state_attr('sun.sun', 'elevation') | round <= elevationday }}"
+  - condition: template
+    value_template: "{{ state_attr('sun.sun', 'elevation') | round >= elevationnight }}"
+
+action:
+  - choose:
+      #########################################################################
+      # Sun elevation is approximately equal to or greater than daytime value, send brightday
+      - conditions:
+          - condition: template
+            value_template: "{{ state_attr('sun.sun', 'elevation') | round >= elevationday }}"
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{ lightcommandtopic }}"
+              payload: "{{ brightday | int }}"
+      #########################################################################
+      # Sun elevation is approximately equal to or less than nighttime value, send brightnight
+      - conditions:
+          - condition: template
+            value_template: "{{ state_attr('sun.sun', 'elevation') | round <= elevationnight }}"
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{ lightcommandtopic }}"
+              payload: "{{ brightnight | int }}"
+    #########################################################################
+    # Sun elevation is in transition range, send calculated brightness value
+    default:
+      - service: mqtt.publish
+        data:
+          topic: "{{ lightcommandtopic }}"
+          payload: "{{ (brightnight + ((brightday - brightnight) / (elevationday - elevationnight)) * (state_attr('sun.sun', 'elevation') - elevationnight)) | round | int }}"

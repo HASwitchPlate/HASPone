@@ -12,11 +12,17 @@ blueprint:
 
     <details>
 
-    This automation is designed to work with the full-width buttons found on pages 1-3
+    | Page 0 | Pages 1-3 | Pages 4-5 |
+    |--------|-----------|-----------|
+    | ![Page 0](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p0_Init_Screen.png) | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) | ![Pages 4-5](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p4-p5_3sliders.png) |
 
-    | Pages 1-3 |
-    |-----------|
-    | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) |
+    | Page 6 | Page 7 | Page 8 |
+    |--------|--------|--------|
+    | ![Page 6](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p6_8buttons.png) | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p7_12buttons.png) | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+    | Page 9 | Page 10 | Page 11 |
+    |--------|---------|---------|
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p11_1button+1slider.png)
 
     </details>
 
@@ -53,7 +59,7 @@ blueprint:
           model: "HASPone v1.0.0"
     hasppage:
       name: "HASP Page"
-      description: "Select the HASP page (1-3) for the temperature. Refer to the HASP Page and Button reference above."
+      description: "Select the HASP page (1-11) for the temperature icon. Refer to the HASP Page and Button reference above."
       default: 1
       selector:
         number:
@@ -63,7 +69,7 @@ blueprint:
           unit_of_measurement: page
     haspbutton:
       name: "HASP Button"
-      description: "Select the HASP button (4-7) for the temperature. Refer to the HASP Page and Button reference above."
+      description: "Select the HASP button (4-15) for the temperature icon. Refer to the HASP Page and Button reference above."
       default: 4
       selector:
         number:
@@ -73,24 +79,11 @@ blueprint:
           unit_of_measurement: button
     weather_provider:
       name: "Weather provider"
-      description: "Select the weather provider to obtain the current outdoor temperature.  If a temperature sensor is selected below, that will override this selection."
+      description: "Select the weather provider to obtain the current outdoor temperature."
       default:
       selector:
         entity:
           domain: weather
-    temperature_sensor:
-      name: "Temperature sensor"
-      description: "Select a temperature sensor.  If selected, this state of this sensor will be displayed instead of the weather provider selected above."
-      default:
-      selector:
-        entity:
-          domain: sensor
-    temperature_attribute:
-      name: "Temperature sensor state or attribute to monitor"
-      description: "Enter `state` to track the state of the sensor above, or enter an attribute name if the sensor has a specific attribute you want to track.  Most uses will leave this set to `state`."
-      default: "state"
-      selector:
-        text:
     thermometer_empty_color:
       name: "Thermometer empty color"
       description: 'Icon color for an empty thermometer in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme foreground color, or 2047 = Ice blue'
@@ -192,8 +185,6 @@ variables:
   hasppage: !input hasppage
   haspbutton: !input haspbutton
   weather_provider: !input weather_provider
-  temperature_sensor: !input temperature_sensor
-  temperature_attribute: !input temperature_attribute
   thermometer_empty_color: !input thermometer_empty_color
   thermometer_quarter_threshold: !input thermometer_quarter_threshold
   thermometer_quarter_color: !input thermometer_quarter_color
@@ -206,17 +197,9 @@ variables:
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
-  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
-  temperature_value: >-
-    {%- if temperature_sensor|lower == "none" -%}
-      {{- state_attr(weather_provider, "temperature") -}}
-    {%- elif temperature_attribute|lower == "state" -%}
-      {{- states(temperature_sensor) -}}
-    {%- else -%}
-      {{- state_attr(temperature_sensor, temperature_attribute) -}}
-    {%- endif -%}
+  temperature: '{{ state_attr(weather_provider, "temperature") }}'
   icon: >-
-    {%- set temp = temperature_value|int -%}
+    {%- set temp = temperature|int -%}
     {%- if temp <= thermometer_quarter_threshold|int -%}
       
     {%- elif temp < thermometer_half_threshold|int -%}
@@ -228,23 +211,9 @@ variables:
     {%- else -%}
       
     {%- endif -%}
-  text: "{{temperature_value}}"
   font: 8
-  ypos: "{{(haspbutton|int - 4) * 67 + 2}}"
-  xpos: 0
-  iconwidth: 40
-  iconheight: 65
-  iconfont: 8
   xcen: 1
   ycen: 1
-  activepage: >-
-    {%- set activepage = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
-        {%- set activepage.entity=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
@@ -298,7 +267,7 @@ variables:
     {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   tempcolor: >-
-    {%- set temp = temperature_value|int -%}
+    {%- set temp = temperature|int -%}
     {%- if temp <= thermometer_quarter_threshold|int -%}
       {%- set color = thermometer_empty_color -%}
     {%- elif temp < thermometer_half_threshold|int -%}
@@ -330,7 +299,6 @@ trigger_variables:
         {{ entity }}
       {%- endif -%}
     {%- endfor -%}
-  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
@@ -343,8 +311,6 @@ trigger:
     value_template: "{{ is_state(haspsensor, 'ON') }}"
   - platform: homeassistant
     event: start
-  - platform: mqtt
-    topic: "{{jsontopic}}"
   - platform: mqtt
     topic: "{{selectedfgtopic}}"
   - platform: mqtt
