@@ -108,11 +108,21 @@ Page 8 controls a selected media player with artist and track info, track back/p
 
 ### Display Temperature with Icon and Colors
 
-[![Display Dimmer with Icon](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Temperature_with_Icon_and_Colors.yaml)
+[![Display Temperature with Icon and Colors](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Temperature_with_Icon_and_Colors.yaml)
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_with_Icon_and_Colors.png)
 
-A HASP button displays the current temperature on the right with a dynamic thermometer icon on the left and (optional) colors.
+A HASP button displays the current temperature from a selected weather provider on the right with a dynamic thermometer icon on the left and (optional) colors.
+
+---
+
+### Display current temperature, coloured icon only
+
+[![Display current temperature, coloured icon only](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Temperature_Color_Icon_Only.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_Color_Icon_Only.png)
+
+A HASP button displays the current temperature as an icon that is optionally coloured.
 
 ---
 
