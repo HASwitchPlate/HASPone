@@ -184,19 +184,27 @@ A button on the HASP will perform an action when pressed. Can be combined on a b
 
 ---
 
+### Dim Screen with Sun
+
+[![Dim Screen with Sun](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Dim_Screen_with_Sun.yaml)
+
+Dim the HASPone backlight in response to the sun going up and down.
+
+---
+
+### Dim Screen on Idle
+
+[![Dim Screen on Idle](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Dim_Screen_on_Idle.yaml)
+
+Dim the screen backlight after a specified period of inactivity.
+
+---
+
 ### Apply Theme
 
 [![Apply Theme](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Apply_Theme.yaml)
 
 A button on the HASP will have the current device theme or custom colors applied.
-
----
-
-### Remove MQTT Discovery Devices
-
-[![Remove MQTT Discovery Devices](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Remove_MQTT_Discovery_Devices.yaml)
-
-Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASP.
 
 ---
 
@@ -218,3 +226,10 @@ Press RUN ACTIONS to apply the theme Dark on Light to the selected HASP device
 
 Press RUN ACTIONS to apply the theme Light on Dark to the selected HASP device
 
+---
+
+### Remove MQTT Discovery Devices
+
+[![Remove MQTT Discovery Devices](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Remove_MQTT_Discovery_Devices.yaml)
+
+Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASP.
