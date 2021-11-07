@@ -67,7 +67,7 @@ const float haspVersion = 1.03;                       // Current HASP software r
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
-uint8_t nextionActivePage = 0;                        // Track active LCD page
+int8_t nextionActivePage = -1;                        // Track active LCD page
 bool lcdConnected = false;                            // Set to true when we've heard something from the LCD
 const char wifiConfigPass[9] = "hasplate";            // First-time config WPA2 password
 const char wifiConfigAP[14] = "HASwitchPlate";        // First-time config SSID
@@ -133,6 +133,7 @@ String mqttLightBrightStateTopic;                     // MQTT topic for outgoing
 String mqttMotionStateTopic;                          // MQTT topic for outgoing motion sensor state
 String nextionModel;                                  // Record reported model number of LCD panel
 const byte nextionSuffix[] = {0xFF, 0xFF, 0xFF};      // Standard suffix for Nextion commands
+uint8_t nextionMaxPages = 11;                         // Maximum number of pages in Nextion project
 uint32_t tftFileSize = 0;                             // Filesize for TFT firmware upload
 const uint8_t nextionResetPin = D6;                   // Pin for Nextion power rail switch (GPIO12/D6)
 const unsigned long nextionSpeeds[] = {2400,
@@ -517,6 +518,16 @@ void mqttConnect()
     }
   }
   rebootOnp0b1 = false;
+  if (nextionActivePage < 0)
+  { // We never picked up a message giving us a page number, so we'll just go to the default page
+    debugPrintln(String(F("DEBUG: NextionActivePage not received from MQTT, setting to 0")));
+    String mqttButtonJSONEvent = String(F("{\"event\":\"page\",\"value\":0}"));
+    debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+    mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent, false, 0);
+    String mqttPageTopic = mqttStateTopic + "/page";
+    debugPrintln(String(F("MQTT OUT: '")) + mqttPageTopic + String(F("' : '0'")));
+    mqttClient.publish(mqttPageTopic, "0", false, 0);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -756,7 +767,7 @@ void mqttDiscovery()
 
   // light discovery for backlight
   String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/config"));
-  String mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" backlight\",\"command_topic\":\"")) + mqttLightCommandTopic + String(F("\",\"state_topic\":\"")) + mqttLightStateTopic + String(F("\",\"brightness_state_topic\":\"")) + mqttLightBrightStateTopic + String(F("\",\"brightness_command_topic\":\"")) + mqttLightBrightCommandTopic + String(F("\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"brightness_scale\":100,\"unique_id\":\"")) + mqttClientId + String(F("-backlight\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  String mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" backlight\",\"command_topic\":\"")) + mqttLightCommandTopic + String(F("\",\"state_topic\":\"")) + mqttLightStateTopic + String(F("\",\"brightness_state_topic\":\"")) + mqttLightBrightStateTopic + String(F("\",\"brightness_command_topic\":\"")) + mqttLightBrightCommandTopic + String(F("\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"brightness_scale\":100,\"unique_id\":\"")) + mqttClientId + String(F("-backlight\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F(",\"configuration_url\":\"http://")) + WiFi.localIP().toString() + String(F("\"}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
@@ -768,7 +779,7 @@ void mqttDiscovery()
 
   // number discovery for active page
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/number/")) + String(haspNode) + String(F("/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" active page\",\"command_topic\":\"")) + mqttCommandTopic + String(F("/page\",\"state_topic\":\"")) + mqttStateTopic + String(F("/page\",\"retain\":true,\"optimistic\":true,\"icon\":\"mdi:page-next-outline\",\"unique_id\":\"")) + mqttClientId + String(F("-page\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" active page\",\"command_topic\":\"")) + mqttCommandTopic + String(F("/page\",\"state_topic\":\"")) + mqttStateTopic + String(F("/page\",\"step\":1,\"min\":0,\"max\":")) + String(nextionMaxPages) + String(F(",\"retain\":true,\"optimistic\":true,\"icon\":\"mdi:page-next-outline\",\"unique_id\":\"")) + mqttClientId + String(F("-page\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
@@ -1148,7 +1159,6 @@ void nextionProcessInput()
     // Meaning: page 2
     String nextionPage = String(nextionReturnBuffer[1]);
     debugPrintln(String(F("HMI IN: [sendme Page] '")) + nextionPage + String(F("'")));
-    // if ((nextionActivePage != nextionPage.toInt()) && ((nextionPage != "0") || nextionReportPage0))
     if ((nextionPage != "0") || nextionReportPage0)
     { // If we have a new page AND ( (it's not "0") OR (we've set the flag to report 0 anyway) )
 
@@ -2203,6 +2213,10 @@ void configRead()
           {
             strcpy(nextionBaud, jsonConfigValues["nextionBaud"]);
           }
+          if (!jsonConfigValues["nextionMaxPages"].isNull())
+          {
+            nextionMaxPages = jsonConfigValues["nextionMaxPages"];
+          }
           if (!jsonConfigValues["motionPinConfig"].isNull())
           {
             strcpy(motionPinConfig, jsonConfigValues["motionPinConfig"]);
@@ -2320,6 +2334,7 @@ void configSave()
   jsonConfigValues["configPassword"] = configPassword;
   jsonConfigValues["hassDiscovery"] = hassDiscovery;
   jsonConfigValues["nextionBaud"] = nextionBaud;
+  jsonConfigValues["nextionMaxPages"] = nextionMaxPages;
   jsonConfigValues["motionPinConfig"] = motionPinConfig;
   jsonConfigValues["debugSerialEnabled"] = debugSerialEnabled;
   jsonConfigValues["debugTelnetEnabled"] = debugTelnetEnabled;
@@ -2339,6 +2354,7 @@ void configSave()
   debugPrintln(String(F("SPIFFS: configPassword = ")) + String(configPassword));
   debugPrintln(String(F("SPIFFS: hassDiscovery = ")) + String(hassDiscovery));
   debugPrintln(String(F("SPIFFS: nextionBaud = ")) + String(nextionBaud));
+  debugPrintln(String(F("SPIFFS: nextionMaxPages = ")) + String(nextionMaxPages));
   debugPrintln(String(F("SPIFFS: motionPinConfig = ")) + String(motionPinConfig));
   debugPrintln(String(F("SPIFFS: debugSerialEnabled = ")) + String(debugSerialEnabled));
   debugPrintln(String(F("SPIFFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
@@ -2493,8 +2509,12 @@ void webHandleRoot()
   {
     webServer.sendContent(hassDiscovery);
   }
+  webServer.sendContent(F("'><br/><b>Nextion project page count</b> <i><small>(required, probably \"11\")</small></i><input id='nextionMaxPages' required name='nextionMaxPages' type='number' maxlength=2 placeholder='nextionMaxPages' value='"));
+  if (nextionMaxPages != 0)
+  {
+    webServer.sendContent(String(nextionMaxPages));
+  }
   webServer.sendContent(F("'><br/><hr>"));
-
   // Big menu of possible serial speeds
   if ((lcdVersion != 1) && (lcdVersion != 2))
   { // HASP lcdVersion 1 and 2 have `bauds=115200` in the pre-init script of page 0.  Don't show this option if either of those two versions are running.
@@ -2756,6 +2776,11 @@ void webHandleSaveConfig()
   { // Handle hassDiscovery
     shouldSaveConfig = true;
     webServer.arg("hassDiscovery").toCharArray(hassDiscovery, 128);
+  }
+  if (webServer.arg("nextionMaxPages") != String(nextionMaxPages))
+  { // Handle nextionMaxPages
+    shouldSaveConfig = true;
+    nextionMaxPages = webServer.arg("nextionMaxPages").toInt();
   }
   if (webServer.arg("nextionBaud") != String(nextionBaud))
   { // Handle nextionBaud
