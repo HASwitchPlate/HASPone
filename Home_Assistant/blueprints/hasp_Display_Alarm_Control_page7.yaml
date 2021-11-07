@@ -318,6 +318,8 @@ action:
                       "availability":{"topic":"hasp/{{haspname}}/alwayson","payload_available":"ON"},
                       "retain":true,
                       "optimistic":true,
+                      "min":-1,
+                      "max":9,
                       "icon":"mdi:bell-plus-outline",
                       "unique_id":"{{haspClientId}}-alarmcode_{{repeat.index}}",
                       "device":{
@@ -414,7 +416,7 @@ action:
                           - condition: template
                             value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[13]") and (trigger.payload_json.value == "ON") and (states(alarmpanel) == "disarmed")}}'
                         sequence:
-                          - service_template: "{{'alarm_control_panel.' ~ b13armservice}}"
+                          - service: "{{'alarm_control_panel.' ~ b13armservice}}"
                             data:
                               entity_id: !input alarmpanel
                               code: >-
@@ -438,7 +440,7 @@ action:
                           - condition: template
                             value_template: '{{ (trigger.payload_json.event is defined) and (trigger.payload_json.event == "p[7].b[15]") and (trigger.payload_json.value == "ON") and (states(alarmpanel) == "disarmed")}}'
                         sequence:
-                          - service_template: "{{'alarm_control_panel.' ~ b15armservice}}"
+                          - service: "{{'alarm_control_panel.' ~ b15armservice}}"
                             data:
                               entity_id: !input alarmpanel
                               code: >-
