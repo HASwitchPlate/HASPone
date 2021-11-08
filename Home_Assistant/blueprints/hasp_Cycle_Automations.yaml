@@ -1,0 +1,319 @@
+blueprint:
+  name: "HASP p[x].b[y] cycles through multiple automations"
+  description: |
+
+    ## Description
+
+    A button on the HASP will toggle through as many as 10 selected automations.  This allows the user to assign multiple blueprints to the same button on the HASPone device, and to cycle between them by pressing the selected button.
+
+    Optionally, a timeout can be set to cycle back to a "default" automation after a specified interval, or to continuously cycle through selected automations.
+
+    ## Example
+
+    1. Deploy blueprint `hasp_Display_Clock_with_Icon.yaml` to button `p[1].b[4]`
+    2. Deploy blueprint `hasp_Display_Calendar_with_Icon.yaml` to the same button `p[1].b[4]`
+    3. Deploy this blueprint, selecting page 1 button 4 (same as above), and then select each of the previous deployed automations as the "first" and "second" automations
+    4. Press `p[1].b[4]` to show the calendar and disable the clock automation on `p[1].b[4]`
+    5. Press `p[1].b[4]` again to show the clock and disable the calendar automation on `p[1].b[4]`
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Cycle_Automations.gif)
+
+    ## HASP Page and Button Reference
+
+    The images below show each available HASP page along with the layout of available button objects.
+
+    <details>
+
+    | Page 0 | Pages 1-3 | Pages 4-5 |
+    |--------|-----------|-----------|
+    | ![Page 0](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p0_Init_Screen.png) | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) | ![Pages 4-5](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p4-p5_3sliders.png) |
+
+    | Page 6 | Page 7 | Page 8 |
+    |--------|--------|--------|
+    | ![Page 6](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p6_8buttons.png) | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p7_12buttons.png) | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+    | Page 9 | Page 10 | Page 11 |
+    |--------|---------|---------|
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p11_1button+1slider.png)
+
+    </details>
+
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    hasppage:
+      name: "HASP Page"
+      description: "Select the HASP page (1-11) for the button to be cycled. Refer to the HASP Page and Button reference above."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 11
+          mode: slider
+          unit_of_measurement: page
+    haspbutton:
+      name: "HASP Button"
+      description: "Select the HASP button (4-15) to be cycled. Refer to the HASP Page and Button reference above."
+      default: 4
+      selector:
+        number:
+          min: 4
+          max: 15
+          mode: slider
+          unit_of_measurement: button
+    automation01:
+      name: "Cycle automation 1"
+      description: "Select the first automation to cycle. This entry is required."
+      selector:
+        entity:
+          domain: automation
+    automation02:
+      name: "Cycle automation 2"
+      description: "Select the second automation to cycle. This entry is required."
+      selector:
+        entity:
+          domain: automation
+    automation03:
+      name: "Cycle automation 3"
+      description: "Select the third automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation04:
+      name: "Cycle automation 4"
+      description: "Select the fourth automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation05:
+      name: "Cycle automation 5"
+      description: "Select the fifth automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation06:
+      name: "Cycle automation 6"
+      description: "Select the sixth automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation07:
+      name: "Cycle automation 7"
+      description: "Select the seventh automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation08:
+      name: "Cycle automation 8"
+      description: "Select the eighth automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation09:
+      name: "Cycle automation 9"
+      description: "Select the nineth automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    automation10:
+      name: "Cycle automation 10"
+      description: "Select the tenth automation to cycle. This entry is optional (but cannot be blank), enter 'none' to skip this slot."
+      default: "none"
+      selector:
+        entity:
+          domain: automation
+    cycleselect:
+      name: "Automatic cycling"
+      description: "Optional: enable automation periodic cycling of the selected automations"
+      default: "Disabled"
+      selector:
+        select:
+          options:
+            - "Disabled"
+            - "Default back to automation 1"
+            - "Continuously cycle automations"
+    cycletime:
+      name: "Cycle time"
+      description: "Idle time in seconds for automatic cycling (if enabled)"
+      default: 15
+      selector:
+        number:
+          min: 1
+          max: 600
+          step: 1
+          mode: box
+          unit_of_measurement: seconds
+
+mode: restart
+
+variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  automation01: !input automation01
+  automation02: !input automation02
+  automation03: !input automation03
+  automation04: !input automation04
+  automation05: !input automation05
+  automation06: !input automation06
+  automation07: !input automation07
+  automation08: !input automation08
+  automation09: !input automation09
+  automation10: !input automation10
+  cycleselect: !input cycleselect
+  cycletime: !input cycletime
+  automation_list: >-
+    {%- set return_list = [] -%}
+    {%- if automation01|default("none") != "none" and automation01.startswith("automation.") -%}
+      {%- set return_list = return_list + [automation01] -%}
+    {%- endif -%}
+    {%- if automation02|default("none") != "none" and automation02.startswith("automation.") and automation02 not in return_list -%}
+      {%- set return_list = return_list + [automation02] -%}
+    {%- endif -%}
+    {%- if automation03|default("none") != "none" and automation03.startswith("automation.") and automation03 not in return_list -%}
+      {%- set return_list = return_list + [automation03] -%}
+    {%- endif -%}
+    {%- if automation04|default("none") != "none" and automation04.startswith("automation.") and automation04 not in return_list -%}
+      {%- set return_list = return_list + [automation04] -%}
+    {%- endif -%}
+    {%- if automation05|default("none") != "none" and automation05.startswith("automation.") and automation05 not in return_list -%}
+      {%- set return_list = return_list + [automation05] -%}
+    {%- endif -%}
+    {%- if automation06|default("none") != "none" and automation06.startswith("automation.") and automation06 not in return_list -%}
+      {%- set return_list = return_list + [automation06] -%}
+    {%- endif -%}
+    {%- if automation07|default("none") != "none" and automation07.startswith("automation.") and automation07 not in return_list -%}
+      {%- set return_list = return_list + [automation07] -%}
+    {%- endif -%}
+    {%- if automation08|default("none") != "none" and automation08.startswith("automation.") and automation08 not in return_list -%}
+      {%- set return_list = return_list + [automation08] -%}
+    {%- endif -%}
+    {%- if automation09|default("none") != "none" and automation09.startswith("automation.") and automation09 not in return_list -%}
+      {%- set return_list = return_list + [automation09] -%}
+    {%- endif -%}
+    {%- if automation10|default("none") != "none" and automation10.startswith("automation.") and automation10 not in return_list -%}
+      {%- set return_list = return_list + [automation10] -%}
+    {%- endif -%}{{ return_list }}
+  automation_enable_index: >-
+    {%- set automations = namespace() -%}
+    {%- set automations.next = 0 -%}
+    {%- for automation in automation_list -%}
+      {%- if states(automation_list[loop.index-1]) == "on" and automations.next == 0 and not loop.last -%}
+        {%- set automations.next = loop.index -%}
+      {%- endif -%}
+    {%- endfor -%}{{automations.next}}
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  buttonjsonpayload: '{"event_type":"button_short_press","event":"{{haspobject}}","value":"ON"}'
+
+trigger:
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: homeassistant
+    event: start
+  - platform: event
+    event_type: automation_reloaded
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+    payload: "{{buttonjsonpayload}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+    #########################################################################
+    # Run cycle on button press or when "RUN ACTIONS" is pressed by the user
+    # This prevents cycling on device connect, home assistant start, or automation reloads
+    - conditions: "{{ (trigger.platform is none) or (trigger.platform == 'mqtt') }}"
+      sequence:
+      #########################################################################
+      # Cycle through automation list and disable everything except the "next"
+      # automation to be enabled (automation_list[automation_enable_index])
+      - repeat:
+          count: "{{automation_list|length}}"
+          sequence:
+            - choose:
+              - conditions: "{{ repeat.index - 1 != automation_enable_index }}"
+                sequence:
+                 - service: automation.turn_off
+                   data:
+                     stop_actions: true
+                   target:
+                     entity_id: "{{automation_list[repeat.index - 1]}}"
+      - service: automation.turn_on
+        target:
+          entity_id: "{{automation_list[automation_enable_index]}}"
+      - delay: "00:00:00.2"
+      - service: automation.trigger
+        target:
+          entity_id: "{{automation_list[automation_enable_index]}}"
+  - choose:
+    #########################################################################
+    # Default back to automation 1 if that option is selected
+    - conditions: "{{ cycleselect == 'Default back to automation 1' }}"
+      sequence:
+        - delay:
+            seconds: "{{cycletime|int}}"
+        - service: automation.turn_off
+          data:
+            stop_actions: true
+          target:
+            entity_id: "{{automation_list[automation_enable_index]}}"
+        - service: automation.turn_on
+          target:
+            entity_id: "{{automation_list[0]}}"
+        - delay: "00:00:00.2"
+        - service: automation.trigger
+          target:
+            entity_id: "{{automation_list[0]}}"
+    #########################################################################
+    # Continuously cycle automations if that option is selected
+    - conditions: "{{ cycleselect == 'Continuously cycle automations' }}"
+      sequence:
+        - delay:
+            seconds: "{{cycletime|int}}"
+        - service: automation.trigger
+          target:
+            entity_id: "{{this.entity_id}}"

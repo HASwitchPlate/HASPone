@@ -194,6 +194,18 @@ A button on the HASP will perform an action when pressed. Can be combined on a b
 
 ---
 
+### Cycle Automations
+
+[![Cycle Automations](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Cycle_Automations.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Cycle_Automations.gif)
+
+A button on the HASP will toggle through as many as 10 selected automations.  This allows the user to assign multiple blueprints to the same button on the HASPone device, and to cycle between them by pressing the selected button.
+
+Optionally, a timeout can be set to cycle back to a "default" automation after a specified interval, or to continuously cycle through selected automations.
+
+---
+
 ### Dim Screen with Sun
 
 [![Dim Screen with Sun](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Dim_Screen_with_Sun.yaml)
