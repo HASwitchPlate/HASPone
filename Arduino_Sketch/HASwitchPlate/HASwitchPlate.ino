@@ -2209,6 +2209,11 @@ void configRead()
           {
             strcpy(hassDiscovery, jsonConfigValues["hassDiscovery"]);
           }
+          if (strcmp(hassDiscovery, "") == 0)
+          { // Cover off any edge case where this value winds up being empty
+            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty hassDiscovery value, setting to 'homeassistant'"));
+            strcpy(hassDiscovery, "homeassistant");
+          }
           if (!jsonConfigValues["nextionBaud"].isNull())
           {
             strcpy(nextionBaud, jsonConfigValues["nextionBaud"]);
