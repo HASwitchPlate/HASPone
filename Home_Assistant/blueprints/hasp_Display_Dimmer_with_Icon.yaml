@@ -227,7 +227,7 @@ variables:
   iconwidth: 60
   iconheight: 65
   iconfont: 8
-  brightness: '{{state_attr(dimmer, "brightness")|int}}'
+  brightness: '{{state_attr(dimmer, "brightness")|int(default=0)}}'
 
 trigger_variables:
   haspdevice: !input haspdevice
