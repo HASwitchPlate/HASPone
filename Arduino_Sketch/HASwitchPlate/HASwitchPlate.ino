@@ -26,24 +26,6 @@
 // OUT OF OR IN CONNECTION WITH THE PRODUCT OR THE USE OR OTHER DEALINGS IN THE PRODUCT.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// These defaults may be overwritten with values saved by the web interface
-char wifiSSID[32] = "";
-char wifiPass[64] = "";
-char mqttServer[64] = "";
-char mqttPort[6] = "1883";
-char mqttUser[128] = "";
-char mqttPassword[128] = "";
-char mqttFingerprint[60] = "";
-char haspNode[16] = "plate01";
-char groupName[16] = "plates";
-char configUser[32] = "admin";
-char configPassword[32] = "";
-char motionPinConfig[3] = "0";
-char nextionBaud[7] = "115200";
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 #include <FS.h>
 #include <EEPROM.h>
 #include <EspSaveCrash.h>
@@ -62,11 +44,30 @@ char nextionBaud[7] = "115200";
 #include <SoftwareSerial.h>
 #include <ESP8266Ping.h>
 
-const float haspVersion = 1.02;                       // Current HASP software release version
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// These defaults may be overwritten with values saved by the web interface
+char wifiSSID[32] = "";
+char wifiPass[64] = "";
+char mqttServer[64] = "";
+char mqttPort[6] = "1883";
+char mqttUser[128] = "";
+char mqttPassword[128] = "";
+char mqttFingerprint[60] = "";
+char haspNode[16] = "plate01";
+char groupName[16] = "plates";
+char hassDiscovery[128] = "homeassistant";
+char configUser[32] = "admin";
+char configPassword[32] = "";
+char motionPinConfig[3] = "0";
+char nextionBaud[7] = "115200";
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const float haspVersion = 1.03;                       // Current HASP software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
-uint8_t nextionActivePage = 0;                        // Track active LCD page
+int8_t nextionActivePage = -1;                        // Track active LCD page
 bool lcdConnected = false;                            // Set to true when we've heard something from the LCD
 const char wifiConfigPass[9] = "hasplate";            // First-time config WPA2 password
 const char wifiConfigAP[14] = "HASwitchPlate";        // First-time config SSID
@@ -85,12 +86,13 @@ bool debugTelnetEnabled = false;                      // Enable telnet debug out
 bool nextionBufferOverrun = false;                    // Set to true if an overrun error was encountered
 bool nextionAckEnable = false;                        // Wait for each Nextion command to be acked before continuing
 bool nextionAckReceived = false;                      // Ack was received
-bool rebootOnp0b1 = false;                            // When true, reboot device on button press ofr p[0].b[1]
+bool rebootOnp0b1 = false;                            // When true, reboot device on button press of p[0].b[1]
 const unsigned long nextionAckTimeout = 1000;         // Timeout to wait for an ack before throwing error
 unsigned long nextionAckTimer = 0;                    // Timer to track Nextion ack
 const unsigned long telnetInputMax = 128;             // Size of user input buffer for user telnet session
 bool motionEnabled = false;                           // Motion sensor is enabled
 bool mdnsEnabled = true;                              // mDNS enabled
+bool ignoreTouchWhenOff = false;                      // Ignore touch events when backlight is off and instead send mqtt msg
 bool beepEnabled = false;                             // Keypress beep enabled
 unsigned long beepOnTime = 1000;                      // milliseconds of on-time for beep
 unsigned long beepOffTime = 1000;                     // milliseconds of off-time for beep
@@ -118,7 +120,6 @@ bool mqttPingCheck = false;                           // MQTT broker ping check 
 bool mqttPortCheck = false;                           // MQTT broke port check result
 String mqttClientId;                                  // Auto-generated MQTT ClientID
 String mqttGetSubtopic;                               // MQTT subtopic for incoming commands requesting .val
-String mqttGetSubtopicJSON;                           // MQTT object buffer for JSON status when requesting .val
 String mqttStateTopic;                                // MQTT topic for outgoing panel interactions
 String mqttStateJSONTopic;                            // MQTT topic for outgoing panel interactions in JSON format
 String mqttCommandTopic;                              // MQTT topic for incoming panel commands
@@ -126,13 +127,13 @@ String mqttGroupCommandTopic;                         // MQTT topic for incoming
 String mqttStatusTopic;                               // MQTT topic for publishing device connectivity state
 String mqttSensorTopic;                               // MQTT topic for publishing device information in JSON format
 String mqttLightCommandTopic;                         // MQTT topic for incoming panel backlight on/off commands
-String mqttBeepCommandTopic;                          // MQTT topic for error beep
 String mqttLightStateTopic;                           // MQTT topic for outgoing panel backlight on/off state
 String mqttLightBrightCommandTopic;                   // MQTT topic for incoming panel backlight dimmer commands
 String mqttLightBrightStateTopic;                     // MQTT topic for outgoing panel backlight dimmer state
 String mqttMotionStateTopic;                          // MQTT topic for outgoing motion sensor state
 String nextionModel;                                  // Record reported model number of LCD panel
 const byte nextionSuffix[] = {0xFF, 0xFF, 0xFF};      // Standard suffix for Nextion commands
+uint8_t nextionMaxPages = 11;                         // Maximum number of pages in Nextion project
 uint32_t tftFileSize = 0;                             // Filesize for TFT firmware upload
 const uint8_t nextionResetPin = D6;                   // Pin for Nextion power rail switch (GPIO12/D6)
 const unsigned long nextionSpeeds[] = {2400,
@@ -218,7 +219,9 @@ void setup()
   webServer.on("/firmware", webHandleFirmware);
   webServer.on("/espfirmware", webHandleEspFirmware);
   webServer.on(
-      "/lcdupload", HTTP_POST, []() { webServer.send(200); }, webHandleLcdUpload);
+      "/lcdupload", HTTP_POST, []()
+      { webServer.send(200); },
+      webHandleLcdUpload);
   webServer.on("/tftFileSize", webHandleTftFileSize);
   webServer.on("/lcddownload", webHandleLcdDownload);
   webServer.on("/lcdOtaSuccess", webHandleLcdUpdateSuccess);
@@ -515,6 +518,16 @@ void mqttConnect()
     }
   }
   rebootOnp0b1 = false;
+  if (nextionActivePage < 0)
+  { // We never picked up a message giving us a page number, so we'll just go to the default page
+    debugPrintln(String(F("DEBUG: NextionActivePage not received from MQTT, setting to 0")));
+    String mqttButtonJSONEvent = String(F("{\"event\":\"page\",\"value\":0}"));
+    debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+    mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent, false, 0);
+    String mqttPageTopic = mqttStateTopic + "/page";
+    debugPrintln(String(F("MQTT OUT: '")) + mqttPageTopic + String(F("' : '0'")));
+    mqttClient.publish(mqttPageTopic, "0", false, 0);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -753,47 +766,47 @@ void mqttDiscovery()
   String macAddress = String(espMac[0], HEX) + String(F(":")) + String(espMac[1], HEX) + String(F(":")) + String(espMac[2], HEX) + String(F(":")) + String(espMac[3], HEX) + String(F(":")) + String(espMac[4], HEX) + String(F(":")) + String(espMac[5], HEX);
 
   // light discovery for backlight
-  String mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/config"));
+  String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/config"));
   String mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" backlight\",\"command_topic\":\"")) + mqttLightCommandTopic + String(F("\",\"state_topic\":\"")) + mqttLightStateTopic + String(F("\",\"brightness_state_topic\":\"")) + mqttLightBrightStateTopic + String(F("\",\"brightness_command_topic\":\"")) + mqttLightBrightCommandTopic + String(F("\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"brightness_scale\":100,\"unique_id\":\"")) + mqttClientId + String(F("-backlight\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // sensor discovery for device telemetry
-  mqttDiscoveryTopic = String(F("homeassistant/sensor/")) + String(haspNode) + String(F("/config"));
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/sensor/")) + String(haspNode) + String(F("/config"));
   mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" sensor\",\"json_attributes_topic\":\"")) + mqttSensorTopic + String(F("\",\"state_topic\":\"")) + mqttStatusTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-sensor\",\"icon\":\"mdi:cellphone-text\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // number discovery for active page
-  mqttDiscoveryTopic = String(F("homeassistant/number/")) + String(haspNode) + String(F("/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" active page\",\"command_topic\":\"")) + mqttCommandTopic + String(F("/page\",\"state_topic\":\"")) + mqttStateTopic + String(F("/page\",\"retain\":true,\"optimistic\":true,\"icon\":\"mdi:page-next-outline\",\"unique_id\":\"")) + mqttClientId + String(F("-page\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/number/")) + String(haspNode) + String(F("/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" active page\",\"command_topic\":\"")) + mqttCommandTopic + String(F("/page\",\"state_topic\":\"")) + mqttStateTopic + String(F("/page\",\"step\":1,\"min\":0,\"max\":")) + String(nextionMaxPages) + String(F(",\"retain\":true,\"optimistic\":true,\"icon\":\"mdi:page-next-outline\",\"unique_id\":\"")) + mqttClientId + String(F("-page\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // AlwaysOn topic for RGB lights
   mqttClient.publish((String(F("hasp/")) + String(haspNode) + String(F("/alwayson"))), "ON", true, 1);
-  debugPrintln(String(F("MQTT OUT: 'hasp/"))+ String(haspNode) + String(F("/alwayson' : 'ON'")));
+  debugPrintln(String(F("MQTT OUT: 'hasp/")) + String(haspNode) + String(F("/alwayson' : 'ON'")));
 
   // rgb light discovery for selectedforegroundcolor
-  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/selectedforegroundcolor/config"));
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/selectedforegroundcolor/config"));
   mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" selected foreground color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedforegroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // rgb light discovery for selectedbackgroundcolor
-  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/selectedbackgroundcolor/config"));
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/selectedbackgroundcolor/config"));
   mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" selected background color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedbackgroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // rgb light discovery for unselectedforegroundcolor
-  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/unselectedforegroundcolor/config"));
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/unselectedforegroundcolor/config"));
   mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" unselected foreground color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedforegroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // rgb light discovery for unselectedbackgroundcolor
-  mqttDiscoveryTopic = String(F("homeassistant/light/")) + String(haspNode) + String(F("/unselectedbackgroundcolor/config"));
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/unselectedbackgroundcolor/config"));
   mqttDiscoveryPayload = String(F("{\"name\":\"")) + String(haspNode) + String(F(" unselected background color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedbackgroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
@@ -801,7 +814,7 @@ void mqttDiscovery()
   if (motionEnabled)
   { // binary_sensor for motion
     String macAddress = String(espMac[0], HEX) + String(F(":")) + String(espMac[1], HEX) + String(F(":")) + String(espMac[2], HEX) + String(F(":")) + String(espMac[3], HEX) + String(F(":")) + String(espMac[4], HEX) + String(F(":")) + String(espMac[5], HEX);
-    String mqttDiscoveryTopic = String(F("homeassistant/binary_sensor/")) + String(haspNode) + String(F("-motion/config"));
+    String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/binary_sensor/")) + String(haspNode) + String(F("-motion/config"));
     String mqttDiscoveryPayload = String(F("{\"device_class\":\"motion\",\"name\":\"")) + String(haspNode) + String(F(" motion\",\"state_topic\":\"")) + mqttMotionStateTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-motion\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
     mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
     debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
@@ -1079,12 +1092,22 @@ void nextionProcessInput()
       debugPrintln(String(F("HMI IN: [Button ON] 'p[")) + nextionPage + "].b[" + nextionButtonID + "]'");
       if (mqttClient.connected())
       {
-        String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
-        mqttClient.publish(mqttButtonTopic, "ON");
-        debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'ON'");
-        String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_press\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
-        mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
-        debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        // Only process touch events if screen backlight is on and configured to do so.
+        if (ignoreTouchWhenOff && !lcdBacklightOn)
+        {
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_press_disabled\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        }
+        else
+        {
+          String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
+          mqttClient.publish(mqttButtonTopic, "ON");
+          debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'ON'");
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_press\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        }
       }
       if (beepEnabled)
       {
@@ -1098,25 +1121,34 @@ void nextionProcessInput()
         espReset();
       }
     }
-    if (nextionButtonAction == 0x00)
+    else if (nextionButtonAction == 0x00)
     {
       debugPrintln(String(F("HMI IN: [Button OFF] 'p[")) + nextionPage + "].b[" + nextionButtonID + "]'");
       if (mqttClient.connected())
       {
-        String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
-        mqttClient.publish(mqttButtonTopic, "OFF");
-        debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'OFF'");
-        String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_release\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"OFF\"}"));
-        mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
-        debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
-        // Now see if this object has a .val that might have been updated.  Works for sliders,
-        // two-state buttons, etc, returns 0 for normal buttons
-        mqttGetSubtopic = "/p[" + nextionPage + "].b[" + nextionButtonID + "].val";
-        mqttGetSubtopicJSON = "p[" + nextionPage + "].b[" + nextionButtonID + "].val";
-        // This right here is dicey.  We're done w/ this command so reset the index allowing this to be kinda-reentrant
-        // because the call to nextionGetAttr is going to call us back.
-        nextionReturnIndex = 0;
-        nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
+        // Only process touch events if screen backlight is on and configured to do so.
+        if (ignoreTouchWhenOff && !lcdBacklightOn)
+        {
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_release_disabled\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"ON\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+        }
+        else
+        {
+          String mqttButtonTopic = mqttStateTopic + "/p[" + nextionPage + "].b[" + nextionButtonID + "]";
+          mqttClient.publish(mqttButtonTopic, "OFF");
+          debugPrintln(String(F("MQTT OUT: '")) + mqttButtonTopic + "' : 'OFF'");
+          String mqttButtonJSONEvent = String(F("{\"event_type\":\"button_short_release\",\"event\":\"p[")) + nextionPage + String(F("].b[")) + nextionButtonID + String(F("]\",\"value\":\"OFF\"}"));
+          mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
+          debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
+          // Now see if this object has a .val that might have been updated.  Works for sliders,
+          // two-state buttons, etc, returns 0 for normal buttons
+          mqttGetSubtopic = "/p[" + nextionPage + "].b[" + nextionButtonID + "].val";
+          // This right here is dicey.  We're done w/ this command so reset the index allowing this to be kinda-reentrant
+          // because the call to nextionGetAttr is going to call us back.
+          nextionReturnIndex = 0;
+          nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
+        }
       }
     }
   }
@@ -1127,7 +1159,6 @@ void nextionProcessInput()
     // Meaning: page 2
     String nextionPage = String(nextionReturnBuffer[1]);
     debugPrintln(String(F("HMI IN: [sendme Page] '")) + nextionPage + String(F("'")));
-    // if ((nextionActivePage != nextionPage.toInt()) && ((nextionPage != "0") || nextionReportPage0))
     if ((nextionPage != "0") || nextionReportPage0)
     { // If we have a new page AND ( (it's not "0") OR (we've set the flag to report 0 anyway) )
 
@@ -1221,7 +1252,7 @@ void nextionProcessInput()
         String mqttReturnTopic = mqttStateTopic + mqttGetSubtopic;
         mqttClient.publish(mqttReturnTopic, getString);
         debugPrintln(String(F("MQTT OUT: '")) + mqttReturnTopic + String(F("' : '")) + getString + String(F("'")));
-        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopicJSON + String(F("\",\"value\":\"")) + getString + String(F("\"}"));
+        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopic.substring(1) + String(F("\",\"value\":\"")) + getString + String(F("\"}"));
         mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
         debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
         mqttGetSubtopic = "";
@@ -1276,7 +1307,7 @@ void nextionProcessInput()
         String mqttReturnTopic = mqttStateTopic + mqttGetSubtopic;
         mqttClient.publish(mqttReturnTopic, getString);
         debugPrintln(String(F("MQTT OUT: '")) + mqttReturnTopic + String(F("' : '")) + getString + String(F("'")));
-        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopicJSON + String(F("\",\"value\":")) + getString + String(F("}"));
+        String mqttButtonJSONEvent = String(F("{\"event\":\"")) + mqttGetSubtopic.substring(1) + String(F("\",\"value\":")) + getString + String(F("}"));
         mqttClient.publish(mqttStateJSONTopic, mqttButtonJSONEvent);
         debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F("' : '")) + mqttButtonJSONEvent + String(F("'")));
       }
@@ -1850,7 +1881,7 @@ void espWifiConnect()
     { // We gave it a shot, still couldn't connect, so let WiFiManager run to make one last
       // connection attempt and then flip to AP mode to collect credentials from the user.
 
-      WiFiManagerParameter custom_haspNodeHeader("<br/><br/><b>HASP Node</b>");
+      WiFiManagerParameter custom_haspNodeHeader("<br/><b>HASP Node</b>");
       WiFiManagerParameter custom_haspNode("haspNode", "<br/>Node Name <small>(required: lowercase letters, numbers, and _ only)</small>", haspNode, 15, " maxlength=15 required pattern='[a-z0-9_]*'");
       WiFiManagerParameter custom_groupName("groupName", "Group Name <small>(required)</small>", groupName, 15, " maxlength=15 required");
       WiFiManagerParameter custom_mqttHeader("<br/><br/><b>MQTT</b>");
@@ -1871,8 +1902,10 @@ void espWifiConnect()
       WiFiManagerParameter custom_mqttTlsEnabled("mqttTlsEnabled", "MQTT TLS enabled:", mqttTlsEnabled_value.c_str(), 2, mqttTlsEnabled_checked.c_str());
       WiFiManagerParameter custom_mqttFingerprint("mqttFingerprint", "</br>MQTT TLS Fingerprint <small>(optional, enter as 01:23:AB:CD, etc)</small>", mqttFingerprint, 60, " min length=59 maxlength=59");
       WiFiManagerParameter custom_configHeader("<br/><br/><b>Admin access</b>");
-      WiFiManagerParameter custom_configUser("configUser", "<br/>Config User <small>(required)</small>", configUser, 15, " maxlength=31'");
+      WiFiManagerParameter custom_configUser("configUser", "<br/>Config User <small>(required)</small>", configUser, 15, " maxlength=31");
       WiFiManagerParameter custom_configPassword("configPassword", "Config Password <small>(optional)</small>", configPassword, 31, " maxlength=31 type='password'");
+      WiFiManagerParameter custom_hassHeader("<br/><br/><b>Home Assistant integration</b>");
+      WiFiManagerParameter custom_hassDiscovery("hassDiscovery", "<br/>Home Assistant Discovery topic <small>(required, should probably be \"homeassistant\")</small>", hassDiscovery, 127, " maxlength=127");
 
       WiFiManager wifiManager;
       wifiManager.setSaveConfigCallback(configSaveCallback); // set config save notify callback
@@ -1890,6 +1923,8 @@ void espWifiConnect()
       wifiManager.addParameter(&custom_configHeader);
       wifiManager.addParameter(&custom_configUser);
       wifiManager.addParameter(&custom_configPassword);
+      wifiManager.addParameter(&custom_hassHeader);
+      wifiManager.addParameter(&custom_hassDiscovery);
 
       // Timeout config portal after connectTimeout seconds, useful if configured wifi network was temporarily unavailable
       wifiManager.setTimeout(connectTimeout);
@@ -1923,7 +1958,7 @@ void espWifiConnect()
       strcpy(groupName, custom_groupName.getValue());
       strcpy(configUser, custom_configUser.getValue());
       strcpy(configPassword, custom_configPassword.getValue());
-
+      strcpy(hassDiscovery, custom_hassDiscovery.getValue());
       if (shouldSaveConfig)
       { // Save the custom parameters to FS
         configSave();
@@ -2000,39 +2035,41 @@ void espSetupOta()
   ArduinoOTA.setPassword(configPassword);
   ArduinoOTA.setRebootOnSuccess(false);
 
-  ArduinoOTA.onStart([]() {
-    debugPrintln(F("ESP OTA: update start"));
-    nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r\\r \"");
-    nextionSendCmd("page 0");
-    nextionSendCmd("vis 4,1");
-  });
-  ArduinoOTA.onEnd([]() {
-    debugPrintln(F("ESP OTA: update complete"));
-    nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r Complete!\\rRestarting.\"");
-    nextionSendCmd("vis 4,1");
-    delay(1000);
-    espReset();
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    nextionUpdateProgress(progress, total);
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    debugPrintln(String(F("ESP OTA: ERROR code ")) + String(error));
-    if (error == OTA_AUTH_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Auth Failed"));
-    else if (error == OTA_BEGIN_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Begin Failed"));
-    else if (error == OTA_CONNECT_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Connect Failed"));
-    else if (error == OTA_RECEIVE_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - Receive Failed"));
-    else if (error == OTA_END_ERROR)
-      debugPrintln(F("ESP OTA: ERROR - End Failed"));
-    nextionSendCmd("vis 4,0");
-    nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\r FAILED\\rerror: " + String(error) + "\"");
-    delay(1000);
-    nextionSendCmd("page " + String(nextionActivePage));
-  });
+  ArduinoOTA.onStart([]()
+                     {
+                       debugPrintln(F("ESP OTA: update start"));
+                       nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r\\r \"");
+                       nextionSendCmd("page 0");
+                       nextionSendCmd("vis 4,1");
+                     });
+  ArduinoOTA.onEnd([]()
+                   {
+                     debugPrintln(F("ESP OTA: update complete"));
+                     nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r Complete!\\rRestarting.\"");
+                     nextionSendCmd("vis 4,1");
+                     delay(1000);
+                     espReset();
+                   });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
+                        { nextionUpdateProgress(progress, total); });
+  ArduinoOTA.onError([](ota_error_t error)
+                     {
+                       debugPrintln(String(F("ESP OTA: ERROR code ")) + String(error));
+                       if (error == OTA_AUTH_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Auth Failed"));
+                       else if (error == OTA_BEGIN_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Begin Failed"));
+                       else if (error == OTA_CONNECT_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Connect Failed"));
+                       else if (error == OTA_RECEIVE_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - Receive Failed"));
+                       else if (error == OTA_END_ERROR)
+                         debugPrintln(F("ESP OTA: ERROR - End Failed"));
+                       nextionSendCmd("vis 4,0");
+                       nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\r FAILED\\rerror: " + String(error) + "\"");
+                       delay(1000);
+                       nextionSendCmd("page " + String(nextionActivePage));
+                     });
   ArduinoOTA.begin();
   debugPrintln(F("ESP OTA: Over the Air firmware update ready"));
 }
@@ -2123,7 +2160,7 @@ void configRead()
       File configFile = SPIFFS.open("/config.json", "r");
       if (configFile)
       {
-        DynamicJsonDocument jsonConfigValues(1024);
+        DynamicJsonDocument jsonConfigValues(1536);
         DeserializationError jsonError = deserializeJson(jsonConfigValues, configFile);
 
         if (jsonError)
@@ -2168,9 +2205,22 @@ void configRead()
           {
             strcpy(configPassword, jsonConfigValues["configPassword"]);
           }
+          if (!jsonConfigValues["hassDiscovery"].isNull())
+          {
+            strcpy(hassDiscovery, jsonConfigValues["hassDiscovery"]);
+          }
+          if (strcmp(hassDiscovery, "") == 0)
+          { // Cover off any edge case where this value winds up being empty
+            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty hassDiscovery value, setting to 'homeassistant'"));
+            strcpy(hassDiscovery, "homeassistant");
+          }
           if (!jsonConfigValues["nextionBaud"].isNull())
           {
             strcpy(nextionBaud, jsonConfigValues["nextionBaud"]);
+          }
+          if (!jsonConfigValues["nextionMaxPages"].isNull())
+          {
+            nextionMaxPages = jsonConfigValues["nextionMaxPages"];
           }
           if (!jsonConfigValues["motionPinConfig"].isNull())
           {
@@ -2231,6 +2281,17 @@ void configRead()
               beepEnabled = false;
             }
           }
+          if (!jsonConfigValues["ignoreTouchWhenOff"].isNull())
+          {
+            if (jsonConfigValues["ignoreTouchWhenOff"])
+            {
+              ignoreTouchWhenOff = true;
+            }
+            else
+            {
+              ignoreTouchWhenOff = false;
+            }
+          }
           String jsonConfigValuesStr;
           serializeJson(jsonConfigValues, jsonConfigValuesStr);
           debugPrintln(String(F("SPIFFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
@@ -2264,7 +2325,7 @@ void configSave()
 { // Save the custom parameters to config.json
   nextionSetAttr("p[0].b[1].txt", "\"Saving\\rconfig\"");
   debugPrintln(F("SPIFFS: Saving config"));
-  DynamicJsonDocument jsonConfigValues(1024);
+  DynamicJsonDocument jsonConfigValues(1536);
 
   jsonConfigValues["mqttServer"] = mqttServer;
   jsonConfigValues["mqttPort"] = mqttPort;
@@ -2276,12 +2337,15 @@ void configSave()
   jsonConfigValues["groupName"] = groupName;
   jsonConfigValues["configUser"] = configUser;
   jsonConfigValues["configPassword"] = configPassword;
+  jsonConfigValues["hassDiscovery"] = hassDiscovery;
   jsonConfigValues["nextionBaud"] = nextionBaud;
+  jsonConfigValues["nextionMaxPages"] = nextionMaxPages;
   jsonConfigValues["motionPinConfig"] = motionPinConfig;
   jsonConfigValues["debugSerialEnabled"] = debugSerialEnabled;
   jsonConfigValues["debugTelnetEnabled"] = debugTelnetEnabled;
   jsonConfigValues["mdnsEnabled"] = mdnsEnabled;
   jsonConfigValues["beepEnabled"] = beepEnabled;
+  jsonConfigValues["ignoreTouchWhenOff"] = ignoreTouchWhenOff;
 
   debugPrintln(String(F("SPIFFS: mqttServer = ")) + String(mqttServer));
   debugPrintln(String(F("SPIFFS: mqttPort = ")) + String(mqttPort));
@@ -2293,12 +2357,15 @@ void configSave()
   debugPrintln(String(F("SPIFFS: groupName = ")) + String(groupName));
   debugPrintln(String(F("SPIFFS: configUser = ")) + String(configUser));
   debugPrintln(String(F("SPIFFS: configPassword = ")) + String(configPassword));
+  debugPrintln(String(F("SPIFFS: hassDiscovery = ")) + String(hassDiscovery));
   debugPrintln(String(F("SPIFFS: nextionBaud = ")) + String(nextionBaud));
+  debugPrintln(String(F("SPIFFS: nextionMaxPages = ")) + String(nextionMaxPages));
   debugPrintln(String(F("SPIFFS: motionPinConfig = ")) + String(motionPinConfig));
   debugPrintln(String(F("SPIFFS: debugSerialEnabled = ")) + String(debugSerialEnabled));
   debugPrintln(String(F("SPIFFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
   debugPrintln(String(F("SPIFFS: mdnsEnabled = ")) + String(mdnsEnabled));
   debugPrintln(String(F("SPIFFS: beepEnabled = ")) + String(beepEnabled));
+  debugPrintln(String(F("SPIFFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
 
   File configFile = SPIFFS.open("/config.json", "w");
   if (!configFile)
@@ -2341,7 +2408,7 @@ void webHandleNotFound()
 { // webServer 404
   debugPrintln(String(F("HTTP: Sending 404 to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " 404");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " 404");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(404, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2377,7 +2444,7 @@ void webHandleRoot()
   debugPrintln(String(F("HTTP: Sending root page to client connected from: ")) + webServer.client().remoteIP().toString());
 
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode));
+  httpHeader.replace("{v}", "HASPone " + String(haspNode));
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent(httpHeader);
@@ -2442,8 +2509,17 @@ void webHandleRoot()
   {
     webServer.sendContent(F("********"));
   }
+  webServer.sendContent(F("'><br/><br/><b>Home Assistant discovery topic</b> <i><small>(required, should probably be \"homeassistant\")</small></i><input id='hassDiscovery' name='hassDiscovery' maxlength=127 placeholder='homeassistant' value='"));
+  if (strcmp(hassDiscovery, "") != 0)
+  {
+    webServer.sendContent(hassDiscovery);
+  }
+  webServer.sendContent(F("'><br/><b>Nextion project page count</b> <i><small>(required, probably \"11\")</small></i><input id='nextionMaxPages' required name='nextionMaxPages' type='number' maxlength=2 placeholder='nextionMaxPages' value='"));
+  if (nextionMaxPages != 0)
+  {
+    webServer.sendContent(String(nextionMaxPages));
+  }
   webServer.sendContent(F("'><br/><hr>"));
-
   // Big menu of possible serial speeds
   if ((lcdVersion != 1) && (lcdVersion != 2))
   { // HASP lcdVersion 1 and 2 have `bauds=115200` in the pre-init script of page 0.  Don't show this option if either of those two versions are running.
@@ -2467,7 +2543,22 @@ void webHandleRoot()
     webServer.sendContent(F("</select><br/>"));
   }
 
-  webServer.sendContent(F("<b>Motion Sensor Pin:&nbsp;</b><select id='motionPinConfig' name='motionPinConfig'><option value='0'"));
+  webServer.sendContent(F("<b>USB serial debug output enabled:</b><input id='debugSerialEnabled' name='debugSerialEnabled' type='checkbox'"));
+  if (debugSerialEnabled)
+  {
+    webServer.sendContent(F(" checked='checked'"));
+  }
+  webServer.sendContent(F("><br/><b>Telnet debug output enabled:</b><input id='debugTelnetEnabled' name='debugTelnetEnabled' type='checkbox'"));
+  if (debugTelnetEnabled)
+  {
+    webServer.sendContent(F(" checked='checked'"));
+  }
+  webServer.sendContent(F("><br/><b>mDNS enabled:</b><input id='mdnsEnabled' name='mdnsEnabled' type='checkbox'"));
+  if (mdnsEnabled)
+  {
+    webServer.sendContent(F(" checked='checked'"));
+  }
+  webServer.sendContent(F("><br/><b>Motion Sensor Pin:&nbsp;</b><select id='motionPinConfig' name='motionPinConfig'><option value='0'"));
   if (!motionPin)
   {
     webServer.sendContent(F(" selected"));
@@ -2488,18 +2579,8 @@ void webHandleRoot()
   {
     webServer.sendContent(F(" checked='checked'"));
   }
-  webServer.sendContent(F("><br/><b>USB serial debug output enabled:</b><input id='debugSerialEnabled' name='debugSerialEnabled' type='checkbox'"));
-  if (debugSerialEnabled)
-  {
-    webServer.sendContent(F(" checked='checked'"));
-  }
-  webServer.sendContent(F("><br/><b>Telnet debug output enabled:</b><input id='debugTelnetEnabled' name='debugTelnetEnabled' type='checkbox'"));
-  if (debugTelnetEnabled)
-  {
-    webServer.sendContent(F(" checked='checked'"));
-  }
-  webServer.sendContent(F("><br/><b>mDNS enabled:</b><input id='mdnsEnabled' name='mdnsEnabled' type='checkbox'"));
-  if (mdnsEnabled)
+  webServer.sendContent(F("><br/><b>Ignore touchevents when backlight is off:</b><input id='ignoreTouchWhenOff' name='ignoreTouchWhenOff' type='checkbox'"));
+  if (ignoreTouchWhenOff)
   {
     webServer.sendContent(F(" checked='checked'"));
   }
@@ -2615,7 +2696,7 @@ void webHandleSaveConfig()
   }
   debugPrintln(String(F("HTTP: Sending /saveConfig page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Saving configuration");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Saving configuration");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2696,7 +2777,16 @@ void webHandleSaveConfig()
     shouldSaveConfig = true;
     webServer.arg("configPassword").toCharArray(configPassword, 32);
   }
-
+  if (webServer.arg("hassDiscovery") != String(hassDiscovery))
+  { // Handle hassDiscovery
+    shouldSaveConfig = true;
+    webServer.arg("hassDiscovery").toCharArray(hassDiscovery, 128);
+  }
+  if (webServer.arg("nextionMaxPages") != String(nextionMaxPages))
+  { // Handle nextionMaxPages
+    shouldSaveConfig = true;
+    nextionMaxPages = webServer.arg("nextionMaxPages").toInt();
+  }
   if (webServer.arg("nextionBaud") != String(nextionBaud))
   { // Handle nextionBaud
     shouldSaveConfig = true;
@@ -2747,6 +2837,16 @@ void webHandleSaveConfig()
     shouldSaveConfig = true;
     beepEnabled = false;
   }
+  if ((webServer.arg("ignoreTouchWhenOff") == String("on")) && !ignoreTouchWhenOff)
+  { // ignoreTouchWhenOff was disabled but should now be enabled
+    shouldSaveConfig = true;
+    ignoreTouchWhenOff = true;
+  }
+  else if ((webServer.arg("ignoreTouchWhenOff") == String("")) && ignoreTouchWhenOff)
+  { // ignoreTouchWhenOff was enabled but should now be disabled
+    shouldSaveConfig = true;
+    ignoreTouchWhenOff = false;
+  }
 
   if (shouldSaveConfig)
   { // Config updated, notify user and trigger write to SPIFFS
@@ -2792,7 +2892,7 @@ void webHandleResetConfig()
   }
   debugPrintln(String(F("HTTP: Sending /resetConfig page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Resetting configuration");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Resetting configuration");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2834,7 +2934,7 @@ void webHandleResetBacklight()
   }
   debugPrintln(String(F("HTTP: Sending /resetBacklight page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Backlight reset");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Backlight reset");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2865,7 +2965,7 @@ void webHandleFirmware()
   }
   debugPrintln(String(F("HTTP: Sending /firmware page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Firmware updates");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Firmware updates");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2939,7 +3039,7 @@ void webHandleEspFirmware()
 
   debugPrintln(String(F("HTTP: Sending /espfirmware page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " ESP8266 firmware update");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " ESP8266 firmware update");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2984,7 +3084,7 @@ void webHandleLcdUpload()
   {
     debugPrintln(String(F("LCDOTA: FAILED, no filesize sent.")));
     String httpHeader = FPSTR(HTTP_HEAD_START);
-    httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD update error");
+    httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD update error");
     webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
     webServer.send(200, "text/html", httpHeader);
     webServer.sendContent_P(HTTP_SCRIPT);
@@ -3207,7 +3307,7 @@ void webHandleLcdUpdateSuccess()
   }
   debugPrintln(String(F("HTTP: Sending /lcdOtaSuccess page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD firmware update success");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD firmware update success");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3235,7 +3335,7 @@ void webHandleLcdUpdateFailure()
   }
   debugPrintln(String(F("HTTP: Sending /lcdOtaFailure page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD firmware update failed");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD firmware update failed");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3263,7 +3363,7 @@ void webHandleLcdDownload()
   }
   debugPrintln(String(F("HTTP: Sending /lcddownload page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD firmware update");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD firmware update");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3292,7 +3392,7 @@ void webHandleTftFileSize()
   }
   debugPrintln(String(F("HTTP: Sending /tftFileSize page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " TFT Filesize");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " TFT Filesize");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_HEAD_END);
@@ -3312,7 +3412,7 @@ void webHandleReboot()
   }
   debugPrintln(String(F("HTTP: Sending /reboot page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " reboot");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " reboot");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
