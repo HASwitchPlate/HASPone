@@ -2408,7 +2408,7 @@ void webHandleNotFound()
 { // webServer 404
   debugPrintln(String(F("HTTP: Sending 404 to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " 404");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " 404");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(404, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2444,7 +2444,7 @@ void webHandleRoot()
   debugPrintln(String(F("HTTP: Sending root page to client connected from: ")) + webServer.client().remoteIP().toString());
 
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode));
+  httpHeader.replace("{v}", "HASPone " + String(haspNode));
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent(httpHeader);
@@ -2696,7 +2696,7 @@ void webHandleSaveConfig()
   }
   debugPrintln(String(F("HTTP: Sending /saveConfig page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Saving configuration");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Saving configuration");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2892,7 +2892,7 @@ void webHandleResetConfig()
   }
   debugPrintln(String(F("HTTP: Sending /resetConfig page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Resetting configuration");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Resetting configuration");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2934,7 +2934,7 @@ void webHandleResetBacklight()
   }
   debugPrintln(String(F("HTTP: Sending /resetBacklight page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Backlight reset");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Backlight reset");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -2965,7 +2965,7 @@ void webHandleFirmware()
   }
   debugPrintln(String(F("HTTP: Sending /firmware page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " Firmware updates");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " Firmware updates");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3039,7 +3039,7 @@ void webHandleEspFirmware()
 
   debugPrintln(String(F("HTTP: Sending /espfirmware page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " ESP8266 firmware update");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " ESP8266 firmware update");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3084,7 +3084,7 @@ void webHandleLcdUpload()
   {
     debugPrintln(String(F("LCDOTA: FAILED, no filesize sent.")));
     String httpHeader = FPSTR(HTTP_HEAD_START);
-    httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD update error");
+    httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD update error");
     webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
     webServer.send(200, "text/html", httpHeader);
     webServer.sendContent_P(HTTP_SCRIPT);
@@ -3307,7 +3307,7 @@ void webHandleLcdUpdateSuccess()
   }
   debugPrintln(String(F("HTTP: Sending /lcdOtaSuccess page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD firmware update success");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD firmware update success");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3335,7 +3335,7 @@ void webHandleLcdUpdateFailure()
   }
   debugPrintln(String(F("HTTP: Sending /lcdOtaFailure page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD firmware update failed");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD firmware update failed");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3363,7 +3363,7 @@ void webHandleLcdDownload()
   }
   debugPrintln(String(F("HTTP: Sending /lcddownload page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " LCD firmware update");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " LCD firmware update");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
@@ -3392,7 +3392,7 @@ void webHandleTftFileSize()
   }
   debugPrintln(String(F("HTTP: Sending /tftFileSize page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " TFT Filesize");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " TFT Filesize");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_HEAD_END);
@@ -3412,7 +3412,7 @@ void webHandleReboot()
   }
   debugPrintln(String(F("HTTP: Sending /reboot page to client connected from: ")) + webServer.client().remoteIP().toString());
   String httpHeader = FPSTR(HTTP_HEAD_START);
-  httpHeader.replace("{v}", "HASwitchPlate " + String(haspNode) + " reboot");
+  httpHeader.replace("{v}", "HASPone " + String(haspNode) + " reboot");
   webServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   webServer.send(200, "text/html", httpHeader);
   webServer.sendContent_P(HTTP_SCRIPT);
