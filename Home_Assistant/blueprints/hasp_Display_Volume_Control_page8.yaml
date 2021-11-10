@@ -2,6 +2,8 @@ blueprint:
   name: "HASP p[8].b[9] The slider button on page 8 displays a volume control"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     The slider button on page 8 displays a volume control
@@ -64,10 +66,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   unselectedbg: >-
     {%- set color = namespace() -%}
@@ -76,12 +78,12 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
-  volume: '{% if state_attr(volumeentity, "volume_level")|lower == "none" %}0{% else %}{{(state_attr(volumeentity, "volume_level")*255)|int}}{% endif %}'
+  volume: '{{(state_attr(volumeentity, "volume_level")|float(default=0)*255)|int}}'
 
 trigger_variables:
   haspdevice: !input haspdevice
@@ -173,7 +175,7 @@ action:
                   - service: media_player.volume_set
                     entity_id: !input volumeentity
                     data:
-                      volume_level: "{{ (trigger.payload | int) / 255 }}"
+                      volume_level: "{{ (trigger.payload | int(default=0)) / 255 }}"
               #########################################################################
               # Theme: Apply unselected foreground color on change
               - conditions:

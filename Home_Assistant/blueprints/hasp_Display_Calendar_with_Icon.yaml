@@ -2,6 +2,8 @@ blueprint:
   name: "HASP p[x].b[y] displays the month + date with a calendar icon"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     A HASP button displays month + date on the right with a calendar icon on the left.
@@ -79,7 +81,7 @@ variables:
         {%- set activepage.entity=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
+    {{ states(activepage.entity) | int(default=-1) }}
   selectedfg: >-
     {%- set color = namespace() -%}
     {%- for entity in device_entities(haspdevice) -%}
@@ -87,10 +89,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   selectedbg: >-
     {%- set color = namespace() -%}
@@ -99,10 +101,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   unselectedfg: >-
     {%- set color = namespace() -%}
@@ -111,10 +113,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   unselectedbg: >-
     {%- set color = namespace() -%}
@@ -123,10 +125,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   text: '{{(now().strftime("%b "))~now().day}}'
   font: 8

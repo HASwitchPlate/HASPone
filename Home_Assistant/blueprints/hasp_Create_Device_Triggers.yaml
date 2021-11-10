@@ -2,6 +2,8 @@ blueprint:
   name: "HASP create device triggers"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     Create [Device Triggers](https://www.home-assistant.io/integrations/device_trigger.mqtt/) for each of the HASP buttons defined below.  Device triggers can be utilized while creating your own automations through the Home Assistant UI.

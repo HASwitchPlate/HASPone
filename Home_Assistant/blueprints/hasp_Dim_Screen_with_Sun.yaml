@@ -2,6 +2,8 @@ blueprint:
   name: "HASP dims the backlight with the sun"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     Dim the HASPone backlight in response to the sun going up and down.
@@ -91,9 +93,9 @@ condition:
   - condition: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
   - condition: template
-    value_template: "{{ state_attr('sun.sun', 'elevation') | round <= elevationday }}"
+    value_template: "{{ state_attr('sun.sun', 'elevation') | round(default=90) <= elevationday }}"
   - condition: template
-    value_template: "{{ state_attr('sun.sun', 'elevation') | round >= elevationnight }}"
+    value_template: "{{ state_attr('sun.sun', 'elevation') | round(default=-90) >= elevationnight }}"
 
 action:
   - choose:
@@ -101,7 +103,7 @@ action:
       # Sun elevation is approximately equal to or greater than daytime value, send brightday
       - conditions:
           - condition: template
-            value_template: "{{ state_attr('sun.sun', 'elevation') | round >= elevationday }}"
+            value_template: "{{ state_attr('sun.sun', 'elevation') | round(default=0) >= elevationday }}"
         sequence:
           - service: mqtt.publish
             data:
@@ -111,7 +113,7 @@ action:
       # Sun elevation is approximately equal to or less than nighttime value, send brightnight
       - conditions:
           - condition: template
-            value_template: "{{ state_attr('sun.sun', 'elevation') | round <= elevationnight }}"
+            value_template: "{{ state_attr('sun.sun', 'elevation') | round(default=0) <= elevationnight }}"
         sequence:
           - service: mqtt.publish
             data:
@@ -123,4 +125,4 @@ action:
       - service: mqtt.publish
         data:
           topic: "{{ lightcommandtopic }}"
-          payload: "{{ (brightnight + ((brightday - brightnight) / (elevationday - elevationnight)) * (state_attr('sun.sun', 'elevation') - elevationnight)) | round | int }}"
+          payload: "{{ (brightnight + ((brightday - brightnight) / (elevationday - elevationnight)) * (state_attr('sun.sun', 'elevation') - elevationnight)) | round(default=0) | int }}"

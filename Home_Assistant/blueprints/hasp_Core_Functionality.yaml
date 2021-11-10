@@ -2,7 +2,7 @@ blueprint:
   name: "HASP Core functionality"
   description: |
 
-    ## Blueprint Version: `1.02`
+    ## Blueprint Version: `1.03.00`
 
     ## Description
 
@@ -250,7 +250,7 @@ variables:
         {%- set activepage.entity=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
+    {{ states(activepage.entity) | int(default=-1) }}
   statetopic: '{{ "hasp/" ~ haspname ~ "/state" }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
@@ -569,10 +569,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco2={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -589,10 +589,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco2={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -609,10 +609,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -629,10 +629,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -668,10 +668,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco2={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -688,10 +688,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco2={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -708,10 +708,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco={{colorcode}}",{%- endfor -%}{%- endif -%}
@@ -728,10 +728,10 @@ action:
                     {%- set color.source=entity -%}
                   {%- endif -%}
                 {%- endfor -%}
-                {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+                {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+                {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+                {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+                {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
                 {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
                 [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco={{colorcode}}",{%- endfor -%}{%- endif -%}

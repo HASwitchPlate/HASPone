@@ -1,12 +1,14 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the current weather temperature with icon and colors"
+  name: "HASP p[x].b[y] displays the current temperature from a weather provider with icon and colors"
   description: |
+
+    ## Blueprint Version: `1.03.00`
 
     # Description
 
-    A HASP button displays the current weather temperature on the right with a dynamic thermometer icon on the left and (optional) colors.
+    A HASP button displays the current temperature from a weather provider on the right with a dynamic thermometer icon on the left and (optional) colors.
 
-    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_with_Icon_and_Colors.png)
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Temperature_with_Icon_and_Colors.png)
 
     ## HASP Page and Button reference
 
@@ -220,7 +222,7 @@ variables:
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
   temperature: >-
     {%- if roundtemp == true -%}
-      {{- state_attr(weather_provider, "temperature") | round -}}
+      {{- state_attr(weather_provider, "temperature") | round(default=0) -}}
     {%- else -%}
       {{- state_attr(weather_provider, "temperature") -}}
     {%- endif -%}
@@ -254,7 +256,7 @@ variables:
         {%- set activepage.entity=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
+    {{ states(activepage.entity) | int(default=-1) }}
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
@@ -266,10 +268,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   selectedbg: >-
     {%- set color = namespace() -%}
@@ -278,10 +280,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   unselectedfg: >-
     {%- set color = namespace() -%}
@@ -290,10 +292,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   unselectedbg: >-
     {%- set color = namespace() -%}
@@ -302,10 +304,10 @@ variables:
         {%- set color.source=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   tempcolor: >-
     {%- set temp = temperature|int -%}

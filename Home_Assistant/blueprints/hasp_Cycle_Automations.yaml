@@ -2,6 +2,8 @@ blueprint:
   name: "HASP p[x].b[y] cycles through multiple automations"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     ## Description
 
     A button on the HASP will toggle through as many as 10 selected automations.  This allows the user to assign multiple blueprints to the same button on the HASPone device, and to cycle between them by pressing the selected button.

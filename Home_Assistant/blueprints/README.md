@@ -106,26 +106,6 @@ Page 8 controls a selected media player with artist and track info, track back/p
 
 ---
 
-### Display Temperature with Colored Icon Only
-
-[![Display Temperature with Colored Icon Only](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Temperature_Color_Icon_Only.yaml)
-
-![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_Color_Icon_Only.png)
-
-A HASP button displays the current temperature as an icon that is optionally coloured.
-
----
-
-### Display Temperature with Icon and Colors
-
-[![Display Temperature with Icon and Colors](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Temperature_with_Icon_and_Colors.yaml)
-
-![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Temperature_with_Icon_and_Colors.png)
-
-A HASP button displays the current temperature from a selected weather provider on the right with a dynamic thermometer icon on the left and (optional) colors.
-
----
-
 ### Display Template
 
 [![Display Template](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Template.yaml)
@@ -183,6 +163,26 @@ A HASP button displays the current weather condition on the right with a matchin
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Forecast.png)
 
 A HASP button displays an attribute of a selected weather forecast. You can use this to display tomorrow's condition, or tonight's low temp. Available forecast conditions will vary by weather provider, check your selected provider's state under `Developer Tools` > `States` to get a sense of what your selected provider has to offer.
+
+---
+
+### Display Weather Temperature with Colored Icon Only
+
+[![Display Weather Temperature with Colored Icon Only](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Weather_Temperature_Color_Icon_Only.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Temperature_Color_Icon_Only.png)
+
+A HASP button displays the current temperature as an icon that is optionally coloured.
+
+---
+
+### Display Weather Temperature with Icon and Colors
+
+[![Display Weather Temperature with Icon and Colors](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Weather_Temperature_with_Icon_and_Colors.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Temperature_with_Icon_and_Colors.png)
+
+A HASP button displays the current temperature from a selected weather provider on the right with a dynamic thermometer icon on the left and (optional) colors.
 
 ---
 

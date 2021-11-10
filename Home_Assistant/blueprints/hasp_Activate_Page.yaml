@@ -2,6 +2,8 @@ blueprint:
   name: "HASP p[x].b[y] activates a page"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     A button on the HASP will activate a page when pressed.  Can be combined on a button with another blueprint which displays text.

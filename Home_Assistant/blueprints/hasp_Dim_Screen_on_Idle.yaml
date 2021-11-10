@@ -2,6 +2,8 @@ blueprint:
   name: "HASP dim the display screen after a specified period of inactivity"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     Dim the screen backlight after a specified period of inactivity.

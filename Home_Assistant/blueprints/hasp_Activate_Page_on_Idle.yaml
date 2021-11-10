@@ -2,6 +2,8 @@ blueprint:
   name: "HASP activates a selected page after a specified period of inactivity"
   description: |
 
+    ## Blueprint Version: `1.03.00`
+
     # Description
 
     Activates a selected page after a specified period of inactivity.
@@ -79,7 +81,7 @@ variables:
         {%- set activepage.entity=entity -%}
       {%- endif -%}
     {%- endfor -%}
-    {% if states(activepage.entity)|lower == "none" %}-1{% else %}{{ states(activepage.entity) | int }}{% endif %}
+    {{ states(activepage.entity) | int(default=-1) }}
 
 trigger_variables:
   haspdevice: !input haspdevice
