@@ -63,7 +63,7 @@ char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const float haspVersion = 1.03;                       // Current HASP software release version
+const float haspVersion = 1.04;                       // Current HASP software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -552,6 +552,7 @@ void mqttProcessInput(String &strTopic, String &strPayload)
   // '[...]/device/command/lcdupdate' -m '' = nextionOtaStartDownload("lcdFirmwareUrl")
   // '[...]/device/command/espupdate' -m 'http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin' = espStartOta("http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin")
   // '[...]/device/command/espupdate' -m '' = espStartOta("espFirmwareUrl")
+  // '[...]/device/command/beep' -m '100,200,3' = espStartOta("espFirmwareUrl")
 
   debugPrintln(String(F("MQTT IN: '")) + strTopic + String(F("' : '")) + strPayload + String(F("'")));
 
@@ -624,13 +625,13 @@ void mqttProcessInput(String &strTopic, String &strPayload)
   }
   else if (strTopic == (mqttCommandTopic + "/beep") || strTopic == (mqttGroupCommandTopic + "/beep"))
   { // '[...]/device/command/beep' == activate beep function
-    String mqqtvar1 = getSubtringField(strPayload, ',', 0);
-    String mqqtvar2 = getSubtringField(strPayload, ',', 1);
-    String mqqtvar3 = getSubtringField(strPayload, ',', 2);
+    String mqttvar1 = getSubtringField(strPayload, ',', 0);
+    String mqttvar2 = getSubtringField(strPayload, ',', 1);
+    String mqttvar3 = getSubtringField(strPayload, ',', 2);
 
-    beepOnTime = mqqtvar1.toInt();
-    beepOffTime = mqqtvar2.toInt();
-    beepCounter = mqqtvar3.toInt();
+    beepOnTime = mqttvar1.toInt();
+    beepOffTime = mqttvar2.toInt();
+    beepCounter = mqttvar3.toInt();
   }
   else if (strTopic == (mqttCommandTopic + "/crashtest"))
   { // '[...]/device/command/crashtest' -m 'divzero' == divide by zero
