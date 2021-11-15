@@ -2158,6 +2158,7 @@ void configRead()
     if (SPIFFS.exists("/config.json"))
     { // File exists, reading and loading
       debugPrintln(F("SPIFFS: reading /config.json"));
+      debugPrintFile("/config.json");
       File configFile = SPIFFS.open("/config.json", "r");
       if (configFile)
       {
@@ -2376,9 +2377,11 @@ void configSave()
   else
   {
     serializeJson(jsonConfigValues, configFile);
+    configFile.println("");
     yield();
     configFile.close();
   }
+  debugPrintFile("/config.json");
   shouldSaveConfig = false;
 }
 
@@ -3679,6 +3682,25 @@ void debugPrintCrash()
   debugSerial.begin(debugSerialBaud);
   SaveCrash.print(debugSerial);
   SaveCrash.clear();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void debugPrintFile(const String &fileName)
+{ // Debug output line of text to our debug targets
+  File debugFile = SPIFFS.open(fileName, "r");
+  if (debugFile)
+  {
+    uint16_t lineCount = 1;
+    while (debugFile.available())
+    {
+      debugPrintln(F("SPIFFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:")+ debugFile.readStringUntil('\n'));
+      lineCount++;
+    }
+    debugFile.close();
+  }
+  else {
+    debugPrintln("SPIFFS: Error opening file for read: " + fileName);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
