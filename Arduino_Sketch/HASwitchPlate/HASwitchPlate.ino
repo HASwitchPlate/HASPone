@@ -48,7 +48,7 @@
 // These defaults may be overwritten with values saved by the web interface
 char wifiSSID[32] = "";
 char wifiPass[64] = "";
-char mqttServer[64] = "";
+char mqttServer[128] = "";
 char mqttPort[6] = "1883";
 char mqttUser[128] = "";
 char mqttPassword[128] = "";
@@ -2378,9 +2378,10 @@ void configSave()
   {
     serializeJson(jsonConfigValues, configFile);
     configFile.println("");
-    yield();
+    configFile.flush();
     configFile.close();
   }
+  yield();
   debugPrintFile("/config.json");
   shouldSaveConfig = false;
 }
