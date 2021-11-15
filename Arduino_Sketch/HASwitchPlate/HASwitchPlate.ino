@@ -2326,7 +2326,7 @@ void configSave()
 { // Save the custom parameters to config.json
   nextionSetAttr("p[0].b[1].txt", "\"Saving\\rconfig\"");
   debugPrintln(F("SPIFFS: Saving config"));
-  DynamicJsonDocument jsonConfigValues(1536);
+  DynamicJsonDocument jsonConfigValues(2048);
 
   jsonConfigValues["mqttServer"] = mqttServer;
   jsonConfigValues["mqttPort"] = mqttPort;
@@ -2376,6 +2376,7 @@ void configSave()
   else
   {
     serializeJson(jsonConfigValues, configFile);
+    yield();
     configFile.close();
   }
   shouldSaveConfig = false;
