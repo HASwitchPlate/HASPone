@@ -175,9 +175,13 @@ void setup()
 { // System setup
   debugPrint(String(F("\n\n================================================================================\n")));
   debugPrintln(String(F("SYSTEM: Starting HASPone v")) + String(haspVersion));
-  debugPrintln(String(F("SYSTEM: Last reset reason: ")) + String(ESP.getResetInfo()));
   debugPrintln(String(F("SYSTEM: heapFree: ")) + String(ESP.getFreeHeap()) + String(F(" heapMaxFreeBlockSize: ")) + String(ESP.getMaxFreeBlockSize()));
-  debugPrintCrash();
+  debugPrintln(String(F("SYSTEM: Last reset reason: ")) + String(ESP.getResetInfo()));
+  if (SaveCrash.count())
+  {
+    debugPrint(String(F("SYSTEM: Crashdump data discovered:")));
+    debugPrintCrash();
+  }
   debugPrint(String(F("================================================================================\n\n")));
 
   pinMode(nextionResetPin, OUTPUT);    // Take control over the power switch for the LCD
@@ -476,17 +480,26 @@ void mqttConnect()
       mqttReconnectCount++;
       if (mqttReconnectCount * mqttConnectTimeout * 6 > (connectTimeout * 1000))
       {
-        debugPrintln(String(F("MQTT connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc: ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()) + String(F(". Restarting device.")));
+        debugPrintln(String(F("MQTT: connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc: ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()) + String(F(". Restarting device.")));
         espReset();
       }
       yield();
       webServer.handleClient();
+
+      String mqttCheckResult = "Ping: FAILED";
+      String mqttCheckResultNextion = "MQTT Check...";
+
+      debugPrintln(String(F("MQTT: connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()));
+      nextionSetAttr("p[0].b[1].txt", String(F("\"WiFi Connected!\\r ")) + String(WiFi.SSID()) + String(F("\\rIP: ")) + WiFi.localIP().toString() + String(F("\\r\\rMQTT Failed:\\r ")) + String(mqttServer) + String(F("\\rRC: ")) + String(mqttClient.returnCode()) + String(F("   Error: ")) + String(mqttClient.lastError()) + String(F("\\r")) + mqttCheckResultNextion + String(F("\"")));
+
       mqttPingCheck = Ping.ping(mqttServer, 4);
       yield();
       webServer.handleClient();
       mqttPortCheck = wifiClient.connect(mqttServer, atoi(mqttPort));
-      String mqttCheckResult = "Ping: FAILED";
-      String mqttCheckResultNextion = "Ping: ";
+      yield();
+      webServer.handleClient();
+
+      mqttCheckResultNextion = "Ping: ";
       if (mqttPingCheck)
       {
         mqttCheckResult = "Ping: SUCCESS";
@@ -502,7 +515,7 @@ void mqttConnect()
         mqttCheckResult += " Port: FAILED";
         mqttCheckResultNextion += " Port: ";
       }
-      debugPrintln(String(F("MQTT connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()) + String(F(". Connection checks: ")) + mqttCheckResult + String(F(". Trying again in 30 seconds.")));
+      debugPrintln(String(F("MQTT: connection checks: ")) + mqttCheckResult + String(F(". Trying again in 30 seconds.")));
       nextionSetAttr("p[0].b[1].txt", String(F("\"WiFi Connected!\\r ")) + String(WiFi.SSID()) + String(F("\\rIP: ")) + WiFi.localIP().toString() + String(F("\\r\\rMQTT Failed:\\r ")) + String(mqttServer) + String(F("\\rRC: ")) + String(mqttClient.returnCode()) + String(F("   Error: ")) + String(mqttClient.lastError()) + String(F("\\r")) + mqttCheckResultNextion + String(F("\"")));
 
       while (millis() < (mqttConnectTimer + (mqttConnectTimeout * 6)))
@@ -2471,7 +2484,7 @@ void webHandleRoot()
   webServer.sendContent(haspNode);
   webServer.sendContent(F("'><br/><b>Group Name</b> <i><small>(required)</small></i><input id='groupName' required name='groupName' maxlength=15 placeholder='Group Name' value='"));
   webServer.sendContent(groupName);
-  webServer.sendContent(F("'><br/><br/><b>MQTT Broker</b> <i><small>(required, IP address is preferred)</small></i><input id='mqttServer' required name='mqttServer' maxlength=63 placeholder='mqttServer' value='"));
+  webServer.sendContent(F("'><br/><br/><b>MQTT Broker</b> <i><small>(required, IP address is preferred)</small></i><input id='mqttServer' required name='mqttServer' maxlength=127 placeholder='mqttServer' value='"));
   if (strcmp(mqttServer, "") != 0)
   {
     webServer.sendContent(mqttServer);
@@ -3654,7 +3667,7 @@ void debugPrintln(const String &debugText)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void debugPrint(const String &debugText)
-{ // Debug output single character to our debug targets (DON'T USE THIS!)
+{ // Debug output a string to our debug targets.
   // Try to avoid using this function if at all possible.  When connected to telnet, printing each
   // character requires a full TCP round-trip + acknowledgement back and execution halts while this
   // happens.  Far better to put everything into a line and send it all out in one packet using
@@ -3694,12 +3707,13 @@ void debugPrintFile(const String &fileName)
     uint16_t lineCount = 1;
     while (debugFile.available())
     {
-      debugPrintln(F("SPIFFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:")+ debugFile.readStringUntil('\n'));
+      debugPrintln(F("SPIFFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:") + debugFile.readStringUntil('\n'));
       lineCount++;
     }
     debugFile.close();
   }
-  else {
+  else
+  {
     debugPrintln("SPIFFS: Error opening file for read: " + fileName);
   }
 }
