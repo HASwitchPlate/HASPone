@@ -1,0 +1,623 @@
+blueprint:
+  name: "HASP p[x].b[y] displays the value of a given entity with icons and colors"
+  description: |
+
+    ## Blueprint Version: `1.03.00`
+
+    # Description
+
+    A HASP button displays the current value of an entity (state or attribute) with a dynamic icon on the left and (optional) colors.  Up to 5 icons and color ranges are supported.
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Value_with_Icon_and_Colors.png)
+
+    If fewer than 5 value ranges are desired, set the unused ranges at the end to a threshold of `999999`. For example, to use 3 ranges one can set the `Value 4/5 lower threshold` and `Value 5/5 lower threshold` to `999999`.
+
+    ## HASP Page and Button reference
+
+    <details>
+
+    This automation is designed to work with the full-width buttons found on pages 1-3
+
+    | Pages 1-3 |
+    |-----------|
+    | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) |
+
+    </details>
+
+
+    ## HASP Font Reference
+
+    <details>
+
+    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
+
+    | Font | Name              | Characters per line | Lines per button |
+    | :--- | :---------------- | :-------------------| :--------------- |
+    | 5    | Noto Sans 24      | Proportional        | 2 lines          |
+    | 6    | Noto Sans 32      | Proportional        | 2 lines          |
+    | 7    | Noto Sans 48      | Proportional        | 1 line           |
+    | 8    | Noto Sans 64      | Proportional        | 1 line           |
+    | 9    | Noto Sans 80      | Proportional        | 1 line           |
+    | 10   | Noto Sans Bold 80 | Proportional        | 1 line           |
+
+    ### Icons
+
+    Fonts 5-10 also include [1400+ icons which you can copy and paste from here](https://htmlpreview.github.io/?https://github.com/HASwitchPlate/HASPone/blob/main/images/hasp-fontawesome5.html)
+
+    ### Font examples
+
+    ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
+
+    </details>
+
+    ## Nextion color codes
+
+    <details>
+
+    The Nextion environment utilizes RGB 565 encoding.  [Use this handy convertor](https://nodtem66.github.io/nextion-hmi-color-convert/index.html) to select your colors and convert to the RGB 565 format.
+
+    Here are some example colors:
+
+    | Color  | Code  |
+    |--------|-------|
+    | White  | 65535 |
+    | Black  | 0     |
+    | Grey   | 25388 |
+    | Red    | 63488 |
+    | Green  | 2016  |
+    | Blue   | 31    |
+    | Yellow | 65504 |
+    | Orange | 64512 |
+    | Brown  | 48192 |
+
+    </details>
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    hasppage:
+      name: "HASP Page"
+      description: "Select the HASP page (1-3) for the value. Refer to the HASP Page and Button reference above."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: slider
+          unit_of_measurement: page
+    haspbutton:
+      name: "HASP Button"
+      description: "Select the HASP button (4-7) for the value. Refer to the HASP Page and Button reference above."
+      default: 4
+      selector:
+        number:
+          min: 4
+          max: 7
+          mode: slider
+          unit_of_measurement: button
+    source_entity:
+      name: "Source entity"
+      description: "Select the entity providing the value to display"
+      default:
+      selector:
+        entity:
+    source_attribute:
+      name: "Source entity state or attribute"
+      description: "Enter `state` to track the state of the entity above, or enter an attribute name if the sensor has a specific attribute you want to track.  Most uses will leave this set to `state`."
+      default: "state"
+      selector:
+        text:
+    source_prefix:
+      name: "Display prefix"
+      description: "Text to insert before the value to be displayed.  Enter `none` to disable."
+      default: "none"
+      selector:
+        text:
+    source_suffix:
+      name: "Display suffix"
+      description: "Text to insert after the value to be displayed.  Enter `none` to disable."
+      default: "none"
+      selector:
+        text:
+    font_select:
+      name: "Font"
+      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
+      default: "10 - Noto Sans Bold 80"
+      selector:
+        select:
+          options:
+            - "5 - Noto Sans 24"
+            - "6 - Noto Sans 32"
+            - "7 - Noto Sans 48"
+            - "8 - Noto Sans 64"
+            - "9 - Noto Sans 80"
+            - "10 - Noto Sans Bold 80"
+    value_1of5_icon:
+      name: "Value 1/5 icon"
+      description: 'Icon to display when the selected value is below the 2/5 threshold.  (see "Icons" above for reference)'
+      default: ""
+      selector:
+        text:
+    value_1of5_color:
+      name: "Value 1/5 color"
+      description: 'Icon color when the selected value is below the 2/5 threshold in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme foreground color, or 2047 = Ice blue'
+      default: 2047
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    value_2of5_threshold:
+      name: "Value 2/5 lower threshold"
+      description: "Values above the 2/5 threshold and below the 3/5 threshold will show the 2/5 icon+color.  Below this threshold, show the 1/5 icon+color."
+      default: 0
+      selector:
+        number:
+          max: 999999
+          min: -999999
+          mode: box
+    value_2of5_icon:
+      name: "Value 2/5 icon"
+      description: 'Icon to display when the selected value is between the 2/5 and 3/5 thresholds'
+      default: ""
+      selector:
+        text:
+    value_2of5_color:
+      name: "Value 2/5 color"
+      description: "Icon color when the selected value is above the 2/5 threshold and below the 3/5 threshold in Nextion RGB565 format. -1 = Current theme foreground color, or 31 = Blue"
+      default: 31
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    value_3of5_threshold:
+      name: "Value 3/5 lower threshold"
+      description: "Values above the 3/5 threshold and below the 4/5 threshold will show the 3/5 icon+color."
+      default: 32
+      selector:
+        number:
+          max: 999999
+          min: -999999
+          mode: box
+    value_3of5_icon:
+      name: "Value 3/5 icon"
+      description: 'Icon to display when the selected value is between the 3/5 and 4/5 thresholds'
+      default: ""
+      selector:
+        text:
+    value_3of5_color:
+      name: "Value 3/5 color"
+      description: "Icon color when the selected value is above the 3/5 threshold and below the 4/5 threshold in Nextion RGB565 format. -1 = Current theme foreground color, or 1536 = Green"
+      default: 1536
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    value_4of5_threshold:
+      name: "Value 4/5 lower threshold"
+      description: "Values above the 4/5 threshold and below the 5/5 threshold will show the 4/5 icon+color."
+      default: 80
+      selector:
+        number:
+          max: 999999
+          min: -999999
+          mode: box
+    value_4of5_icon:
+      name: "Value 4/5 icon"
+      description: 'Icon to display when the selected value is between the 4/5 and 5/5 thresholds'
+      default: ""
+      selector:
+        text:
+    value_4of5_color:
+      name: "Value 4/5 color"
+      description: "Icon color when the selected value is above the 4/5 threshold and below the 5/5 threshold in Nextion RGB565 format. -1 = Current theme foreground color, or 64512 = Orange"
+      default: 64512
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    value_5of5_threshold:
+      name: "Value 5/5 lower threshold"
+      description: "Values above the 5/5 threshold will show the 5/5 icon+color."
+      default: 95
+      selector:
+        number:
+          max: 999999
+          min: -999999
+          mode: box
+    value_5of5_icon:
+      name: "Value 5/5 icon"
+      description: 'Icon to display when the selected value is above the 5/5 threshold'
+      default: ""
+      selector:
+        text:
+    value_5of5_color:
+      name: "Value 5/5 color"
+      description: "Icon color when the selected value is above the 5/5 threshold in Nextion RGB565 format. -1 = Current theme foreground color, or 63488 = Red"
+      default: 63488
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    colortext:
+      name: "Colorize value text"
+      description: "Also apply icon colors to text"
+      default: false
+      selector:
+        boolean:
+    roundvalue:
+      name: "Round sensor values to nearest integer"
+      description: "Enable this if you don't want decimal places involved"
+      default: false
+      selector:
+        boolean:
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  source_entity: !input source_entity
+  source_attribute: !input source_attribute
+  source_prefix: !input source_prefix  
+  source_suffix: !input source_suffix
+  font_select: !input font_select
+  font: '{{ font_select.split(" - ")[0] | int(default=10) }}'
+  value_1of5_color: !input value_1of5_color
+  value_1of5_icon: !input value_1of5_icon
+  value_2of5_threshold: !input value_2of5_threshold
+  value_2of5_color: !input value_2of5_color
+  value_2of5_icon: !input value_2of5_icon
+  value_3of5_threshold: !input value_3of5_threshold
+  value_3of5_color: !input value_3of5_color
+  value_3of5_icon: !input value_3of5_icon
+  value_4of5_threshold: !input value_4of5_threshold
+  value_4of5_color: !input value_4of5_color
+  value_4of5_icon: !input value_4of5_icon
+  value_5of5_threshold: !input value_5of5_threshold
+  value_5of5_color: !input value_5of5_color
+  value_5of5_icon: !input value_5of5_icon
+  colortext: !input colortext
+  roundvalue: !input roundvalue
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  entity_value: >-
+    {%- if source_attribute|lower == "state" -%}
+      {%- if roundvalue == true -%}
+        {{- states(source_entity) | round(default=0) | int -}}
+      {%- else -%}
+        {{- states(source_entity) -}}
+      {%- endif -%}
+    {%- else -%}
+      {%- if roundvalue == true -%}
+        {{- state_attr(source_entity, source_attribute) | round(default=0) | int -}}
+      {%- else -%}
+        {{- state_attr(source_entity, source_attribute) -}}
+      {%- endif -%}
+    {%- endif -%}
+  icon: >-
+    {%- if entity_value|round(3,default=0) <= value_2of5_threshold|round(3,default=0) -%}
+      {{ value_1of5_icon }}
+    {%- elif entity_value|round(3,default=0) < value_3of5_threshold|round(3,default=0) -%}
+      {{ value_2of5_icon }}
+    {%- elif entity_value|round(3,default=0) < value_4of5_threshold|round(3,default=0) -%}
+      {{ value_3of5_icon }}
+    {%- elif entity_value|round(3,default=0) < value_5of5_threshold|round(3,default=0) -%}
+      {{ value_4of5_icon }}
+    {%- else -%}
+      {{ value_5of5_icon }}
+    {%- endif -%}
+  prefixstring: "{% if source_prefix|lower != 'none' %}{{ source_prefix }}{% endif %}"
+  suffixstring: "{% if source_suffix|lower != 'none' %}{{ source_suffix }}{% endif %}"
+  text: "{{prefixstring}}{{entity_value}}{{suffixstring}}"
+  ypos: "{{(haspbutton|int - 4) * 67 + 2}}"
+  xpos: 0
+  iconwidth: 65
+  iconheight: 65
+  iconfont: 8
+  xcen: 2
+  ycen: 1
+  activepage: >-
+    {%- set activepage = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
+        {%- set activepage.entity=entity -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ states(activepage.entity) | int(default=-1) }}
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  selectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  selectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedfg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  unselectedbg: >-
+    {%- set color = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+        {%- set color.source=entity -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+  iconcolor: >-
+    {%- if entity_value|round(3,default=0) <= value_2of5_threshold|round(3,default=0) -%}
+      {%- set color = value_1of5_color -%}
+    {%- elif entity_value|round(3,default=0) <= value_3of5_threshold|round(3,default=0) -%}
+      {%- set color = value_2of5_color -%}
+    {%- elif entity_value|round(3,default=0) <= value_4of5_threshold|round(3,default=0) -%}
+      {%- set color = value_3of5_color -%}
+    {%- elif entity_value|round(3,default=0) <= value_5of5_threshold|round(3,default=0) -%}
+      {%- set color = value_4of5_color -%}
+    {%- else -%}
+      {%- set color = value_5of5_color -%}
+    {%- endif -%}
+    {%- if color|int < 0 -%}
+      {{- selectedfg -}}
+    {%- else -%}
+      {{- color|int -}}
+    {%- endif -%}
+  textcolor: >-
+    {%- if colortext == true -%}
+      {{- iconcolor -}}
+    {%- else -%}
+      {{- selectedfg -}}
+    {%- endif -%}
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\.") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: state
+    entity_id: !input source_entity
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+  - platform: mqtt
+    topic: "{{selectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{selectedbgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "debug"
+      payload: "trigger: {{ trigger }}"
+  - choose:
+      #########################################################################
+      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # Apply styles, place text, and then place icon if our target page is currently active
+      - conditions:
+          - condition: template
+            value_template: >- 
+              {{-
+                (trigger is not defined)
+              or
+                (trigger.platform is none)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              -}}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["{{haspobject}}.font={{font}}",
+                "{{haspobject}}.xcen={{xcen}}",
+                "{{haspobject}}.ycen={{ycen}}",
+                "{{haspobject}}.pco={{textcolor}}",
+                "{{haspobject}}.bco={{selectedbg}}",
+                "{{haspobject}}.pco2={{unselectedfg}}",
+                "{{haspobject}}.bco2={{unselectedbg}}",
+                "{{haspobject}}.txt=\"{{text}} \""
+                {%- if activepage|int == hasppage|int -%}
+                ,"delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""
+                {%- endif -%}]
+      #########################################################################
+      # Update value if our source entity changed state
+      - conditions:
+          - condition: template
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == source_entity) }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                ["{{haspobject}}.pco={{textcolor}}",
+                "{{haspobject}}.txt=\"{{text}} \""
+                {%- if activepage|int == hasppage|int -%}
+                ,"delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""
+                {%- endif -%}]
+      #########################################################################
+      # Catch triggers fired by incoming MQTT messages
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Catch incoming JSON messages
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (trigger.topic == jsontopic) and trigger.payload_json is defined }}"
+                sequence:
+                  - choose:
+                      #########################################################################
+                      # Icon overlay
+                      - conditions: # Somebody pressed our button which hides the overlaid icon.  Put it back.
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic ) and (trigger.payload_json.event == haspobject ) and (trigger.payload_json.value == "OFF") and (activepage|int == hasppage|int)}}'
+                        sequence:
+                          - service: mqtt.publish
+                            data:
+                              topic: "{{jsoncommandtopic}}"
+                              payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""]'
+                      - conditions: # Page changed to our page, so place the icon on the screen.
+                          - condition: template
+                            value_template: '{{ (trigger.topic == jsontopic ) and (trigger.payload_json.event == "page" ) and (trigger.payload_json.value == hasppage|int) }}'
+                        sequence:
+                          - service: mqtt.publish
+                            data:
+                              topic: "{{jsoncommandtopic}}"
+                              payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""]'
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes.
+              # Any change to the button will remove the overlaid icon.
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco"
+                      payload: "{{trigger.payload}}"
+                  - condition: template
+                    value_template: "{{ activepage|int == hasppage|int }}"
+                  - delay: "00:00:00.5"
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""]'
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco"
+                      payload: "{{trigger.payload}}"
+                  - condition: template
+                    value_template: "{{ activepage|int == hasppage|int }}"
+                  - delay: "00:00:00.5"
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""]'
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco2"
+                      payload: "{{trigger.payload}}"
+                  - condition: template
+                    value_template: "{{ activepage|int == hasppage|int }}"
+                  - delay: "00:00:00.5"
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""]'
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco2"
+                      payload: "{{trigger.payload}}"
+                  - condition: template
+                    value_template: "{{ activepage|int == hasppage|int }}"
+                  - delay: "00:00:00.5"
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{iconcolor}},0,1,1,3,\"{{icon}}\""]'
