@@ -136,6 +136,16 @@ Press a button on the HASP to toggle the state of an entity.  The button colors 
 
 ---
 
+### Display Value with Icon and Colors
+
+[![Display Value with Icon and Colors](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Value_with_Icon_and_Colors.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Value_with_Icon_and_Colors.png)
+
+A HASP button displays the current value of an entity (state or attribute) with a dynamic icon on the left and (optional) colors.  Up to 5 icons and color ranges are supported.
+
+---
+
 ### Display Volume Control on page 8
 
 [![Display Volume Control on page 8](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Volume_Control_page8.yaml)
