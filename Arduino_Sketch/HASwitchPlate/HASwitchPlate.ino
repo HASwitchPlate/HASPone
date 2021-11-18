@@ -48,7 +48,7 @@
 // These defaults may be overwritten with values saved by the web interface
 char wifiSSID[32] = "";
 char wifiPass[64] = "";
-char mqttServer[64] = "";
+char mqttServer[128] = "";
 char mqttPort[6] = "1883";
 char mqttUser[128] = "";
 char mqttPassword[128] = "";
@@ -63,7 +63,7 @@ char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const float haspVersion = 1.03;                       // Current HASP software release version
+const float haspVersion = 1.04;                       // Current HASPone software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -174,10 +174,14 @@ String lcdFirmwareUrl = "https://raw.githubusercontent.com/HASwitchPlate/HASPone
 void setup()
 { // System setup
   debugPrint(String(F("\n\n================================================================================\n")));
-  debugPrintln(String(F("SYSTEM: Starting HASwitchPlate v")) + String(haspVersion));
-  debugPrintln(String(F("SYSTEM: Last reset reason: ")) + String(ESP.getResetInfo()));
+  debugPrintln(String(F("SYSTEM: Starting HASPone v")) + String(haspVersion));
   debugPrintln(String(F("SYSTEM: heapFree: ")) + String(ESP.getFreeHeap()) + String(F(" heapMaxFreeBlockSize: ")) + String(ESP.getMaxFreeBlockSize()));
-  debugPrintCrash();
+  debugPrintln(String(F("SYSTEM: Last reset reason: ")) + String(ESP.getResetInfo()));
+  if (SaveCrash.count())
+  {
+    debugPrint(String(F("SYSTEM: Crashdump data discovered:")));
+    debugPrintCrash();
+  }
   debugPrint(String(F("================================================================================\n\n")));
 
   pinMode(nextionResetPin, OUTPUT);    // Take control over the power switch for the LCD
@@ -476,17 +480,26 @@ void mqttConnect()
       mqttReconnectCount++;
       if (mqttReconnectCount * mqttConnectTimeout * 6 > (connectTimeout * 1000))
       {
-        debugPrintln(String(F("MQTT connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc: ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()) + String(F(". Restarting device.")));
+        debugPrintln(String(F("MQTT: connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc: ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()) + String(F(". Restarting device.")));
         espReset();
       }
       yield();
       webServer.handleClient();
+
+      String mqttCheckResult = "Ping: FAILED";
+      String mqttCheckResultNextion = "MQTT Check...";
+
+      debugPrintln(String(F("MQTT: connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()));
+      nextionSetAttr("p[0].b[1].txt", String(F("\"WiFi Connected!\\r ")) + String(WiFi.SSID()) + String(F("\\rIP: ")) + WiFi.localIP().toString() + String(F("\\r\\rMQTT Failed:\\r ")) + String(mqttServer) + String(F("\\rRC: ")) + String(mqttClient.returnCode()) + String(F("   Error: ")) + String(mqttClient.lastError()) + String(F("\\r")) + mqttCheckResultNextion + String(F("\"")));
+
       mqttPingCheck = Ping.ping(mqttServer, 4);
       yield();
       webServer.handleClient();
       mqttPortCheck = wifiClient.connect(mqttServer, atoi(mqttPort));
-      String mqttCheckResult = "Ping: FAILED";
-      String mqttCheckResultNextion = "Ping: ";
+      yield();
+      webServer.handleClient();
+
+      mqttCheckResultNextion = "Ping: ";
       if (mqttPingCheck)
       {
         mqttCheckResult = "Ping: SUCCESS";
@@ -502,7 +515,7 @@ void mqttConnect()
         mqttCheckResult += " Port: FAILED";
         mqttCheckResultNextion += " Port: ";
       }
-      debugPrintln(String(F("MQTT connection attempt ")) + String(mqttReconnectCount) + String(F(" failed with rc ")) + String(mqttClient.returnCode()) + String(F(" and error: ")) + String(mqttClient.lastError()) + String(F(". Connection checks: ")) + mqttCheckResult + String(F(". Trying again in 30 seconds.")));
+      debugPrintln(String(F("MQTT: connection checks: ")) + mqttCheckResult + String(F(". Trying again in 30 seconds.")));
       nextionSetAttr("p[0].b[1].txt", String(F("\"WiFi Connected!\\r ")) + String(WiFi.SSID()) + String(F("\\rIP: ")) + WiFi.localIP().toString() + String(F("\\r\\rMQTT Failed:\\r ")) + String(mqttServer) + String(F("\\rRC: ")) + String(mqttClient.returnCode()) + String(F("   Error: ")) + String(mqttClient.lastError()) + String(F("\\r")) + mqttCheckResultNextion + String(F("\"")));
 
       while (millis() < (mqttConnectTimer + (mqttConnectTimeout * 6)))
@@ -552,6 +565,7 @@ void mqttProcessInput(String &strTopic, String &strPayload)
   // '[...]/device/command/lcdupdate' -m '' = nextionOtaStartDownload("lcdFirmwareUrl")
   // '[...]/device/command/espupdate' -m 'http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin' = espStartOta("http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin")
   // '[...]/device/command/espupdate' -m '' = espStartOta("espFirmwareUrl")
+  // '[...]/device/command/beep' -m '100,200,3' = espStartOta("espFirmwareUrl")
 
   debugPrintln(String(F("MQTT IN: '")) + strTopic + String(F("' : '")) + strPayload + String(F("'")));
 
@@ -624,13 +638,13 @@ void mqttProcessInput(String &strTopic, String &strPayload)
   }
   else if (strTopic == (mqttCommandTopic + "/beep") || strTopic == (mqttGroupCommandTopic + "/beep"))
   { // '[...]/device/command/beep' == activate beep function
-    String mqqtvar1 = getSubtringField(strPayload, ',', 0);
-    String mqqtvar2 = getSubtringField(strPayload, ',', 1);
-    String mqqtvar3 = getSubtringField(strPayload, ',', 2);
+    String mqttvar1 = getSubtringField(strPayload, ',', 0);
+    String mqttvar2 = getSubtringField(strPayload, ',', 1);
+    String mqttvar3 = getSubtringField(strPayload, ',', 2);
 
-    beepOnTime = mqqtvar1.toInt();
-    beepOffTime = mqqtvar2.toInt();
-    beepCounter = mqqtvar3.toInt();
+    beepOnTime = mqttvar1.toInt();
+    beepOffTime = mqttvar2.toInt();
+    beepCounter = mqttvar3.toInt();
   }
   else if (strTopic == (mqttCommandTopic + "/crashtest"))
   { // '[...]/device/command/crashtest' -m 'divzero' == divide by zero
@@ -1117,7 +1131,7 @@ void nextionProcessInput()
       }
       if (rebootOnp0b1 && (nextionPage == "0") && (nextionButtonID == "1"))
       {
-        debugPrintln(String(F("HMI IN: p[0].b[1] pressed during HASP configuration, rebooting.")));
+        debugPrintln(String(F("HMI IN: p[0].b[1] pressed during HASPone configuration, rebooting.")));
         espReset();
       }
     }
@@ -1714,7 +1728,7 @@ bool nextionConnect()
     }
   }
 
-  // Query backlight status.  This should always succeed under simulation or non-HASP HMI
+  // Query backlight status.  This should always succeed under simulation or non-HASPone HMI
   lcdBacklightQueryFlag = true;
   debugPrintln(F("HMI: Querying LCD backlight status"));
   Serial1.write(nextionSuffix, sizeof(nextionSuffix));
@@ -1736,7 +1750,7 @@ bool nextionConnect()
 
   // This check depends on the HMI having been designed with a version number in the object
   // defined in lcdVersionQuery.  It's OK if this fails, it just means the HMI project is
-  // not utilizing the version capability that the HASP project makes use of.
+  // not utilizing the version capability that the HASPone project makes use of.
   lcdVersionQueryFlag = true;
   debugPrintln(F("HMI: Querying LCD firmware version number"));
   nextionSendCmd("get " + lcdVersionQuery);
@@ -1746,7 +1760,7 @@ bool nextionConnect()
   }
   if (lcdVersionQueryFlag)
   { // Our flag is still set, meaning we never got a response.  This should only happen if
-    // there's a problem.  Non-HASP projects should pass this check with lcdVersion = 0
+    // there's a problem.  Non-HASPone projects should pass this check with lcdVersion = 0
     debugPrintln(F("HMI: LCD version query timed out"));
     lcdVersionQueryFlag = false;
     return false;
@@ -1881,7 +1895,7 @@ void espWifiConnect()
     { // We gave it a shot, still couldn't connect, so let WiFiManager run to make one last
       // connection attempt and then flip to AP mode to collect credentials from the user.
 
-      WiFiManagerParameter custom_haspNodeHeader("<br/><b>HASP Node</b>");
+      WiFiManagerParameter custom_haspNodeHeader("<br/><b>HASPone Node</b>");
       WiFiManagerParameter custom_haspNode("haspNode", "<br/>Node Name <small>(required: lowercase letters, numbers, and _ only)</small>", haspNode, 15, " maxlength=15 required pattern='[a-z0-9_]*'");
       WiFiManagerParameter custom_groupName("groupName", "Group Name <small>(required)</small>", groupName, 15, " maxlength=15 required");
       WiFiManagerParameter custom_mqttHeader("<br/><br/><b>MQTT</b>");
@@ -2023,7 +2037,7 @@ void espWifiConfigCallback(WiFiManager *myWiFiManager)
     nextionSendCmd("page 0");
   }
   nextionSetAttr("p[0].b[1].font", "6");
-  nextionSetAttr("p[0].b[1].txt", "\" HASP WiFi Setup\\r AP: " + String(wifiConfigAP) + "\\rPassword: " + String(wifiConfigPass) + "\\r\\r\\r\\r\\r\\r\\r  http://192.168.4.1\"");
+  nextionSetAttr("p[0].b[1].txt", "\" HASPone Setup\\r AP: " + String(wifiConfigAP) + "\\rPassword: " + String(wifiConfigPass) + "\\r\\r\\r\\r\\r\\r\\r  http://192.168.4.1\"");
   nextionSendCmd("vis 3,1");
 }
 
@@ -2038,14 +2052,14 @@ void espSetupOta()
   ArduinoOTA.onStart([]()
                      {
                        debugPrintln(F("ESP OTA: update start"));
-                       nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r\\r \"");
+                       nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r\\r \"");
                        nextionSendCmd("page 0");
                        nextionSendCmd("vis 4,1");
                      });
   ArduinoOTA.onEnd([]()
                    {
                      debugPrintln(F("ESP OTA: update complete"));
-                     nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r Complete!\\rRestarting.\"");
+                     nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r Complete!\\rRestarting.\"");
                      nextionSendCmd("vis 4,1");
                      delay(1000);
                      espReset();
@@ -2066,7 +2080,7 @@ void espSetupOta()
                        else if (error == OTA_END_ERROR)
                          debugPrintln(F("ESP OTA: ERROR - End Failed"));
                        nextionSendCmd("vis 4,0");
-                       nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\r FAILED\\rerror: " + String(error) + "\"");
+                       nextionSetAttr("p[0].b[1].txt", "\"HASPone update:\\r FAILED\\rerror: " + String(error) + "\"");
                        delay(1000);
                        nextionSendCmd("page " + String(nextionActivePage));
                      });
@@ -2078,7 +2092,7 @@ void espSetupOta()
 void espStartOta(const String &espOtaUrl)
 { // Update ESP firmware from HTTP/HTTPS URL
 
-  nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r\\r \"");
+  nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r\\r \"");
   nextionSendCmd("page 0");
   nextionSendCmd("vis 4,1");
 
@@ -2106,18 +2120,18 @@ void espStartOta(const String &espOtaUrl)
   case HTTP_UPDATE_FAILED:
     debugPrintln(String(F("ESPFW: HTTP_UPDATE_FAILED error ")) + String(ESPhttpUpdate.getLastError()) + " " + ESPhttpUpdate.getLastErrorString());
     nextionSendCmd("vis 4,0");
-    nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\r FAILED\\rerror: " + ESPhttpUpdate.getLastErrorString() + "\"");
+    nextionSetAttr("p[0].b[1].txt", "\"HASPone update:\\r FAILED\\rerror: " + ESPhttpUpdate.getLastErrorString() + "\"");
     break;
 
   case HTTP_UPDATE_NO_UPDATES:
     debugPrintln(F("ESPFW: HTTP_UPDATE_NO_UPDATES"));
     nextionSendCmd("vis 4,0");
-    nextionSetAttr("p[0].b[1].txt", "\"HASP update:\\rNo update\"");
+    nextionSetAttr("p[0].b[1].txt", "\"HASPone update:\\rNo update\"");
     break;
 
   case HTTP_UPDATE_OK:
     debugPrintln(F("ESPFW: HTTP_UPDATE_OK"));
-    nextionSetAttr("p[0].b[1].txt", "\"\\rHASP update:\\r\\r Complete!\\rRestarting.\"");
+    nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r Complete!\\rRestarting.\"");
     nextionSendCmd("vis 4,1");
     delay(1000);
     espReset();
@@ -2129,7 +2143,7 @@ void espStartOta(const String &espOtaUrl)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void espReset()
 {
-  debugPrintln(F("RESET: HASP reset"));
+  debugPrintln(F("RESET: HASPone reset"));
   if (mqttClient.connected())
   {
     mqttClient.publish(mqttStateJSONTopic, String(F("{\"event_type\":\"hasp_device\",\"event\":\"offline\"}")));
@@ -2157,6 +2171,7 @@ void configRead()
     if (SPIFFS.exists("/config.json"))
     { // File exists, reading and loading
       debugPrintln(F("SPIFFS: reading /config.json"));
+      debugPrintFile("/config.json");
       File configFile = SPIFFS.open("/config.json", "r");
       if (configFile)
       {
@@ -2325,7 +2340,7 @@ void configSave()
 { // Save the custom parameters to config.json
   nextionSetAttr("p[0].b[1].txt", "\"Saving\\rconfig\"");
   debugPrintln(F("SPIFFS: Saving config"));
-  DynamicJsonDocument jsonConfigValues(1536);
+  DynamicJsonDocument jsonConfigValues(2048);
 
   jsonConfigValues["mqttServer"] = mqttServer;
   jsonConfigValues["mqttPort"] = mqttPort;
@@ -2375,8 +2390,12 @@ void configSave()
   else
   {
     serializeJson(jsonConfigValues, configFile);
+    configFile.println("");
+    configFile.flush();
     configFile.close();
   }
+  yield();
+  debugPrintFile("/config.json");
   shouldSaveConfig = false;
 }
 
@@ -2461,11 +2480,11 @@ void webHandleRoot()
   webServer.sendContent(F("<b>WiFi SSID</b> <i><small>(required)</small></i><input id='wifiSSID' required name='wifiSSID' maxlength=32 placeholder='WiFi SSID' value='"));
   webServer.sendContent(WiFi.SSID());
   webServer.sendContent(F("'><br/><b>WiFi Password</b> <i><small>(required)</small></i><input id='wifiPass' required name='wifiPass' type='password' maxlength=64 placeholder='WiFi Password' value='********'>"));
-  webServer.sendContent(F("<br/><br/><b>HASP Node Name</b> <i><small>(required. lowercase letters, numbers, and _ only)</small></i><input id='haspNode' required name='haspNode' maxlength=15 placeholder='HASP Node Name' pattern='[a-z0-9_]*' value='"));
+  webServer.sendContent(F("<br/><br/><b>HASPone Node Name</b> <i><small>(required. lowercase letters, numbers, and _ only)</small></i><input id='haspNode' required name='haspNode' maxlength=15 placeholder='HASPone Node Name' pattern='[a-z0-9_]*' value='"));
   webServer.sendContent(haspNode);
   webServer.sendContent(F("'><br/><b>Group Name</b> <i><small>(required)</small></i><input id='groupName' required name='groupName' maxlength=15 placeholder='Group Name' value='"));
   webServer.sendContent(groupName);
-  webServer.sendContent(F("'><br/><br/><b>MQTT Broker</b> <i><small>(required, IP address is preferred)</small></i><input id='mqttServer' required name='mqttServer' maxlength=63 placeholder='mqttServer' value='"));
+  webServer.sendContent(F("'><br/><br/><b>MQTT Broker</b> <i><small>(required, IP address is preferred)</small></i><input id='mqttServer' required name='mqttServer' maxlength=127 placeholder='mqttServer' value='"));
   if (strcmp(mqttServer, "") != 0)
   {
     webServer.sendContent(mqttServer);
@@ -2499,12 +2518,12 @@ void webHandleRoot()
   }
   webServer.sendContent(F("'>"));
 
-  webServer.sendContent(F("<br/><br/><b>HASP Admin Username</b> <i><small>(optional)</small></i><input id='configUser' name='configUser' maxlength=31 placeholder='Admin User' value='"));
+  webServer.sendContent(F("<br/><br/><b>HASPone Admin Username</b> <i><small>(optional)</small></i><input id='configUser' name='configUser' maxlength=31 placeholder='Admin User' value='"));
   if (strcmp(configUser, "") != 0)
   {
     webServer.sendContent(configUser);
   }
-  webServer.sendContent(F("'><br/><b>HASP Admin Password</b> <i><small>(optional)</small></i><input id='configPassword' name='configPassword' type='password' maxlength=31 placeholder='Admin User Password' value='"));
+  webServer.sendContent(F("'><br/><b>HASPone Admin Password</b> <i><small>(optional)</small></i><input id='configPassword' name='configPassword' type='password' maxlength=31 placeholder='Admin User Password' value='"));
   if (strcmp(configPassword, "") != 0)
   {
     webServer.sendContent(F("********"));
@@ -2522,7 +2541,7 @@ void webHandleRoot()
   webServer.sendContent(F("'><br/><hr>"));
   // Big menu of possible serial speeds
   if ((lcdVersion != 1) && (lcdVersion != 2))
-  { // HASP lcdVersion 1 and 2 have `bauds=115200` in the pre-init script of page 0.  Don't show this option if either of those two versions are running.
+  { // HASPone lcdVersion 1 and 2 have `bauds=115200` in the pre-init script of page 0.  Don't show this option if either of those two versions are running.
     webServer.sendContent(F("<b>LCD Serial Speed:&nbsp;</b><select id='nextionBaud' name='nextionBaud'>"));
 
     for (unsigned int nextionSpeedsIndex = 0; nextionSpeedsIndex < nextionSpeedsLength; nextionSpeedsIndex++)
@@ -2588,11 +2607,11 @@ void webHandleRoot()
 
   if (updateEspAvailable)
   {
-    webServer.sendContent(F("<br/><hr><font color='green'><center><h3>HASP Update available!</h3></center></font>"));
+    webServer.sendContent(F("<br/><hr><font color='green'><center><h3>HASPone Update available!</h3></center></font>"));
     webServer.sendContent(F("<form method='get' action='espfirmware'>"));
     webServer.sendContent(F("<input id='espFirmwareURL' type='hidden' name='espFirmware' value='"));
     webServer.sendContent(espFirmwareUrl);
-    webServer.sendContent(F("'><button type='submit'>update HASP to v"));
+    webServer.sendContent(F("'><button type='submit'>update HASPone to v"));
     webServer.sendContent(String(updateEspAvailableVersion));
     webServer.sendContent(F("</button></form>"));
   }
@@ -2644,14 +2663,14 @@ void webHandleRoot()
   {
     webServer.sendContent(mqttClientId);
   }
-  webServer.sendContent(F("<br/><b>HASP Version: </b>"));
+  webServer.sendContent(F("<br/><b>HASPone FW Version: </b>"));
   webServer.sendContent(String(haspVersion));
   webServer.sendContent(F("<br/><b>LCD Model: </b>"));
   if (nextionModel != "")
   {
     webServer.sendContent(nextionModel);
   }
-  webServer.sendContent(F("<br/><b>LCD Version: </b>"));
+  webServer.sendContent(F("<br/><b>LCD FW Version: </b>"));
   webServer.sendContent(String(lcdVersion));
   webServer.sendContent(F("<br/><b>LCD Active Page: </b>"));
   webServer.sendContent(String(nextionActivePage));
@@ -2981,7 +3000,7 @@ void webHandleFirmware()
   webServer.sendContent(F("<form method='get' action='/espfirmware'>"));
   if (updateEspAvailable)
   {
-    webServer.sendContent(F("<font color='green'><b>HASP ESP8266 update available!</b></font>"));
+    webServer.sendContent(F("<font color='green'><b>HASPone ESP8266 update available!</b></font>"));
   }
   webServer.sendContent(F("<br/><b>Update ESP8266 from URL</b>"));
   webServer.sendContent(F("<br/><input id='espFirmwareURL' name='espFirmware' value='"));
@@ -2994,12 +3013,12 @@ void webHandleFirmware()
 
   webServer.sendContent(F("<br/><br/><hr><h1>WARNING!</h1>"));
   webServer.sendContent(F("<b>Nextion LCD firmware updates can be risky.</b> If interrupted, the LCD will display an error message until a successful firmware update has completed. "));
-  webServer.sendContent(F("<br/><br/><i>Note: Failed LCD firmware updates on HASP hardware prior to v1.0 may require a hard power cycle of the device, via a circuit breaker or by physically disconnecting the device.</i>"));
+  webServer.sendContent(F("<br/><br/><i>Note: Failed LCD firmware updates on HASPone hardware prior to v1.0 may require a hard power cycle of the device, via a circuit breaker or by physically disconnecting the device.</i>"));
 
   webServer.sendContent(F("<br/><hr><form method='get' action='lcddownload'>"));
   if (updateLcdAvailable)
   {
-    webServer.sendContent(F("<font color='green'><b>HASP LCD update available!</b></font>"));
+    webServer.sendContent(F("<font color='green'><b>HASPone LCD update available!</b></font>"));
   }
   webServer.sendContent(F("<br/><b>Update Nextion LCD from URL</b><small><i> http only</i></small>"));
   webServer.sendContent(F("<br/><input id='lcdFirmware' name='lcdFirmware' value='"));
@@ -3648,7 +3667,7 @@ void debugPrintln(const String &debugText)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void debugPrint(const String &debugText)
-{ // Debug output single character to our debug targets (DON'T USE THIS!)
+{ // Debug output a string to our debug targets.
   // Try to avoid using this function if at all possible.  When connected to telnet, printing each
   // character requires a full TCP round-trip + acknowledgement back and execution halts while this
   // happens.  Far better to put everything into a line and send it all out in one packet using
@@ -3677,6 +3696,26 @@ void debugPrintCrash()
   debugSerial.begin(debugSerialBaud);
   SaveCrash.print(debugSerial);
   SaveCrash.clear();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void debugPrintFile(const String &fileName)
+{ // Debug output line of text to our debug targets
+  File debugFile = SPIFFS.open(fileName, "r");
+  if (debugFile)
+  {
+    uint16_t lineCount = 1;
+    while (debugFile.available())
+    {
+      debugPrintln(F("SPIFFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:") + debugFile.readStringUntil('\n'));
+      lineCount++;
+    }
+    debugFile.close();
+  }
+  else
+  {
+    debugPrintln("SPIFFS: Error opening file for read: " + fileName);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
