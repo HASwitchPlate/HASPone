@@ -105,9 +105,7 @@ variables:
         {{ entity }}
       {%- endif -%}
     {%- endfor -%}
-  haspIP: '{{state_attr(haspsensor, "haspIP")}}'
   haspClientId: '{{state_attr(haspsensor, "haspClientID")}}'
-  haspMac: '{{state_attr(haspsensor, "haspMac")}}'
   haspManufacturer: '{{state_attr(haspsensor, "haspManufacturer")}}'
   haspModel: '{{state_attr(haspsensor, "haspModel")}}'
   sw_version: '{{state_attr(haspsensor, "espVersion")}}'
