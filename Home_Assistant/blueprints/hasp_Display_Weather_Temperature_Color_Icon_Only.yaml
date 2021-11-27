@@ -1,16 +1,16 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the current temperature from a weather provider, coloured icon only"
+  name: "HASPone p[x].b[y] displays the current temperature from a weather provider, coloured icon only"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     # Description
 
-    A HASP button displays the current temperature from a weather provider as an icon that is optionally coloured.
+    A HASPone button displays the current temperature from a weather provider as an icon that is optionally coloured.
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Temperature_Color_Icon_Only.png)
 
-    ## HASP Page and Button reference
+    ## HASPone Page and Button reference
 
     <details>
 
@@ -52,16 +52,16 @@ blueprint:
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     hasppage:
-      name: "HASP Page"
-      description: "Select the HASP page (1-11) for the temperature icon. Refer to the HASP Page and Button reference above."
+      name: "HASPone Page"
+      description: "Select the HASPone page (1-11) for the temperature icon. Refer to the HASPone Page and Button reference above."
       default: 1
       selector:
         number:
@@ -70,8 +70,8 @@ blueprint:
           mode: slider
           unit_of_measurement: page
     haspbutton:
-      name: "HASP Button"
-      description: "Select the HASP button (4-15) for the temperature icon. Refer to the HASP Page and Button reference above."
+      name: "HASPone Button"
+      description: "Select the HASPone button (4-15) for the temperature icon. Refer to the HASPone Page and Button reference above."
       default: 4
       selector:
         number:
@@ -174,7 +174,7 @@ max_exceeded: silent
 variables:
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -291,7 +291,7 @@ trigger_variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -329,7 +329,7 @@ condition:
 action:
   - choose:
       #########################################################################
-      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # RUN ACTIONS or Home Assistant Startup or HASPone Connect
       # Apply styles, place text, and then place icon if our target page is currently active
       - conditions:
           - condition: template

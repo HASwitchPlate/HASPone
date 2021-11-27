@@ -1,16 +1,16 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the month + date with a calendar icon"
+  name: "HASPone p[x].b[y] displays the month + date with a calendar icon"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     # Description
 
-    A HASP button displays month + date on the right with a calendar icon on the left.
+    A HASPone button displays month + date on the right with a calendar icon on the left.
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Calendar_with_Icon.png)
 
-    ## HASP Page and Button Reference
+    ## HASPone Page and Button Reference
 
     <details>
 
@@ -25,16 +25,16 @@ blueprint:
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     hasppage:
-      name: "HASP Page"
-      description: "Select the HASP page (1-3) for the calendar. Refer to the HASP Page and Button reference above."
+      name: "HASPone Page"
+      description: "Select the HASPone page (1-3) for the calendar. Refer to the HASPone Page and Button reference above."
       default: 1
       selector:
         number:
@@ -43,8 +43,8 @@ blueprint:
           mode: slider
           unit_of_measurement: page
     haspbutton:
-      name: "HASP Button"
-      description: "Select the HASP button (4-7) for the calendar. Refer to the HASP Page and Button reference above."
+      name: "HASPone Button"
+      description: "Select the HASPone button (4-7) for the calendar. Refer to the HASPone Page and Button reference above."
       default: 4
       selector:
         number:
@@ -60,7 +60,7 @@ variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -143,7 +143,7 @@ trigger_variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -184,7 +184,7 @@ condition:
 action:
   - choose:
       #########################################################################
-      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # RUN ACTIONS or Home Assistant Startup or HASPone Connect
       # Apply styles, place text, and then place icon if our target page is currently active
       - conditions:
           - condition: template

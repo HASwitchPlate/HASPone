@@ -1,12 +1,12 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the output of a template"
+  name: "HASPone p[x].b[y] displays the output of a template"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     # Description
 
-    A button on the HASP will display the output of a template.  The template is updated when the state of a selected entity updates.
+    A button on the HASPone will display the output of a template.  The template is updated when the state of a selected entity updates.
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Template.png)
 
@@ -22,9 +22,9 @@ blueprint:
 
     </details>
 
-    ## HASP Page and Button Reference
+    ## HASPone Page and Button Reference
 
-    The images below show each available HASP page along with the layout of available button objects.
+    The images below show each available HASPone page along with the layout of available button objects.
 
     <details>
 
@@ -42,11 +42,11 @@ blueprint:
 
     </details>
 
-    ## HASP Font Reference
+    ## HASPone Font Reference
 
     <details>
 
-    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
+    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASPone project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
 
     | Font | Name              | Characters per line | Lines per button |
     | :--- | :---------------- | :-------------------| :--------------- |
@@ -68,23 +68,23 @@ blueprint:
 
     ### Font examples
 
-    ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
+    ![HASPone Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASPone Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASPone Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
 
     </details>
 
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     hasppage:
-      name: "HASP Page"
-      description: "Select the HASP page (1-11). Refer to the HASP Page and Button reference above."
+      name: "HASPone Page"
+      description: "Select the HASPone page (1-11). Refer to the HASPone Page and Button reference above."
       default: 1
       selector:
         number:
@@ -93,8 +93,8 @@ blueprint:
           mode: slider
           unit_of_measurement: page
     haspbutton:
-      name: "HASP Button"
-      description: "Select the HASP button (4-15) for the template display. Refer to the HASP Page and Button reference above."
+      name: "HASPone Button"
+      description: "Select the HASPone button (4-15) for the template display. Refer to the HASPone Page and Button reference above."
       default: 4
       selector:
         number:
@@ -115,7 +115,7 @@ blueprint:
         text:
     font_select:
       name: "Font"
-      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
+      description: "Select the font for the displayed text.  Refer to the HASPone Font Reference above."
       default: "8 - Noto Sans 64"
       selector:
         select:
@@ -165,7 +165,7 @@ variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -241,7 +241,7 @@ trigger_variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -282,7 +282,7 @@ condition:
 action:
   - choose:
       #########################################################################
-      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # RUN ACTIONS or Home Assistant Startup or HASPone Connect
       # Display template and apply text style
       - conditions:
           - condition: template

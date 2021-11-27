@@ -1,18 +1,20 @@
 blueprint:
-  name: "HASP Theme Light on Dark"
+  name: "HASPone Theme Light on Dark"
   description: |
+
+    ## Blueprint Version: `1.05.00`
 
     ## Description
 
-    Press RUN ACTIONS to apply the theme Light on Dark to the selected HASP device
+    Press RUN ACTIONS to apply the theme Light on Dark to the selected HASPone device
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Light_on_Dark.png)
 
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt

@@ -2,9 +2,9 @@
 
 ---
 
-## HASP Core Functionality
+## HASPone Core Functionality
 
-[![HASP Core functionality](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Core_Functionality.yaml)
+[![HASPone Core functionality](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Core_Functionality.yaml)
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Core_Functionality.png)
 
@@ -24,7 +24,7 @@ Activates a selected page after a specified period of inactivity.
 
 [![Activate Page](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Activate_Page.yaml)
 
-A button on the HASP will activate a page when pressed. Can be combined on a button with another blueprint which displays text.
+A button on the HASPone will activate a page when pressed. Can be combined on a button with another blueprint which displays text.
 
 ---
 
@@ -32,7 +32,7 @@ A button on the HASP will activate a page when pressed. Can be combined on a but
 
 [![Create Device Triggers](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Create_Device_Triggers.yaml)
 
-Create [Device Triggers](https://www.home-assistant.io/integrations/device_trigger.mqtt/) for each of the HASP buttons defined. Device triggers can be utilized while creating your own automations through the Home Assistant UI. This allows for the easy creation of automations which will be triggered when pressing buttons on your HASP.
+Create [Device Triggers](https://www.home-assistant.io/integrations/device_trigger.mqtt/) for each of the HASPone buttons defined. Device triggers can be utilized while creating your own automations through the Home Assistant UI. This allows for the easy creation of automations which will be triggered when pressing buttons on your HASPone.
 
 ---
 
@@ -52,7 +52,7 @@ Page 7 controls a selected alarm panel for code entry and arm/disarm.
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Calendar_with_Icon.png)
 
-A HASP button displays month + date on the right with a calendar icon on the left.
+A HASPone button displays month + date on the right with a calendar icon on the left.
 
 ---
 
@@ -62,7 +62,7 @@ A HASP button displays month + date on the right with a calendar icon on the lef
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Clock_with_Icon.png)
 
-A HASP button displays a clock on the right with a clock icon on the left.
+A HASPone button displays a clock on the right with a clock icon on the left.
 
 ---
 
@@ -72,7 +72,7 @@ A HASP button displays a clock on the right with a clock icon on the left.
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Clock.png)
 
-A HASP button displays a clock with configurable text options.
+A HASPone button displays a clock with configurable text options.
 
 ---
 
@@ -82,7 +82,7 @@ A HASP button displays a clock with configurable text options.
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Dimmer_with_Icon.png)
 
-A HASP button displays a dimmer control on page 4 and 5 with a toggle on/off icon to the left.
+A HASPone button displays a dimmer control on page 4 and 5 with a toggle on/off icon to the left.
 
 ---
 
@@ -92,7 +92,7 @@ A HASP button displays a dimmer control on page 4 and 5 with a toggle on/off ico
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Entity_State_or_Attribute.png)
 
-A HASP button displays the state or attribute value of an entity
+A HASPone button displays the state or attribute value of an entity
 
 ---
 
@@ -112,7 +112,7 @@ Page 8 controls a selected media player with artist and track info, track back/p
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Template.png)
 
-A button on the HASP will display the output of a template.  The template is updated when the state of a selected entity updates.
+A button on the HASPone will display the output of a template.  The template is updated when the state of a selected entity updates.
 
 ---
 
@@ -122,7 +122,7 @@ A button on the HASP will display the output of a template.  The template is upd
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Text.png)
 
-A button on the HASP will display text.  This can be useful when combined with other blueprints which perform an action, but don't apply a label to a button. Deploy both blueprints on the same button, and now you have a button that says things and does things.
+A button on the HASPone will display text.  This can be useful when combined with other blueprints which perform an action, but don't apply a label to a button. Deploy both blueprints on the same button, and now you have a button that says things and does things.
 
 ---
 
@@ -132,7 +132,7 @@ A button on the HASP will display text.  This can be useful when combined with o
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Toggle.gif)
 
-Press a button on the HASP to toggle the state of an entity.  The button colors and text can change in response to the on/off state or attribute of the selected entity.
+Press a button on the HASPone to toggle the state of an entity.  The button colors and text can change in response to the on/off state or attribute of the selected entity.
 
 ---
 
@@ -142,7 +142,7 @@ Press a button on the HASP to toggle the state of an entity.  The button colors 
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Value_with_Icon_and_Colors.png)
 
-A HASP button displays the current value of an entity (state or attribute) with a dynamic icon on the left and (optional) colors.  Up to 5 icons and color ranges are supported.
+A HASPone button displays the current value of an entity (state or attribute) with a dynamic icon on the left and (optional) colors.  Up to 5 icons and color ranges are supported.
 
 ---
 
@@ -162,7 +162,7 @@ The slider button on page 8 displays a volume control
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Condition_with_Icon.png)
 
-A HASP button displays the current weather condition on the right with a matching icon on the left
+A HASPone button displays the current weather condition on the right with a matching icon on the left
 
 ---
 
@@ -172,7 +172,7 @@ A HASP button displays the current weather condition on the right with a matchin
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Forecast.png)
 
-A HASP button displays an attribute of a selected weather forecast. You can use this to display tomorrow's condition, or tonight's low temp. Available forecast conditions will vary by weather provider, check your selected provider's state under `Developer Tools` > `States` to get a sense of what your selected provider has to offer.
+A HASPone button displays an attribute of a selected weather forecast. You can use this to display tomorrow's condition, or tonight's low temp. Available forecast conditions will vary by weather provider, check your selected provider's state under `Developer Tools` > `States` to get a sense of what your selected provider has to offer.
 
 ---
 
@@ -182,7 +182,7 @@ A HASP button displays an attribute of a selected weather forecast. You can use 
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Temperature_Color_Icon_Only.png)
 
-A HASP button displays the current temperature as an icon that is optionally coloured.
+A HASPone button displays the current temperature as an icon that is optionally coloured.
 
 ---
 
@@ -192,7 +192,7 @@ A HASP button displays the current temperature as an icon that is optionally col
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Temperature_with_Icon_and_Colors.png)
 
-A HASP button displays the current temperature from a selected weather provider on the right with a dynamic thermometer icon on the left and (optional) colors.
+A HASPone button displays the current temperature from a selected weather provider on the right with a dynamic thermometer icon on the left and (optional) colors.
 
 ---
 
@@ -200,7 +200,7 @@ A HASP button displays the current temperature from a selected weather provider 
 
 [![Perform Action](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Perform_Action.yaml)
 
-A button on the HASP will perform an action when pressed. Can be combined on a button with another blueprint which displays text.
+A button on the HASPone will perform an action when pressed. Can be combined on a button with another blueprint which displays text.
 
 ---
 
@@ -210,7 +210,7 @@ A button on the HASP will perform an action when pressed. Can be combined on a b
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Cycle_Automations.gif)
 
-A button on the HASP will toggle through as many as 10 selected automations.  This allows the user to assign multiple blueprints to the same button on the HASPone device, and to cycle between them by pressing the selected button.
+A button on the HASPone will toggle through as many as 10 selected automations.  This allows the user to assign multiple blueprints to the same button on the HASPone device, and to cycle between them by pressing the selected button.
 
 Optionally, a timeout can be set to cycle back to a "default" automation after a specified interval, or to continuously cycle through selected automations.
 
@@ -236,27 +236,27 @@ Dim the screen backlight after a specified period of inactivity.
 
 [![Apply Theme](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Apply_Theme.yaml)
 
-A button on the HASP will have the current device theme or custom colors applied.
+A button on the HASPone will have the current device theme or custom colors applied.
 
 ---
 
-### HASP Theme Dark on Light
+### HASPone Theme Dark on Light
 
-[![HASP Theme Dark on Light](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Dark_on_Light.yaml)
+[![HASPone Theme Dark on Light](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Dark_on_Light.yaml)
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Dark_on_Light.png)
 
-Press RUN ACTIONS to apply the theme Dark on Light to the selected HASP device
+Press RUN ACTIONS to apply the theme Dark on Light to the selected HASPone device
 
 ---
 
-### HASP Theme Light on Dark
+### HASPone Theme Light on Dark
 
-[![HASP Theme Light on Dark](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Light_on_Dark.yaml)
+[![HASPone Theme Light on Dark](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Light_on_Dark.yaml)
 
 ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Light_on_Dark.png)
 
-Press RUN ACTIONS to apply the theme Light on Dark to the selected HASP device
+Press RUN ACTIONS to apply the theme Light on Dark to the selected HASPone device
 
 ---
 
@@ -264,4 +264,4 @@ Press RUN ACTIONS to apply the theme Light on Dark to the selected HASP device
 
 [![Remove MQTT Discovery Devices](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Remove_MQTT_Discovery_Devices.yaml)
 
-Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASP.
+Press RUN ACTIONS to remove retained MQTT discovery messages for a decommissioned HASPone.

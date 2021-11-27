@@ -1,18 +1,18 @@
 blueprint:
-  name: "HASP p[x].b[y] displays the weather forecast"
+  name: "HASPone p[x].b[y] displays the weather forecast"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     ## Description
 
-    A HASP button displays an attribute of a selected weather forecast.  You can use this to display tomorrow's condition, or tonight's low temp.  
+    A HASPone button displays an attribute of a selected weather forecast.  You can use this to display tomorrow's condition, or tonight's low temp.  
     Available forecast conditions will vary by weather provider, check your selected provider's state under `Developer Tools` > `States` to get
     a sense of what your selected provider has to offer.
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Forecast.png)
 
-    ### HASP Page and Button reference
+    ### HASPone Page and Button reference
 
     <details>
 
@@ -30,49 +30,47 @@ blueprint:
 
     </details>
 
-    ## HASP Font reference
+    ## HASPone Font Reference
 
     <details>
 
-    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) in 4 sizes and [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size.
+    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASPone project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
 
-    | Number | Font              | Characters per line | Lines per button |
-    |--------|-------------------|---------------------|------------------|
-    | 0      | Consolas 24 point | 20 characters       | 2 lines          |
-    | 1      | Consolas 32 point | 15 characters       | 2 lines          |
-    | 2      | Consolas 48 point | 10 characters       | 1 lines          |
-    | 3      | Consolas 80 point | 6 characters        | 1 lines          |
-    | 4      | Webdings 56 point | 8 characters        | 1 lines          |
+    | Font | Name              | Characters per line | Lines per button |
+    | :--- | :---------------- | :-------------------| :--------------- |
+    | 0    | Consolas 24       | 20 characters       | 2 lines          |
+    | 1    | Consolas 32       | 15 characters       | 2 lines          |
+    | 2    | Consolas 48       | 10 characters       | 1 line           |
+    | 3    | Consolas 80       | 6 characters        | 1 line           |
+    | 4    | Webdings 56       | 8 characters        | 1 line           |
+    | 5    | Noto Sans 24      | Proportional        | 2 lines          |
+    | 6    | Noto Sans 32      | Proportional        | 2 lines          |
+    | 7    | Noto Sans 48      | Proportional        | 1 line           |
+    | 8    | Noto Sans 64      | Proportional        | 1 line           |
+    | 9    | Noto Sans 80      | Proportional        | 1 line           |
+    | 10   | Noto Sans Bold 80 | Proportional        | 1 line           |
 
-    The HASP also includes [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional font in 5 sizes.
+    ### Icons
 
-    | Number | Font                       |
-    |--------|----------------------------|
-    | 5      | Noto Sans Regular 24 point |
-    | 6      | Noto Sans Regular 32 point |
-    | 7      | Noto Sans Regular 48 point |
-    | 8      | Noto Sans Regular 64 point |
-    | 9      | Noto Sans Regular 80 point |
-    | 10     | Noto Sans Bold 80 point    |
+    Fonts 5-10 also include [1400+ icons which you can copy and paste from here](https://htmlpreview.github.io/?https://github.com/HASwitchPlate/HASPone/blob/main/images/hasp-fontawesome5.html)
 
     ### Font examples
-    
-    ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
 
-    </details>
+    ![HASPone Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASPone Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASPone Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
+
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     hasppage:
-      name: "HASP Page"
-      description: "Select the HASP page (1-11) for the forecast. Refer to the HASP Page and Button reference above."
+      name: "HASPone Page"
+      description: "Select the HASPone page (1-11) for the forecast. Refer to the HASPone Page and Button reference above."
       default: 1
       selector:
         number:
@@ -81,8 +79,8 @@ blueprint:
           mode: slider
           unit_of_measurement: page
     haspbutton:
-      name: "HASP Button"
-      description: "Select the HASP button (4-15) for the forecast. Refer to the HASP Page and Button reference above."
+      name: "HASPone Button"
+      description: "Select the HASPone button (4-15) for the forecast. Refer to the HASPone Page and Button reference above."
       default: 4
       selector:
         number:
@@ -120,7 +118,7 @@ blueprint:
         text:
     font_select:
       name: "Font"
-      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
+      description: "Select the font for the displayed text.  Refer to the HASPone Font Reference above."
       default: "8 - Noto Sans 64"
       selector:
         select:
@@ -176,7 +174,7 @@ variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -264,7 +262,7 @@ trigger_variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
