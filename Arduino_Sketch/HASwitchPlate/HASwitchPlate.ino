@@ -2233,10 +2233,20 @@ void configRead()
           {
             strcpy(nextionBaud, jsonConfigValues["nextionBaud"]);
           }
+          if (strcmp(nextionBaud, "") == 0)
+          { // Cover off any edge case where this value winds up being empty
+            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty nextionBaud value, setting to '115200'"));
+            strcpy(nextionBaud, "115200");
+          }
           if (!jsonConfigValues["nextionMaxPages"].isNull())
           {
             nextionMaxPages = jsonConfigValues["nextionMaxPages"];
           }
+          if (nextionMaxPages < 1)
+          { // Cover off any edge case where this value winds up being zero or negative
+            debugPrintln(F("SPIFFS: [WARNING] /config.json has nextionMaxPages value of zero or negative, setting to '11'"));
+            nextionMaxPages = 11;
+          }          
           if (!jsonConfigValues["motionPinConfig"].isNull())
           {
             strcpy(motionPinConfig, jsonConfigValues["motionPinConfig"]);
