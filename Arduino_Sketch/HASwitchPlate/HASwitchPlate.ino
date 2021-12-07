@@ -2246,7 +2246,7 @@ void configRead()
           { // Cover off any edge case where this value winds up being zero or negative
             debugPrintln(F("SPIFFS: [WARNING] /config.json has nextionMaxPages value of zero or negative, setting to '11'"));
             nextionMaxPages = 11;
-          }          
+          }
           if (!jsonConfigValues["motionPinConfig"].isNull())
           {
             strcpy(motionPinConfig, jsonConfigValues["motionPinConfig"]);
@@ -2348,7 +2348,6 @@ void configSaveCallback()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configSave()
 { // Save the custom parameters to config.json
-  nextionSetAttr("p[0].b[1].txt", "\"Saving\\rconfig\"");
   debugPrintln(F("SPIFFS: Saving config"));
   DynamicJsonDocument jsonConfigValues(2048);
 
@@ -2764,7 +2763,7 @@ void webHandleSaveConfig()
   if (webServer.arg("mqttServer") != "" && webServer.arg("mqttServer") != String(mqttServer))
   { // Handle mqttServer
     shouldSaveConfig = true;
-    webServer.arg("mqttServer").toCharArray(mqttServer, 64);
+    webServer.arg("mqttServer").toCharArray(mqttServer, 128);
   }
   if (webServer.arg("mqttPort") != "" && webServer.arg("mqttPort") != String(mqttPort))
   { // Handle mqttPort
@@ -2811,8 +2810,8 @@ void webHandleSaveConfig()
     shouldSaveConfig = true;
     webServer.arg("hassDiscovery").toCharArray(hassDiscovery, 128);
   }
-  if (webServer.arg("nextionMaxPages") != String(nextionMaxPages))
-  { // Handle nextionMaxPages
+  if ((webServer.arg("nextionMaxPages") != String(nextionMaxPages)) && (webServer.arg("nextionMaxPages").toInt() < 256) && (webServer.arg("nextionMaxPages").toInt() > 0))
+  {
     shouldSaveConfig = true;
     nextionMaxPages = webServer.arg("nextionMaxPages").toInt();
   }
