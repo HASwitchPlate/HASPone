@@ -11,6 +11,10 @@
     "version": 3,
     "firmware": "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/Nextion_HMI/HASwitchPlate-Enhanced.tft"
   },
+  "NX3224F024_011R": {
+    "version": 3,
+    "firmware": "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/Nextion_HMI/HASwitchPlate-Discovery.tft"
+  },
   "TJC3224T024_011R": {
     "version": 3,
     "firmware": "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/Nextion_HMI/HASwitchPlate-TJC.tft"
