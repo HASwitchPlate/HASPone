@@ -214,6 +214,12 @@ blueprint:
       default: true
       selector:
         boolean:
+    maximize_performance:
+      name: "Maximize HASPone performance"
+      description: "When enabled, LCD serial speed is set to 921600 and local serial debug is disabled for maximum HASPone performance.  Disable this for troubleshooting or development.  Press RUN ACTIONS to apply."
+      default: true
+      selector:
+        boolean:
 
 mode: parallel
 max_exceeded: silent
@@ -243,6 +249,7 @@ variables:
   page_names: !input page_names
   show_lovelace: !input show_lovelace
   reset_hasp: !input reset_hasp
+  maximize_performance: !input maximize_performance
   activepage: >-
     {%- set activepage = namespace() -%}
     {%- for entity in device_entities(haspdevice) -%}
@@ -357,14 +364,6 @@ action:
           - condition: template
             value_template: "{{ (trigger is not defined) or (trigger.platform is none) }}"
         sequence:
-          # Send page select button config
-          - service: mqtt.publish
-            data:
-              topic: "{{jsoncommandtopic}}"
-              payload: >-
-                [{% for p in range(1,12) %}"p[{{p}}].b[1].font={{page1font}}","p[{{p}}].b[1].txt=\"{{page1text}}\"",{% endfor %}
-                {% for p in range(1,12) %}"p[{{p}}].b[2].font={{page2font}}","p[{{p}}].b[2].txt=\"{% if page_scroll %}{{page_names.get("page" ~ p)}}{% else %}{{page2text}}{% endif %}\"",{% endfor %}
-                {% for p in range(1,12) %}"p[{{p}}].b[3].font={{page3font}}","p[{{p}}].b[3].txt=\"{{page3text}}\""{% if not loop.last %},{% endif %}{% endfor %}]
           - service: mqtt.publish # publish alwayson payload
             data:
               topic: "hasp/{{haspname}}/alwayson"
@@ -466,7 +465,38 @@ action:
                                 action: url
                                 url_path: http://{{haspIP}}
                         ```
-
+          - choose:
+              #########################################################################
+              # Set LCD communication serial speed to max and disable local serial debug output
+              - conditions:
+                  - condition: template
+                    value_template: "{{ maximize_performance }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "hasp/{{haspname}}/command/debugserialenabled"
+                      payload: "false"
+                  - service: mqtt.publish
+                    data:
+                      topic: "hasp/{{haspname}}/command/nextionbaud"
+                      payload: "921600"
+            default:
+              - service: mqtt.publish
+                data:
+                  topic: "hasp/{{haspname}}/command/debugserialenabled"
+                  payload: "true"
+              - service: mqtt.publish
+                data:
+                  topic: "hasp/{{haspname}}/command/nextionbaud"
+                  payload: "115200"         
+          # Send page select button config
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: >-
+                [{% for p in range(1,12) %}"p[{{p}}].b[1].font={{page1font}}","p[{{p}}].b[1].txt=\"{{page1text}}\"",{% endfor %}
+                {% for p in range(1,12) %}"p[{{p}}].b[2].font={{page2font}}","p[{{p}}].b[2].txt=\"{% if page_scroll %}{{page_names.get("page" ~ p)}}{% else %}{{page2text}}{% endif %}\"",{% endfor %}
+                {% for p in range(1,12) %}"p[{{p}}].b[3].font={{page3font}}","p[{{p}}].b[3].txt=\"{{page3text}}\""{% if not loop.last %},{% endif %}{% endfor %}]
           - choose:
               #########################################################################
               # Push some defaults to the device
