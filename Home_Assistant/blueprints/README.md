@@ -270,6 +270,16 @@ Press RUN ACTIONS to apply the theme Light on Dark to the selected HASPone devic
 
 ---
 
+### HASPone Theme Light on Dark Blue
+
+[![HASPone Theme Light on Dark](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Theme_Light_on_BlueDark.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Theme_Light_on_BlueDark.png)
+
+Press RUN ACTIONS to apply the theme Light on Dark Blue to the selected HASPone device
+
+---
+
 ### Remove MQTT Discovery Devices
 
 [![Remove MQTT Discovery Devices](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Remove_MQTT_Discovery_Devices.yaml)
