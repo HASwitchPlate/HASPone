@@ -166,6 +166,16 @@ A HASPone button displays the current weather condition on the right with a matc
 
 ---
 
+### Display Weather Condition Icon Only
+
+[![Display Weather Condition Icon Only](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Weather_Condition_Icon_Only.yaml)
+
+![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Condition_Icon_Only.png)
+
+A HASPone button displays the current weather condition as an icon
+
+---
+
 ### Display Weather Forecast
 
 [![Display Weather Forecast](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Weather_Forecast.yaml)

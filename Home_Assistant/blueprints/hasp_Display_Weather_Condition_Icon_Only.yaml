@@ -12,15 +12,45 @@ blueprint:
 
     ## HASPone Page and Button reference
 
+    The images below show each available HASPone page along with the layout of available button objects.
+
     <details>
 
-    This automation is designed to work with the full-width buttons found on pages 1-3
+    | Page 0 | Pages 1-3 | Pages 4-5 |
+    |--------|-----------|-----------|
+    | ![Page 0](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p0_Init_Screen.png) | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) | ![Pages 4-5](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p4-p5_3sliders.png) |
 
-    | Pages 1-3 |
-    |-----------|
-    | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) |
+    | Page 6 | Page 7 | Page 8 |
+    |--------|--------|--------|
+    | ![Page 6](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p6_8buttons.png) | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p7_12buttons.png) | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+    | Page 9 | Page 10 | Page 11 |
+    |--------|---------|---------|
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p11_1button+1slider.png)
 
     </details>
+
+    ## HASPone Font Reference
+
+    <details>
+
+    Weather icons are available in 6 different sizes
+
+    | Font | Name              |
+    | :--- | :---------------- |
+    | 5    | Noto Sans 24      |
+    | 6    | Noto Sans 32      |
+    | 7    | Noto Sans 48      |
+    | 8    | Noto Sans 64      |
+    | 9    | Noto Sans 80      |
+    | 10   | Noto Sans Bold 80 |
+
+    ### Font examples
+
+    ![HASPone Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASPone Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
+
+    </details>
+
   domain: automation
   input:
     haspdevice:
@@ -57,6 +87,81 @@ blueprint:
       selector:
         entity:
           domain: weather
+    font_select:
+      name: "Font"
+      description: "Select the font for the displayed icon.  Refer to the HASPone Font Reference above."
+      default: "8 - Noto Sans 64"
+      selector:
+        select:
+          options:
+            - "5 - Noto Sans 24"
+            - "6 - Noto Sans 32"
+            - "7 - Noto Sans 48"
+            - "8 - Noto Sans 64"
+            - "9 - Noto Sans 80"
+            - "10 - Noto Sans Bold 80"
+    xcen_select:
+      name: "Icon horizontal alignment"
+      description: "Horizontal icon alignment: 0=Left 1=Center 2=Right"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Left aligned"
+            - "1 - Centered"
+            - "2 - Right aligned"
+    ycen_select:
+      name: "Icon vertical alignment"
+      description: "Vertical icon alignment: 0=Top 1=Center 2=Bottom"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Top aligned"
+            - "1 - Centered"
+            - "2 - Bottom aligned"
+    selected_fgcolor:
+      name: "Selected foreground color"
+      description: 'Selected foreground color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    selected_bgcolor:
+      name: "Selected background color"
+      description: 'Selected background color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_fgcolor:
+      name: "Unselected foreground color"
+      description: 'Unselected foreground color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme unselected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_bgcolor:
+      name: "Unselected background color"
+      description: 'Unselected background color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme unselected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    colorize_icon:
+      name: "Colorize weather icon"
+      description: "When enabled, weather condition icon will be colored based on the condition (eg, sunny will be yellow).  If disabled, use the colors selected above."
+      default: true
+      selector:
+        boolean:
 
 mode: parallel
 max_exceeded: silent
@@ -77,6 +182,17 @@ variables:
   hasppage: !input hasppage
   haspbutton: !input haspbutton
   weather_provider: !input weather_provider
+  font_select: !input font_select
+  font: '{{ font_select.split(" - ")[0] | int }}'
+  xcen_select: !input xcen_select
+  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  ycen_select: !input ycen_select
+  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  selected_fgcolor: !input selected_fgcolor
+  selected_bgcolor: !input selected_bgcolor
+  unselected_fgcolor: !input unselected_fgcolor
+  unselected_bgcolor: !input unselected_bgcolor
+  colorize_icon: !input colorize_icon
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
@@ -90,7 +206,7 @@ variables:
     {%- elif condition == "fog" -%}
       
     {%- elif condition == "hail" -%}
-      
+      
     {%- elif condition == "lightning" -%}
       
     {%- elif condition == "lightning-rainy" -%}
@@ -116,32 +232,6 @@ variables:
     {%- else -%}
       
     {%- endif -%}
-  text: >-
-    {{-
-      states(weather_provider) |
-      replace("windy-variant","windy") |
-      replace("clear-night","clear night") |
-      replace("partlycloudy","partly cloudy") |
-      replace("lightning-rainy","lightning & rain") |
-      replace("snowy-rainy","snow & rain") |
-      title
-    -}}
-  font: >-
-    {%- set weatherlength = text | length -%}
-    {%- if weatherlength < 7 -%}
-      8
-    {%- elif weatherlength < 12 -%}
-      7
-    {%- else -%}
-      6
-    {%- endif -%}
-  ypos: "{{(haspbutton|int - 4) * 67 + 2}}"
-  xpos: 0
-  iconwidth: 65
-  iconheight: 65
-  iconfont: 7
-  xcen: 1
-  ycen: 1
   activepage: >-
     {%- set activepage = namespace() -%}
     {%- for entity in device_entities(haspdevice) -%}
@@ -155,53 +245,108 @@ variables:
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
   selectedfg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (selected_fgcolor|int) >= 0 -%}
+      {{ selected_fgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
   selectedbg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (selected_bgcolor|int) >= 0 -%}
+      {{ selected_bgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
   unselectedfg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (unselected_fgcolor|int) >= 0 -%}
+      {{ unselected_fgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
   unselectedbg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
+    {%- if (unselected_bgcolor|int) >= 0 -%}
+      {{ unselected_bgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
+  icon_color: >-
+    {%- if not colorize_icon -%}
+      {{ selectedfg }}
+    {%- else -%}
+      {%- set condition=states(weather_provider) -%}
+      {%- if condition == "clear-night" -%}
+        6350
+      {%- elif condition == "cloudy" -%}
+        29779
+      {%- elif condition == "fog" -%}
+        29779
+      {%- elif condition == "hail" -%}
+        29779
+      {%- elif condition == "lightning" -%}
+        65504
+      {%- elif condition == "lightning-rainy" -%}
+        65504
+      {%- elif condition == "partlycloudy" -%}
+        29779
+      {%- elif condition == "pouring" -%}
+        29779
+      {%- elif condition == "rainy" -%}
+        29779
+      {%- elif condition == "snowy" -%}
+        1535
+      {%- elif condition == "snowy-rainy" -%}
+        1535
+      {%- elif condition == "sunny" -%}
+        65504
+      {%- elif condition == "windy" -%}
+        1535
+      {%- elif condition == "windy-variant" -%}
+        1535
+      {%- elif condition == "exceptional" -%}
+        63488
+      {%- else -%}
+        {{ selected_fgcolor }}
       {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}  
 
 trigger_variables:
   haspdevice: !input haspdevice
@@ -267,10 +412,10 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                ["{{haspobject}}.font={{iconfont}}",
+                ["{{haspobject}}.font={{font}}",
                 "{{haspobject}}.xcen={{xcen}}",
                 "{{haspobject}}.ycen={{ycen}}",
-                "{{haspobject}}.pco={{selectedfg}}",
+                "{{haspobject}}.pco={{icon_color}}",
                 "{{haspobject}}.bco={{selectedbg}}",
                 "{{haspobject}}.pco2={{unselectedfg}}",
                 "{{haspobject}}.bco2={{unselectedbg}}",
@@ -285,7 +430,7 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                ["{{haspobject}}.pco={{selectedfg}}",
+                ["{{haspobject}}.pco={{icon_color}}",
                 "{{haspobject}}.font={{font}}",
                 "{{haspobject}}.txt=\"{{icon}} \""]
       #########################################################################
@@ -300,7 +445,7 @@ action:
               # Any change to the button will remove the overlaid icon.
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedfgtopic) and not colorize_icon }}"
                 sequence:
                   - service: mqtt.publish
                     data:
