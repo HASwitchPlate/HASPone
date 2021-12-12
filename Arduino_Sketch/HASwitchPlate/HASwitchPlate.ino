@@ -186,12 +186,10 @@ void setup()
 
   pinMode(nextionResetPin, OUTPUT);    // Take control over the power switch for the LCD
   digitalWrite(nextionResetPin, HIGH); // Power on the LCD
-
-  configRead(); // Check filesystem for a saved config.json
-
-  Serial.begin(atoi(nextionBaud));  // Serial - LCD RX (after swap), debug TX
-  Serial1.begin(atoi(nextionBaud)); // Serial1 - LCD TX, no RX
-  Serial.swap();                    // Swap to allow hardware UART comms to LCD
+  configRead();                        // Check filesystem for a saved config.json
+  Serial.begin(atoi(nextionBaud));     // Serial - LCD RX (after swap), debug TX
+  Serial1.begin(atoi(nextionBaud));    // Serial1 - LCD TX, no RX
+  Serial.swap();                       // Swap to allow hardware UART comms to LCD
 
   if (!nextionConnect())
   {
@@ -552,20 +550,29 @@ void mqttProcessInput(String &strTopic, String &strPayload)
   // subTopic: p[1].b[4].txt
 
   // Incoming Namespace (replace /device/ with /group/ for group commands)
-  // '[...]/device/command' -m '' = No command requested, respond with mqttStatusUpdate()
-  // '[...]/device/command' -m 'dim=50' = nextionSendCmd("dim=50")
-  // '[...]/device/command/json' -m '["dim=5", "page 1"]' = nextionSendCmd("dim=50"), nextionSendCmd("page 1")
-  // '[...]/device/command/p[1].b[4].txt' -m '' = nextionGetAttr("p[1].b[4].txt")
-  // '[...]/device/command/p[1].b[4].txt' -m '"Lights On"' = nextionSetAttr("p[1].b[4].txt", "\"Lights On\"")
-  // '[...]/device/brightness/set' -m '50' = nextionSendCmd("dims=50")
-  // '[...]/device/light/switch' -m 'OFF' = nextionSendCmd("dims=0")
-  // '[...]/device/command/page' -m '1' = nextionSendCmd("page 1")
-  // '[...]/device/command/statusupdate' -m '' = mqttStatusUpdate()
-  // '[...]/device/command/lcdupdate' -m 'http://192.168.0.10/local/HASwitchPlate.tft' = nextionOtaStartDownload("http://192.168.0.10/local/HASwitchPlate.tft")
-  // '[...]/device/command/lcdupdate' -m '' = nextionOtaStartDownload("lcdFirmwareUrl")
-  // '[...]/device/command/espupdate' -m 'http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin' = espStartOta("http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin")
-  // '[...]/device/command/espupdate' -m '' = espStartOta("espFirmwareUrl")
-  // '[...]/device/command/beep' -m '100,200,3' = espStartOta("espFirmwareUrl")
+  // '[...]/device/command' -m '' == No command requested, respond with mqttStatusUpdate()
+  // '[...]/device/command' -m 'dim=50' == nextionSendCmd("dim=50")
+  // '[...]/device/command/json' -m '["dim=5", "page 1"]' == nextionSendCmd("dim=50"), nextionSendCmd("page 1")
+  // '[...]/device/command/p[1].b[4].txt' -m '' == nextionGetAttr("p[1].b[4].txt")
+  // '[...]/device/command/p[1].b[4].txt' -m '"Lights On"' == nextionSetAttr("p[1].b[4].txt", "\"Lights On\"")
+  // '[...]/device/brightness/set' -m '50' == nextionSendCmd("dims=50")
+  // '[...]/device/light/switch' -m 'OFF' == nextionSendCmd("dims=0")
+  // '[...]/device/command/page' -m '1' == nextionSendCmd("page 1")
+  // '[...]/device/command/statusupdate' -m '' == mqttStatusUpdate()
+  // '[...]/device/command/discovery' -m '' == call mqttDiscovery()
+  // '[...]/device/command/lcdupdate' -m 'http://192.168.0.10/local/HASwitchPlate.tft' == nextionOtaStartDownload("http://192.168.0.10/local/HASwitchPlate.tft")
+  // '[...]/device/command/lcdupdate' -m '' == nextionOtaStartDownload("lcdFirmwareUrl")
+  // '[...]/device/command/espupdate' -m 'http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin' == espStartOta("http://192.168.0.10/local/HASwitchPlate.ino.d1_mini.bin")
+  // '[...]/device/command/espupdate' -m '' == espStartOta("espFirmwareUrl")
+  // '[...]/device/command/beep' -m '100,200,3' == beep on for 100msec, off for 200msec, repeat 3 times
+  // '[...]/device/command/hassdiscovery' -m 'homeassistant' == hassDiscovery = homeassistant
+  // '[...]/device/command/nextionmaxpages' -m '11' == nextionmaxpages = 11
+  // '[...]/device/command/nextionbaud' -m '921600' == nextionBaud = 921600
+  // '[...]/device/command/debugserialenabled' -m 'true' == enable serial debug output
+  // '[...]/device/command/debugtelnetenabled' -m 'true' == enable telnet debug output
+  // '[...]/device/command/mdnsenabled' -m 'true' == enable mDNS responder
+  // '[...]/device/command/beepenabled' -m 'true' == enable beep output on keypress
+  // '[...]/device/command/ignoretouchwhenoff' -m 'true' == disable actions on keypress
 
   debugPrintln(String(F("MQTT IN: '")) + strTopic + String(F("' : '")) + strPayload + String(F("'")));
 
@@ -599,6 +606,115 @@ void mqttProcessInput(String &strTopic, String &strPayload)
   else if (strTopic == (mqttCommandTopic + "/statusupdate") || strTopic == (mqttGroupCommandTopic + "/statusupdate"))
   {                     // '[...]/device/command/statusupdate' == mqttStatusUpdate()
     mqttStatusUpdate(); // return status JSON via MQTT
+  }
+  else if (strTopic == (mqttCommandTopic + "/discovery") || strTopic == (mqttGroupCommandTopic + "/discovery"))
+  {                  // '[...]/device/command/discovery' == mqttDiscovery()
+    mqttDiscovery(); // send Home Assistant discovery message via MQTT
+  }
+  else if (strTopic == (mqttCommandTopic + "/hassdiscovery") || strTopic == (mqttGroupCommandTopic + "/hassdiscovery"))
+  {                                             // '[...]/device/command/hassdiscovery' -m 'homeassistant' == hassDiscovery = homeassistant
+    strPayload.toCharArray(hassDiscovery, 128); // set hassDiscovery to value provided in payload
+    configSave();
+    mqttDiscovery(); // send Home Assistant discovery message on new discovery topic via MQTT
+  }
+  else if ((strTopic == (mqttCommandTopic + "/nextionmaxpages") || strTopic == (mqttGroupCommandTopic + "/nextionmaxpages")) && (strPayload.toInt() < 256) && (strPayload.toInt() > 0))
+  {                                       // '[...]/device/command/nextionmaxpages' -m '11' == nextionmaxpages = 11
+    nextionMaxPages = strPayload.toInt(); // set nextionMaxPages to value provided in payload
+    configSave();
+    mqttDiscovery(); // send Home Assistant discovery message via MQTT
+  }
+  else if ((strTopic == (mqttCommandTopic + "/nextionbaud") || strTopic == (mqttGroupCommandTopic + "/nextionbaud")) &&
+           ((strPayload.toInt() == 2400) ||
+            (strPayload.toInt() == 4800) ||
+            (strPayload.toInt() == 9600) ||
+            (strPayload.toInt() == 19200) ||
+            (strPayload.toInt() == 31250) ||
+            (strPayload.toInt() == 38400) ||
+            (strPayload.toInt() == 57600) ||
+            (strPayload.toInt() == 115200) ||
+            (strPayload.toInt() == 230400) ||
+            (strPayload.toInt() == 250000) ||
+            (strPayload.toInt() == 256000) ||
+            (strPayload.toInt() == 512000) ||
+            (strPayload.toInt() == 921600)))
+  {                                         // '[...]/device/command/nextionbaud' -m '921600' == nextionBaud = 921600
+    strPayload.toCharArray(nextionBaud, 7); // set nextionBaud to value provided in payload
+    nextionAckEnable = false;
+    nextionSendCmd("bauds=" + strPayload); // send baud rate to nextion
+    nextionAckEnable = true;
+    Serial.flush();
+    Serial1.flush();
+    Serial.end();
+    Serial1.end();
+    Serial.begin(atoi(nextionBaud));  // Serial - LCD RX (after swap), debug TX
+    Serial1.begin(atoi(nextionBaud)); // Serial1 - LCD TX, no RX
+    Serial.swap();                    // Swap to allow hardware UART comms to LCD
+    configSave();
+  }
+  else if (strTopic == (mqttCommandTopic + "/debugserialenabled") || strTopic == (mqttGroupCommandTopic + "/debugserialenabled"))
+  {                                             // '[...]/device/command/debugserialenabled' -m 'true' == enable serial debug output
+    if (strPayload.equalsIgnoreCase("true"))
+    {
+      debugSerialEnabled = true;
+      configSave();
+    }
+    else if(strPayload.equalsIgnoreCase("false"))
+    {
+      debugSerialEnabled = false;
+      configSave();
+    }    
+  }
+  else if (strTopic == (mqttCommandTopic + "/debugtelnetenabled") || strTopic == (mqttGroupCommandTopic + "/debugtelnetenabled"))
+  {                                             // '[...]/device/command/debugtelnetenabled' -m 'true' == enable telnet debug output
+    if (strPayload.equalsIgnoreCase("true"))
+    {
+      debugTelnetEnabled = true;
+      configSave();
+    }
+    else if(strPayload.equalsIgnoreCase("false"))
+    {
+      debugTelnetEnabled = false;
+      configSave();
+    }    
+  }
+  else if (strTopic == (mqttCommandTopic + "/mdnsenabled") || strTopic == (mqttGroupCommandTopic + "/mdnsenabled"))
+  {                                             // '[...]/device/command/mdnsenabled' -m 'true' == enable mDNS responder
+    if (strPayload.equalsIgnoreCase("true"))
+    {
+      mdnsEnabled = true;
+      configSave();
+    }
+    else if(strPayload.equalsIgnoreCase("false"))
+    {
+      mdnsEnabled = false;
+      configSave();
+    }    
+  }
+  else if (strTopic == (mqttCommandTopic + "/beepenabled") || strTopic == (mqttGroupCommandTopic + "/beepenabled"))
+  {                                             // '[...]/device/command/beepenabled' -m 'true' == enable beep output on keypress
+    if (strPayload.equalsIgnoreCase("true"))
+    {
+      beepEnabled = true;
+      configSave();
+    }
+    else if(strPayload.equalsIgnoreCase("false"))
+    {
+      beepEnabled = false;
+      configSave();
+    }    
+  }
+  else if (strTopic == (mqttCommandTopic + "/ignoretouchwhenoff") || strTopic == (mqttGroupCommandTopic + "/ignoretouchwhenoff"))
+  {                                             // '[...]/device/command/ignoretouchwhenoff' -m 'true' == disable actions on keypress
+    if (strPayload.equalsIgnoreCase("true"))
+    {
+      ignoreTouchWhenOff = true;
+      configSave();
+    }
+    else if(strPayload.equalsIgnoreCase("false"))
+    {
+      ignoreTouchWhenOff = false;
+      configSave();
+    }    
   }
   else if (strTopic == (mqttCommandTopic + "/lcdupdate") || strTopic == (mqttGroupCommandTopic + "/lcdupdate"))
   { // '[...]/device/command/lcdupdate' -m 'http://192.168.0.10/local/HASwitchPlate.tft' == nextionOtaStartDownload("http://192.168.0.10/local/HASwitchPlate.tft")
@@ -1864,7 +1980,7 @@ void espWifiConnect()
     if (WiFi.SSID() != "")
     {
       nextionSetAttr("p[0].b[1].txt", "\"WiFi Connecting...\\r " + String(WiFi.SSID()) + "\"");
-      unsigned long connectTimer = millis() + 5000;
+      unsigned long connectTimer = millis() + 10000;
       debugPrintln(String(F("WIFI: Connecting to previously-saved SSID: ")) + String(WiFi.SSID()));
       WiFi.begin();
       while ((WiFi.status() != WL_CONNECTED) && (millis() < connectTimer))
@@ -1899,7 +2015,7 @@ void espWifiConnect()
       WiFiManagerParameter custom_haspNode("haspNode", "<br/>Node Name <small>(required: lowercase letters, numbers, and _ only)</small>", haspNode, 15, " maxlength=15 required pattern='[a-z0-9_]*'");
       WiFiManagerParameter custom_groupName("groupName", "Group Name <small>(required)</small>", groupName, 15, " maxlength=15 required");
       WiFiManagerParameter custom_mqttHeader("<br/><br/><b>MQTT</b>");
-      WiFiManagerParameter custom_mqttServer("mqttServer", "<br/>MQTT Broker <small>(required, IP address is preferred)</small>", mqttServer, 63, " maxlength=63");
+      WiFiManagerParameter custom_mqttServer("mqttServer", "<br/>MQTT Broker <small>(required, IP address is preferred)</small>", mqttServer, 127, " maxlength=127");
       WiFiManagerParameter custom_mqttPort("mqttPort", "MQTT Port <small>(required)</small>", mqttPort, 5, " maxlength=5 type='number'");
       WiFiManagerParameter custom_mqttUser("mqttUser", "MQTT User <small>(optional)</small>", mqttUser, 127, " maxlength=127");
       WiFiManagerParameter custom_mqttPassword("mqttPassword", "MQTT Password <small>(optional)</small>", mqttPassword, 127, " maxlength=127 type='password'");
@@ -1914,7 +2030,7 @@ void espWifiConnect()
         mqttTlsEnabled_checked = "type=\"checkbox\" checked=\"true\"";
       }
       WiFiManagerParameter custom_mqttTlsEnabled("mqttTlsEnabled", "MQTT TLS enabled:", mqttTlsEnabled_value.c_str(), 2, mqttTlsEnabled_checked.c_str());
-      WiFiManagerParameter custom_mqttFingerprint("mqttFingerprint", "</br>MQTT TLS Fingerprint <small>(optional, enter as 01:23:AB:CD, etc)</small>", mqttFingerprint, 60, " min length=59 maxlength=59");
+      WiFiManagerParameter custom_mqttFingerprint("mqttFingerprint", "</br>MQTT TLS Fingerprint <small>(optional, enter as 01:23:AB:CD, etc)</small>", mqttFingerprint, 59, " min length=59 maxlength=59");
       WiFiManagerParameter custom_configHeader("<br/><br/><b>Admin access</b>");
       WiFiManagerParameter custom_configUser("configUser", "<br/>Config User <small>(required)</small>", configUser, 15, " maxlength=31");
       WiFiManagerParameter custom_configPassword("configPassword", "Config Password <small>(optional)</small>", configPassword, 31, " maxlength=31 type='password'");
@@ -2171,7 +2287,7 @@ void configRead()
     if (SPIFFS.exists("/config.json"))
     { // File exists, reading and loading
       debugPrintln(F("SPIFFS: reading /config.json"));
-      debugPrintFile("/config.json");
+      // debugPrintFile("/config.json");
       File configFile = SPIFFS.open("/config.json", "r");
       if (configFile)
       {
@@ -2399,11 +2515,11 @@ void configSave()
   else
   {
     serializeJson(jsonConfigValues, configFile);
-    configFile.println("");
+    configFile.print("\n\n\n");
     configFile.flush();
+    delay(10);
     configFile.close();
   }
-  yield();
   debugPrintFile("/config.json");
   shouldSaveConfig = false;
 }
@@ -3477,7 +3593,7 @@ bool updateCheck()
     return false;
   }
 
-  DynamicJsonDocument updateJson(768);
+  DynamicJsonDocument updateJson(2048);
   DeserializationError jsonError = deserializeJson(updateJson, updateClient.getString());
   updateClient.end();
 
