@@ -457,7 +457,7 @@ action:
               # Any change to the button will remove the overlaid icon.
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedfgtopic) and ((selected_fgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -474,7 +474,7 @@ action:
               # Theme: Apply selected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedbgtopic) and ((selected_bgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -491,7 +491,7 @@ action:
               # Theme: Apply unselected foreground color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedfgtopic) and ((unselected_fgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -508,7 +508,7 @@ action:
               # Theme: Apply unselected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedbgtopic) and ((unselected_bgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:

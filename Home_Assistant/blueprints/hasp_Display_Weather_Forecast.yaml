@@ -12,7 +12,9 @@ blueprint:
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Weather_Forecast.png)
 
-    ### HASPone Page and Button reference
+    ## HASPone Page and Button Reference
+
+    The images below show each available HASPone page along with the layout of available button objects.
 
     <details>
 
@@ -57,6 +59,30 @@ blueprint:
     ### Font examples
 
     ![HASPone Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASPone Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASPone Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
+
+    </details>
+
+    ## Nextion color codes
+
+    <details>
+
+    The Nextion environment utilizes RGB 565 encoding.  [Use this handy convertor](https://nodtem66.github.io/nextion-hmi-color-convert/index.html) to select your colors and convert to the RGB 565 format.
+
+    Here are some example colors:
+
+    | Color  | Code  |
+    |--------|-------|
+    | White  | 65535 |
+    | Black  | 0     |
+    | Grey   | 25388 |
+    | Red    | 63488 |
+    | Green  | 2016  |
+    | Blue   | 31    |
+    | Yellow | 65504 |
+    | Orange | 64512 |
+    | Brown  | 48192 |
+
+    </details>
 
   domain: automation
   input:
@@ -166,6 +192,42 @@ blueprint:
       default: true
       selector:
         boolean:
+    selected_fgcolor:
+      name: "Selected foreground color"
+      description: 'Selected foreground color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    selected_bgcolor:
+      name: "Selected background color"
+      description: 'Selected background color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme selected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_fgcolor:
+      name: "Unselected foreground color"
+      description: 'Unselected foreground color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme unselected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_bgcolor:
+      name: "Unselected background color"
+      description: 'Unselected background color in Nextion RGB565 format (see "Nextion color codes" above for reference). -1 = Current theme unselected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
 
 mode: parallel
 max_exceeded: silent
@@ -192,6 +254,10 @@ variables:
   ycen: '{{ ycen_select.split(" - ")[0] | int }}'
   wrap: !input wrap
   title_case: !input title_case
+  selected_fgcolor: !input selected_fgcolor
+  selected_bgcolor: !input selected_bgcolor
+  unselected_fgcolor: !input unselected_fgcolor
+  unselected_bgcolor: !input unselected_bgcolor
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
@@ -200,9 +266,9 @@ variables:
       {{ prefix }}
     {%- endif -%}
     {%- if title_case -%}
-      {{ state_attr(weather_provider, "forecast")[forecast_index|int(default=0)].get(forecast_attribute) | title }}
+      {{ state_attr(weather_provider, "forecast")[forecast_index|int(default=0)].get(forecast_attribute)|replace("windy-variant","windy")|replace("clear-night","clear night")|replace("partlycloudy","partly cloudy")|replace("lightning-rainy","lightning & rain")|replace("snowy-rainy","snow & rain") | title }}
     {%- else -%}
-      {{ state_attr(weather_provider, "forecast")[forecast_index|int(default=0)].get(forecast_attribute) }}
+      {{ state_attr(weather_provider, "forecast")[forecast_index|int(default=0)].get(forecast_attribute)|replace("windy-variant","windy")|replace("clear-night","clear night")|replace("partlycloudy","partly cloudy")|replace("lightning-rainy","lightning & rain")|replace("snowy-rainy","snow & rain") }}
     {%- endif -%}
   isbr: "{% if wrap == true %}1{% else %}0{% endif %}"
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
@@ -210,53 +276,69 @@ variables:
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
   selectedfg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (selected_fgcolor|int) >= 0 -%}
+      {{ selected_fgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
   selectedbg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (selected_bgcolor|int) >= 0 -%}
+      {{ selected_bgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
   unselectedfg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (unselected_fgcolor|int) >= 0 -%}
+      {{ unselected_fgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
   unselectedbg: >-
-    {%- set color = namespace() -%}
-    {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
-        {%- set color.source=entity -%}
-      {%- endif -%}
-    {%- endfor -%}
-    {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
-    {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
-    {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
-    {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-    {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- if (unselected_bgcolor|int) >= 0 -%}
+      {{ unselected_bgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
 
 trigger_variables:
   haspdevice: !input haspdevice
@@ -350,7 +432,7 @@ action:
               # Theme: Apply selected foreground color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedfgtopic) and ((selected_fgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -360,7 +442,7 @@ action:
               # Theme: Apply selected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedbgtopic) and ((selected_bgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -370,7 +452,7 @@ action:
               # Theme: Apply unselected foreground color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedfgtopic) and ((unselected_fgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -380,7 +462,7 @@ action:
               # Theme: Apply unselected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedbgtopic) and ((unselected_bgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
