@@ -43,6 +43,7 @@ blueprint:
     | Brown  | 48192 |
 
     </details>
+
   domain: automation
   input:
     haspdevice:
