@@ -1,18 +1,18 @@
 blueprint:
-  name: "HASP create device triggers"
+  name: "HASPone create device triggers"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     # Description
 
-    Create [Device Triggers](https://www.home-assistant.io/integrations/device_trigger.mqtt/) for each of the HASP buttons defined below.  Device triggers can be utilized while creating your own automations through the Home Assistant UI.
+    Create [Device Triggers](https://www.home-assistant.io/integrations/device_trigger.mqtt/) for each of the HASPone buttons defined below.  Device triggers can be utilized while creating your own automations through the Home Assistant UI.
 
-    This allows for the easy creation of automations which will be triggered when pressing buttons on your HASP.
+    This allows for the easy creation of automations which will be triggered when pressing buttons on your HASPone.
 
-    ## HASP Page and Button Reference
+    ## HASPone Page and Button Reference
 
-    The images below show each available HASP page along with the layout of available button objects.
+    The images below show each available HASPone page along with the layout of available button objects.
 
     <details>
 
@@ -33,15 +33,15 @@ blueprint:
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     objects:
-      name: "HASP buttons"
+      name: "HASPone buttons"
       description: "Create one device trigger for each button in this list."
       default:
         - p[1].b[4]
@@ -59,7 +59,7 @@ variables:
   objects: !input objects
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}

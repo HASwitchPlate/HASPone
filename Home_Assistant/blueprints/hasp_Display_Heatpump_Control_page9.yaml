@@ -1,8 +1,8 @@
 blueprint:
-  name: "HASP p[9].b[all] Page 9 displays Heatpump controls"
+  name: "HASPone p[9].b[all] Page 9 displays Heatpump controls"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     # Description
 
@@ -10,7 +10,7 @@ blueprint:
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Heatpump_Control_page9.png)
 
-    ## HASP Page and Button reference
+    ## HASPone Page and Button reference
 
     <details>
 
@@ -48,8 +48,8 @@ blueprint:
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
@@ -121,7 +121,7 @@ max_exceeded: silent
 variables:
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -267,7 +267,7 @@ trigger_variables:
 #  heatpump: !input heatpump
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -308,7 +308,7 @@ condition:
 action:
   - choose:
       #########################################################################
-      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # RUN ACTIONS or Home Assistant Startup or HASPone Connect
       # Apply styles and place text
       - conditions:
           - condition: template
@@ -381,7 +381,7 @@ action:
                 sequence:
                   - choose:
                       #########################################################################
-                      # Set the volume value when the HASP slider has moved
+                      # Set the volume value when the HASPone slider has moved
 #                      - conditions:
 #                          - condition: template
 #                            value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == volumeobject ~ ".val") }}'

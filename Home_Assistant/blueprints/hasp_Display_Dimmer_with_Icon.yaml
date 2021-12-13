@@ -1,16 +1,16 @@
 blueprint:
-  name: "HASP p[x].b[y] displays a dimmer with a toggle on/off icon"
+  name: "HASPone p[x].b[y] displays a dimmer with a toggle on/off icon"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     # Description
 
-    A HASP button displays a dimmer control on page 4 and 5 with a toggle on/off icon to the left.
+    A HASPone button displays a dimmer control on page 4 and 5 with a toggle on/off icon to the left.
 
     ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/hasp_Display_Dimmer_with_Icon.png)
 
-    ## HASP Page and Button reference
+    ## HASPone Page and Button reference
 
     <details>
 
@@ -25,16 +25,16 @@ blueprint:
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     hasppage:
-      name: "HASP Page"
-      description: "Select the HASP page (4 or 5) for the dimmer. Refer to the HASP Page and Button reference above."
+      name: "HASPone Page"
+      description: "Select the HASPone page (4 or 5) for the dimmer. Refer to the HASPone Page and Button reference above."
       default: 4
       selector:
         number:
@@ -43,8 +43,8 @@ blueprint:
           mode: slider
           unit_of_measurement: page
     haspbutton:
-      name: "HASP Button"
-      description: "Select the HASP button (7-9) for the dimmer. Refer to the HASP Page and Button reference above."
+      name: "HASPone Button"
+      description: "Select the HASPone button (7-9) for the dimmer. Refer to the HASPone Page and Button reference above."
       default: 7
       selector:
         number:
@@ -59,20 +59,20 @@ blueprint:
         entity:
           domain: light
     text_on:
-      name: "HASP Button Text On"
+      name: "HASPone Button Text On"
       description: "Enter text to appear on the button above the dimmer when the selected device is ON."
       default: "Dimmer"
       selector:
         text:
     text_off:
-      name: "HASP Button Text Off"
+      name: "HASPone Button Text Off"
       description: "Enter text to appear on the button when the selected device is OFF.  The default value of {{text_on}} will leave the text unchanged when the device turns on/off"
       default: "{{text_on}}"
       selector:
         text:
     font_select:
-      name: "HASP Button Font"
-      description: "Select the text font for this button label. Refer to the HASP Font reference above."
+      name: "HASPone Button Font"
+      description: "Select the text font for this button label. Refer to the HASPone Font reference above."
       default: "6 - Noto Sans 32"
       selector:
         select:
@@ -134,7 +134,7 @@ variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -235,7 +235,7 @@ trigger_variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -276,7 +276,7 @@ condition:
 action:
   - choose:
       #########################################################################
-      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # RUN ACTIONS or Home Assistant Startup or HASPone Connect
       # Apply styles, place text, and then place icon if our target page is currently active
       - conditions:
           - condition: template
@@ -360,7 +360,7 @@ action:
                           - service: homeassistant.toggle
                             entity_id: !input dimmer
                       #########################################################################
-                      # Primary function: Set the dimmer value when the HASP slider has moved
+                      # Primary function: Set the dimmer value when the HASPone slider has moved
                       - conditions:
                           - condition: template
                             value_template: '{{ (trigger.topic == jsontopic) and (trigger.payload_json.event == dimmerobject ~ ".val") }}'

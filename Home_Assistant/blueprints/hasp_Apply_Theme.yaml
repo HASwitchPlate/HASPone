@@ -1,18 +1,18 @@
 blueprint:
-  name: "HASP p[x].b[y] has theme colors applied"
+  name: "HASPone p[x].b[y] has theme colors applied"
   description: |
 
-    ## Blueprint Version: `1.03.00`
+    ## Blueprint Version: `1.05.00`
 
     ## Description
 
-    A button on the HASP will have the current device theme or custom colors applied.
+    A button on the HASPone will have the current device theme or custom colors applied.
 
-    ## HASP Page and Button Reference
+    ## HASPone Page and Button Reference
 
     <details>
 
-    The images below show each available HASP page along with the layout of available button objects.
+    The images below show each available HASPone page along with the layout of available button objects.
 
     | Page 0 | Pages 1-3 | Pages 4-5 |
     |--------|-----------|-----------|
@@ -53,16 +53,16 @@ blueprint:
   domain: automation
   input:
     haspdevice:
-      name: "HASP Device"
-      description: "Select the HASP device"
+      name: "HASPone Device"
+      description: "Select the HASPone device"
       selector:
         device:
           integration: mqtt
           manufacturer: "HASwitchPlate"
           model: "HASPone v1.0.0"
     hasppage:
-      name: "HASP Page"
-      description: "Select the HASP page (1-11). Refer to the HASP Page and Button reference above."
+      name: "HASPone Page"
+      description: "Select the HASPone page (1-11). Refer to the HASPone Page and Button reference above."
       default: 1
       selector:
         number:
@@ -71,8 +71,8 @@ blueprint:
           mode: slider
           unit_of_measurement: page
     haspbutton:
-      name: "HASP Button"
-      description: "Select the HASP button (4-15) to apply color theme to. Refer to the HASP Page and Button reference above."
+      name: "HASPone Button"
+      description: "Select the HASPone button (4-15) to apply color theme to. Refer to the HASPone Page and Button reference above."
       default: 4
       selector:
         number:
@@ -124,7 +124,7 @@ variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -210,7 +210,7 @@ trigger_variables:
   haspdevice: !input haspdevice
   haspname: >-
     {%- for entity in device_entities(haspdevice) -%}
-      {%- if entity|regex_search("^sensor\.") -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
         {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
       {%- endif -%}
     {%- endfor -%}
@@ -247,7 +247,7 @@ condition:
 action:
   - choose:
       #########################################################################
-      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      # RUN ACTIONS or Home Assistant Startup or HASPone Connect
       # Apply text style
       - conditions:
           - condition: template
@@ -283,39 +283,39 @@ action:
               # Theme: Apply selected foreground color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedfgtopic) and ((selected_fgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
                       topic: "{{commandtopic}}.pco"
-                      payload: "{{selectedfg}}"
+                      payload: "{{trigger.payload}}"
               #########################################################################
               # Theme: Apply selected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedbgtopic) and ((selected_bgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
                       topic: "{{commandtopic}}.bco"
-                      payload: "{{selectedbg}}"
+                      payload: "{{trigger.payload}}"
               #########################################################################
               # Theme: Apply unselected foreground color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedfgtopic) and ((unselected_fgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
                       topic: "{{commandtopic}}.pco2"
-                      payload: "{{unselectedfg}}"
+                      payload: "{{trigger.payload}}"
               #########################################################################
               # Theme: Apply unselected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedbgtopic) and ((unselected_bgcolor|int) == -1) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
                       topic: "{{commandtopic}}.bco2"
-                      payload: "{{unselectedbg}}"
+                      payload: "{{trigger.payload}}"
