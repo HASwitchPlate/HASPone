@@ -26,7 +26,7 @@ Here's a quick look at the setup process:
 
 ## Have a question?
 
-Come talk to us in [the HASPone discussion forum](https://github.com/HASwitchPlate/HASPone/discussions) or [chat with us on Discord](https://discord.gg/jdU5Mrqswa).
+Come talk to us in [the HASPone discussion forum](https://github.com/HASwitchPlate/HASPone/discussions) or [chat with us on Discord](https://haswitchplate.com/discord).
 
 ## [Buy me a coffee](https://www.buymeacoffee.com/gW5rPpsKR)
 
