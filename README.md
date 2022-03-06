@@ -8,9 +8,9 @@ The HASPone is a DIY touchscreen controller you can mount into a [standard North
 
 ![Scene controller](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_SceneController.png?raw=true) ![Status display](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_Status.png?raw=true) ![Media control](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_Media.png?raw=true) ![Alarm Panel](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_AlarmPanel.png?raw=true) ![Slider/Dimmer Controls](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_Dimmers.png?raw=true) ![HVAC Controls](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_HVAC.png?raw=true) ![Light toggles](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_LightToggles.png?raw=true) ![Fan controller](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Demo_FanControls.png?raw=true) ![WiFi Setup](https://github.com/HASwitchPlate/HASPone/blob/main/images/WiFi_Config_0.png?raw=true)
 
-## [Purchase an assembled unit](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/)
+## [Purchase an assembled unit](https://www.etsy.com/listing/1191709235/haspone-haswitchplate-touchscreen-home)
 
-This build requires some specialist skills and tools. [You can buy an assembled device here](https://www.tindie.com/products/luma/ha-switchplate-hasp-single-wide-assembled/) if you want to get started without picking up a soldering iron.
+This build requires some specialist skills and tools. [You can buy an assembled device here](https://www.etsy.com/listing/1191709235/haspone-haswitchplate-touchscreen-home) if you want to get started without picking up a soldering iron.
 
 ## [Build your own HASPone](https://github.com/HASwitchPlate/HASPone/wiki/Building-your-own-HASPone)
 
