@@ -10,7 +10,7 @@ The HASPone is a DIY touchscreen controller you can mount into a [standard North
 
 ## [Purchase an assembled unit](https://www.etsy.com/listing/1191709235/haspone-haswitchplate-touchscreen-home)
 
-This build requires some specialist skills and tools. [You can buy an assembled device here](https://www.etsy.com/listing/1191709235/haspone-haswitchplate-touchscreen-home) if you want to get started without picking up a soldering iron.
+This build requires some specialist skills and tools. [You can buy an assembled device here](https://www.etsy.com/listing/1191709235/haspone-haswitchplate-touchscreen-home) if you want to get started without picking up a soldering iron.  [Buy the PCB here](https://www.etsy.com/listing/1177721322/haspone-pcb) if you want to safely assemble your own HASPone.
 
 ## [Build your own HASPone](https://github.com/HASwitchPlate/HASPone/wiki/Building-your-own-HASPone)
 
