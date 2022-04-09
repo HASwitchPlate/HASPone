@@ -56,7 +56,7 @@ This project is powered by coffee.  [I might get a little weird about it at time
 
 <!---------------------------------{ Previews }-------------------------------->
 
-[Work Box]: https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf)
+[Work Box]: https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf
 
 [HA SwitchPlate Models]: images/HASwitchPlate_Three_Model_Variations.png?raw=true
 [Scene controller]: images/HASwitchPlate_Demo_SceneController.png?raw=true
