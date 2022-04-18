@@ -6,7 +6,7 @@
 //        Home Automation Switch Plate
 // https://github.com/aderusha/HASwitchPlate
 //
-// Copyright (c) 2021 Allen Derusha allen@derusha.org
+// Copyright (c) 2022 Allen Derusha allen@derusha.org
 //
 // MIT License
 //
@@ -63,7 +63,7 @@ char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const float haspVersion = 1.05;                       // Current HASPone software release version
+const float haspVersion = 1.06;                       // Current HASPone software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -1967,12 +1967,12 @@ void espWifiConnect()
     nextionSendCmd("page 0");
   }
 
+  WiFi.mode(WIFI_STA);                // Set the radio to Station
   WiFi.macAddress(espMac);            // Read our MAC address and save it to espMac
   WiFi.hostname(haspNode);            // Assign our hostname before connecting to WiFi
   WiFi.setAutoReconnect(true);        // Tell WiFi to autoreconnect if connection has dropped
   WiFi.setSleepMode(WIFI_NONE_SLEEP); // Disable WiFi sleep modes to prevent occasional disconnects
-  WiFi.mode(WIFI_STA);                // Set the radio to Station
-
+ 
   if (String(wifiSSID) == "")
   { // If the sketch has no hard-coded wifiSSID, attempt to use saved creds or use WiFiManager to collect required information from the user.
 
