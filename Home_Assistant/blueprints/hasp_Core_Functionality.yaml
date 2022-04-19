@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone Core functionality"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     ## Description
 
@@ -234,15 +234,15 @@ variables:
     {%- endfor -%}
   page1text: !input page1text
   page1font_select: !input page1font_select
-  page1font: "{{ page1font_select.split(' - ')[0] | int }}"
+  page1font: "{{ page1font_select.split(' - ')[0] | int(default=6) }}"
   page1page: !input page1page
   page2text: !input page2text
   page2font_select: !input page2font_select
-  page2font: "{{ page2font_select.split(' - ')[0] | int }}"
+  page2font: "{{ page2font_select.split(' - ')[0] | int(default=6) }}"
   page2page: !input page2page
   page3text: !input page3text
   page3font_select: !input page3font_select
-  page3font: "{{ page3font_select.split(' - ')[0] | int }}"
+  page3font: "{{ page3font_select.split(' - ')[0] | int(default=6) }}"
   page3page: !input page3page
   page_scroll: !input page_scroll
   page_scroll_list: !input page_scroll_list
@@ -289,29 +289,29 @@ variables:
   page_list: '{{page_scroll_list.split(",")}}'
   page_previous: >
     {%- set page = namespace() -%}
-    {%- set page.previous = page_list[(page_list|length)-1]|int -%}
-    {%- set page.next = page_list[0]|int -%}
+    {%- set page.previous = page_list[(page_list|length)-1]|int(default=10) -%}
+    {%- set page.next = page_list[0]|int(default=1) -%}
     {%- for item in page_list -%}
-      {%- if item|int == activepage -%}
+      {%- if item|int(default=1) == activepage -%}
         {%- if not loop.first -%}
-          {%- set page.previous = loop.previtem|int -%}
+          {%- set page.previous = loop.previtem|int(default=1) -%}
         {%- endif -%}
         {%- if not loop.last -%}
-          {%- set page.next = loop.nextitem|int -%}
+          {%- set page.next = loop.nextitem|int(default=1) -%}
         {%- endif -%}
       {%- endif -%}
     {%- endfor -%}{{page.previous}}
   page_next: >
     {%- set page = namespace() -%}
-    {%- set page.previous = page_list[(page_list|length)-1]|int -%}
-    {%- set page.next = page_list[0]|int -%}
+    {%- set page.previous = page_list[(page_list|length)-1]|int(default=10) -%}
+    {%- set page.next = page_list[0]|int(default=1) -%}
     {%- for item in page_list -%}
-      {%- if item|int == activepage -%}
+      {%- if item|int(default=1) == activepage -%}
         {%- if not loop.first -%}
-          {%- set page.previous = loop.previtem|int -%}
+          {%- set page.previous = loop.previtem|int(default=1) -%}
         {%- endif -%}
         {%- if not loop.last -%}
-          {%- set page.next = loop.nextitem|int -%}
+          {%- set page.next = loop.nextitem|int(default=1) -%}
         {%- endif -%}
       {%- endif -%}
     {%- endfor -%}{{page.next}}
@@ -488,7 +488,7 @@ action:
               - service: mqtt.publish
                 data:
                   topic: "hasp/{{haspname}}/command/nextionbaud"
-                  payload: "115200"         
+                  payload: "115200"
           # Send page select button config
           - service: mqtt.publish
             data:
@@ -608,11 +608,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=0) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco2={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[3].pco2={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # apply selected background color to page select buttons
             data:
@@ -628,11 +628,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=65535) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco2={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].bco2={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # apply unselected foreground color to page select buttons
             data:
@@ -648,11 +648,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=59164) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].pco={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # apply unselected background color to page select buttons
             data:
@@ -668,11 +668,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=16904) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].bco={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
 
       #########################################################################
@@ -707,11 +707,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=0) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco2={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].pco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {%- else -%}{%- for p in range(1,12) %}"p[{{p}}].b[3].pco2={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # apply selected background color to page select buttons
             data:
@@ -727,11 +727,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=65535) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco2={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco2={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].bco={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco2={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].bco2={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # apply unselected foreground color to page select buttons
             data:
@@ -747,11 +747,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=59164) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].pco={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].pco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].pco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].pco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].pco={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # apply unselected background color to page select buttons
             data:
@@ -767,11 +767,11 @@ action:
                 {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
                 {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
                 {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
-                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int -%}
-                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- set colorcode = (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int(default=16904) -%}
+                [{%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[1].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[1].bco={{colorcode}}",{%- endfor -%}{%- endif -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
-                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[2].bco={{colorcode}}"{%- endif -%},{%- endfor -%}
+                {%- if not page_scroll -%}{%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].bco2={{colorcode}}"{%- else -%}"p[{{p}}].b[3].bco={{colorcode}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}
                 {% else %}{%- for p in range(1,12) %}"p[{{p}}].b[3].bco={{colorcode}}"{% if not loop.last %},{% endif %}{%- endfor -%}{%- endif -%}]
           - service: mqtt.publish # request sensor update
             data:
@@ -847,9 +847,9 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                [{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].pco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].pco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].pco2={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
+                [{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].pco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].pco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].pco2={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
             value_template: "{{ (trigger.platform == 'mqtt') and (trigger.topic == selectedfgtopic) and page_scroll }}"
@@ -859,7 +859,7 @@ action:
               topic: "{{jsoncommandtopic}}"
               payload: >-
                 [{%- for p in range(1,12) %}"p[{{p}}].b[1].pco2={{trigger.payload}}",{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].pco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}"p[{{p}}].b[2].pco2={{trigger.payload}}",{%- endfor -%}
                 {%- for p in range(1,12) %}"p[{{p}}].b[3].pco2={{trigger.payload}}"{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
@@ -869,9 +869,9 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                [{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].bco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].bco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].bco2={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
+                [{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].bco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].bco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].bco2={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
             value_template: "{{ (trigger.platform == 'mqtt') and (trigger.topic == selectedbgtopic) and page_scroll }}"
@@ -881,7 +881,7 @@ action:
               topic: "{{jsoncommandtopic}}"
               payload: >-
                 [{%- for p in range(1,12) %}"p[{{p}}].b[1].bco2={{trigger.payload}}",{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].bco2={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}"p[{{p}}].b[2].bco2={{trigger.payload}}",{%- endfor -%}
                 {%- for p in range(1,12) %}"p[{{p}}].b[3].bco2={{trigger.payload}}"{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
@@ -891,9 +891,9 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                [{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].pco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].pco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].pco={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
+                [{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].pco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].pco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].pco={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
             value_template: "{{ (trigger.platform == 'mqtt') and (trigger.topic == unselectedfgtopic) and page_scroll }}"
@@ -903,7 +903,7 @@ action:
               topic: "{{jsoncommandtopic}}"
               payload: >-
                 [{%- for p in range(1,12) %}"p[{{p}}].b[1].pco={{trigger.payload}}",{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].pco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].pco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}"p[{{p}}].b[2].pco={{trigger.payload}}",{%- endfor -%}
                 {%- for p in range(1,12) %}"p[{{p}}].b[3].pco={{trigger.payload}}"{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
@@ -913,9 +913,9 @@ action:
             data:
               topic: "{{jsoncommandtopic}}"
               payload: >-
-                [{%- for p in range(1,12) %}{%- if p == page1page|int %}"p[{{p}}].b[1].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].bco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].bco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page3page|int %}"p[{{p}}].b[3].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].bco={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
+                [{%- for p in range(1,12) %}{%- if p == page1page|int(default=1) %}"p[{{p}}].b[1].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[1].bco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page2page|int(default=2) %}"p[{{p}}].b[2].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].bco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}{%- if p == page3page|int(default=3) %}"p[{{p}}].b[3].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[3].bco={{trigger.payload}}"{%- endif -%}{% if not loop.last %},{% endif %}{%- endfor -%}]
       - conditions:
           - condition: template
             value_template: "{{ (trigger.platform == 'mqtt') and (trigger.topic == unselectedbgtopic) and page_scroll }}"
@@ -925,5 +925,5 @@ action:
               topic: "{{jsoncommandtopic}}"
               payload: >-
                 [{%- for p in range(1,12) %}"p[{{p}}].b[1].bco={{trigger.payload}}",{%- endfor -%}
-                {%- for p in range(1,12) %}{%- if p == page2page|int %}"p[{{p}}].b[2].bco2={{trigger.payload}}"{%- else -%}"p[{{p}}].b[2].bco={{trigger.payload}}"{%- endif -%},{%- endfor -%}
+                {%- for p in range(1,12) %}"p[{{p}}].b[2].bco={{trigger.payload}}",{%- endfor -%}
                 {%- for p in range(1,12) %}"p[{{p}}].b[3].bco={{trigger.payload}}"{% if not loop.last %},{% endif %}{%- endfor -%}]
