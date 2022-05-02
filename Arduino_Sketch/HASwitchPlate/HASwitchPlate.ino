@@ -652,69 +652,69 @@ void mqttProcessInput(String &strTopic, String &strPayload)
     configSave();
   }
   else if (strTopic == (mqttCommandTopic + "/debugserialenabled") || strTopic == (mqttGroupCommandTopic + "/debugserialenabled"))
-  {                                             // '[...]/device/command/debugserialenabled' -m 'true' == enable serial debug output
+  { // '[...]/device/command/debugserialenabled' -m 'true' == enable serial debug output
     if (strPayload.equalsIgnoreCase("true"))
     {
       debugSerialEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       debugSerialEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/debugtelnetenabled") || strTopic == (mqttGroupCommandTopic + "/debugtelnetenabled"))
-  {                                             // '[...]/device/command/debugtelnetenabled' -m 'true' == enable telnet debug output
+  { // '[...]/device/command/debugtelnetenabled' -m 'true' == enable telnet debug output
     if (strPayload.equalsIgnoreCase("true"))
     {
       debugTelnetEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       debugTelnetEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/mdnsenabled") || strTopic == (mqttGroupCommandTopic + "/mdnsenabled"))
-  {                                             // '[...]/device/command/mdnsenabled' -m 'true' == enable mDNS responder
+  { // '[...]/device/command/mdnsenabled' -m 'true' == enable mDNS responder
     if (strPayload.equalsIgnoreCase("true"))
     {
       mdnsEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       mdnsEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/beepenabled") || strTopic == (mqttGroupCommandTopic + "/beepenabled"))
-  {                                             // '[...]/device/command/beepenabled' -m 'true' == enable beep output on keypress
+  { // '[...]/device/command/beepenabled' -m 'true' == enable beep output on keypress
     if (strPayload.equalsIgnoreCase("true"))
     {
       beepEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       beepEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/ignoretouchwhenoff") || strTopic == (mqttGroupCommandTopic + "/ignoretouchwhenoff"))
-  {                                             // '[...]/device/command/ignoretouchwhenoff' -m 'true' == disable actions on keypress
+  { // '[...]/device/command/ignoretouchwhenoff' -m 'true' == disable actions on keypress
     if (strPayload.equalsIgnoreCase("true"))
     {
       ignoreTouchWhenOff = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       ignoreTouchWhenOff = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/lcdupdate") || strTopic == (mqttGroupCommandTopic + "/lcdupdate"))
   { // '[...]/device/command/lcdupdate' -m 'http://192.168.0.10/local/HASwitchPlate.tft' == nextionOtaStartDownload("http://192.168.0.10/local/HASwitchPlate.tft")
@@ -1624,8 +1624,6 @@ void nextionParseJson(const String &strPayload)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void nextionOtaStartDownload(const String &lcdOtaUrl)
 { // Upload firmware to the Nextion LCD via HTTP download
-  // based in large part on code posted by indev2 here:
-  // http://support.iteadstudio.com/support/discussions/topics/11000007686/page/2
 
   uint32_t lcdOtaFileSize = 0;
   String lcdOtaNextionCmd;
@@ -1967,12 +1965,14 @@ void espWifiConnect()
     nextionSendCmd("page 0");
   }
 
-  WiFi.mode(WIFI_STA);                // Set the radio to Station
+  WiFi.persistent(false);
+  enableWiFiAtBootTime();
   WiFi.macAddress(espMac);            // Read our MAC address and save it to espMac
   WiFi.hostname(haspNode);            // Assign our hostname before connecting to WiFi
   WiFi.setAutoReconnect(true);        // Tell WiFi to autoreconnect if connection has dropped
   WiFi.setSleepMode(WIFI_NONE_SLEEP); // Disable WiFi sleep modes to prevent occasional disconnects
- 
+  WiFi.mode(WIFI_STA);                // Set the radio to Station
+
   if (String(wifiSSID) == "")
   { // If the sketch has no hard-coded wifiSSID, attempt to use saved creds or use WiFiManager to collect required information from the user.
 
@@ -1981,7 +1981,9 @@ void espWifiConnect()
     {
       nextionSetAttr("p[0].b[1].txt", "\"WiFi Connecting...\\r " + String(WiFi.SSID()) + "\"");
       unsigned long connectTimer = millis() + 10000;
+
       debugPrintln(String(F("WIFI: Connecting to previously-saved SSID: ")) + String(WiFi.SSID()));
+
       WiFi.begin();
       while ((WiFi.status() != WL_CONNECTED) && (millis() < connectTimer))
       {
@@ -2004,13 +2006,19 @@ void espWifiConnect()
         {
           yield();
         }
+
+        if (WiFi.localIP().toString() == "(IP unset)")
+        { // Check if we have our IP yet
+          debugPrintln(F("WIFI: Failed to lease address from DHCP, disconnecting and trying again"));
+          WiFi.disconnect();
+        }
       }
     }
 
     if (WiFi.status() != WL_CONNECTED)
     { // We gave it a shot, still couldn't connect, so let WiFiManager run to make one last
       // connection attempt and then flip to AP mode to collect credentials from the user.
-
+      WiFi.persistent(true);
       WiFiManagerParameter custom_haspNodeHeader("<br/><b>HASPone Node</b>");
       WiFiManagerParameter custom_haspNode("haspNode", "<br/>Node Name <small>(required: lowercase letters, numbers, and _ only)</small>", haspNode, 15, " maxlength=15 required pattern='[a-z0-9_]*'");
       WiFiManagerParameter custom_groupName("groupName", "Group Name <small>(required)</small>", groupName, 15, " maxlength=15 required");
@@ -2170,16 +2178,14 @@ void espSetupOta()
                        debugPrintln(F("ESP OTA: update start"));
                        nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r\\r \"");
                        nextionSendCmd("page 0");
-                       nextionSendCmd("vis 4,1");
-                     });
+                       nextionSendCmd("vis 4,1"); });
   ArduinoOTA.onEnd([]()
                    {
                      debugPrintln(F("ESP OTA: update complete"));
                      nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r Complete!\\rRestarting.\"");
                      nextionSendCmd("vis 4,1");
                      delay(1000);
-                     espReset();
-                   });
+                     espReset(); });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
                         { nextionUpdateProgress(progress, total); });
   ArduinoOTA.onError([](ota_error_t error)
@@ -2198,8 +2204,7 @@ void espSetupOta()
                        nextionSendCmd("vis 4,0");
                        nextionSetAttr("p[0].b[1].txt", "\"HASPone update:\\r FAILED\\rerror: " + String(error) + "\"");
                        delay(1000);
-                       nextionSendCmd("page " + String(nextionActivePage));
-                     });
+                       nextionSendCmd("page " + String(nextionActivePage)); });
   ArduinoOTA.begin();
   debugPrintln(F("ESP OTA: Over the Air firmware update ready"));
 }
@@ -2579,7 +2584,7 @@ void webHandleNotFound()
 void webHandleRoot()
 { // http://plate01/
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -2832,7 +2837,7 @@ void webHandleRoot()
 void webHandleSaveConfig()
 { // http://plate01/saveConfig
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3028,7 +3033,7 @@ void webHandleSaveConfig()
 void webHandleResetConfig()
 { // http://plate01/resetConfig
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3070,7 +3075,7 @@ void webHandleResetConfig()
 void webHandleResetBacklight()
 { // http://plate01/resetBacklight
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3101,7 +3106,7 @@ void webHandleResetBacklight()
 void webHandleFirmware()
 { // http://plate01/firmware
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3174,7 +3179,7 @@ void webHandleFirmware()
 void webHandleEspFirmware()
 { // http://plate01/espfirmware
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3209,7 +3214,7 @@ void webHandleLcdUpload()
   // Upload firmware to the Nextion LCD via HTTP upload
 
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3443,7 +3448,7 @@ void webHandleLcdUpload()
 void webHandleLcdUpdateSuccess()
 { // http://plate01/lcdOtaSuccess
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3471,7 +3476,7 @@ void webHandleLcdUpdateSuccess()
 void webHandleLcdUpdateFailure()
 { // http://plate01/lcdOtaFailure
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3499,7 +3504,7 @@ void webHandleLcdUpdateFailure()
 void webHandleLcdDownload()
 { // http://plate01/lcddownload
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3528,7 +3533,7 @@ void webHandleLcdDownload()
 void webHandleTftFileSize()
 { // http://plate01/tftFileSize
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3548,7 +3553,7 @@ void webHandleTftFileSize()
 void webHandleReboot()
 { // http://plate01/reboot
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
