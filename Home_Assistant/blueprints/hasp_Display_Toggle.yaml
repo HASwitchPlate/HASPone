@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays a toggle button"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -294,11 +294,11 @@ variables:
   off_fgcolor: !input off_fgcolor
   off_bgcolor: !input off_bgcolor
   font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int }}'
+  font: '{{ font_select.split(" - ")[0] | int(default=8) }}'
   xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  xcen: '{{ xcen_select.split(" - ")[0] | int(default=1) }}'
   ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  ycen: '{{ ycen_select.split(" - ")[0] | int(default=1) }}'
   wrap: !input wrap
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'

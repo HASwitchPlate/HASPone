@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays the weather forecast"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     ## Description
 
@@ -139,7 +139,7 @@ blueprint:
     prefix:
       name: "Forecast display prefix"
       description: 'Prefix for forecast display, maybe something like "tonight: " or "tomorrow: ". Leave blank for no prefix. Use "\\r" for a newline.'
-      default: 
+      default:
       selector:
         text:
     font_select:
@@ -247,11 +247,11 @@ variables:
   forecast_attribute: !input forecast_attribute
   prefix: !input prefix
   font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int }}'
+  font: '{{ font_select.split(" - ")[0] | int(default=8) }}'
   xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  xcen: '{{ xcen_select.split(" - ")[0] | int(default=1) }}'
   ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  ycen: '{{ ycen_select.split(" - ")[0] | int(default=1) }}'
   wrap: !input wrap
   title_case: !input title_case
   selected_fgcolor: !input selected_fgcolor

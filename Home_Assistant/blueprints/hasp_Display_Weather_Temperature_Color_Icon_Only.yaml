@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays the current temperature from a weather provider, coloured icon only"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -201,7 +201,7 @@ variables:
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
   temperature: '{{ state_attr(weather_provider, "temperature") }}'
   icon: >-
-    {%- set temp = temperature|int -%}
+    {%- set temp = temperature|int(default=0) -%}
     {%- if temp <= thermometer_quarter_threshold|int -%}
       
     {%- elif temp < thermometer_half_threshold|int -%}
@@ -333,7 +333,7 @@ action:
       # Apply styles, place text, and then place icon if our target page is currently active
       - conditions:
           - condition: template
-            value_template: >- 
+            value_template: >-
               {{-
                 (trigger is not defined)
               or
