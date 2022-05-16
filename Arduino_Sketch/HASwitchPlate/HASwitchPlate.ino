@@ -87,6 +87,9 @@ bool nextionBufferOverrun = false;                    // Set to true if an overr
 bool nextionAckEnable = false;                        // Wait for each Nextion command to be acked before continuing
 bool nextionAckReceived = false;                      // Ack was received
 bool rebootOnp0b1 = false;                            // When true, reboot device on button press of p[0].b[1]
+bool rebootOnLongPress = true;                        // When true, reboot device on long press of any button
+unsigned long rebootOnLongPressTimer = 0;             // Clock for long press reboot timer
+unsigned long rebootOnLongPressTimeout = 10000;       // Timeout value for long press reboot timer
 const unsigned long nextionAckTimeout = 1000;         // Timeout to wait for an ack before throwing error
 unsigned long nextionAckTimer = 0;                    // Timer to track Nextion ack
 const unsigned long telnetInputMax = 128;             // Size of user input buffer for user telnet session
@@ -1250,6 +1253,10 @@ void nextionProcessInput()
         debugPrintln(String(F("HMI IN: p[0].b[1] pressed during HASPone configuration, rebooting.")));
         espReset();
       }
+      if (rebootOnLongPress)
+      {
+        rebootOnLongPressTimer = millis();
+      }
     }
     else if (nextionButtonAction == 0x00)
     {
@@ -1280,6 +1287,12 @@ void nextionProcessInput()
           nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
         }
       }
+      if (rebootOnLongPress && (millis() - rebootOnLongPressTimer > rebootOnLongPressTimeout))
+      {
+        debugPrintln(String(F("HMI IN: Button long press, rebooting.")));
+        espReset();
+      }
+      rebootOnLongPressTimer = millis();
     }
   }
   else if (nextionReturnBuffer[0] == 0x66)
