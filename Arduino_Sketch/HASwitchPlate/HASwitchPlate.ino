@@ -62,7 +62,6 @@ char motionPinConfig[3] = "0";
 char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
 const float haspVersion = 1.06;                       // Current HASPone software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
@@ -946,12 +945,12 @@ void mqttDiscovery()
 
   if (motionEnabled)
   { // binary_sensor for motion
-    String macAddress = String(espMac[0], HEX) + String(F(":")) + String(espMac[1], HEX) + String(F(":")) + String(espMac[2], HEX) + String(F(":")) + String(espMac[3], HEX) + String(F(":")) + String(espMac[4], HEX) + String(F(":")) + String(espMac[5], HEX);
     String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/binary_sensor/")) + String(haspNode) + String(F("-motion/config"));
     String mqttDiscoveryPayload = String(F("{\"device_class\":\"motion\",\"name\":\"")) + String(haspNode) + String(F(" motion\",\"state_topic\":\"")) + mqttMotionStateTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-motion\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
     mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
     debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
   }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
