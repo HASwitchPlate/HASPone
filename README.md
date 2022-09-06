@@ -1,6 +1,6 @@
 # HA SwitchPlate HASPone
 
-The HASPone is a DIY touchscreen controller you can mount into a [standard North American work box](https://www.nema.org/Standards/ComplimentaryDocuments/NEMA%20WD%206%20-%20Dimensions%20for%20Wiring%20Devices%20-%20Excerpt.pdf).  It connects to your home automation system over Wifi+MQTT to display useful information and to control your smart devices.  The result is an attractive and highly-customizable home controller you can build yourself!
+The HASPone is a DIY touchscreen controller you can mount into a [standard North American work box](https://archive.org/details/NEMA-WD-6-2016).  It connects to your home automation system over Wifi+MQTT to display useful information and to control your smart devices.  The result is an attractive and highly-customizable home controller you can build yourself!
 
 ![HA SwitchPlate Models](https://github.com/HASwitchPlate/HASPone/blob/main/images/HASwitchPlate_Three_Model_Variations.png?raw=true)
 
