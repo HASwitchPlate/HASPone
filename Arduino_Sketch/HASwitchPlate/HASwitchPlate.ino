@@ -6,7 +6,7 @@
 //        Home Automation Switch Plate
 // https://github.com/aderusha/HASwitchPlate
 //
-// Copyright (c) 2021 Allen Derusha allen@derusha.org
+// Copyright (c) 2022 Allen Derusha allen@derusha.org
 //
 // MIT License
 //
@@ -43,7 +43,6 @@
 #include <MQTT.h>
 #include <SoftwareSerial.h>
 #include <ESP8266Ping.h>
-//BME280 ADD end
 //BME680 ADD begin
 #include "bsec.h"
 //BME680 ADD end
@@ -70,8 +69,7 @@ char motionPinConfig[3] = "0";
 char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-const float haspVersion = 1.05;                       // Current HASPone software release version
+const float haspVersion = 1.055;                       // Current HASPone software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -95,6 +93,9 @@ bool nextionBufferOverrun = false;                    // Set to true if an overr
 bool nextionAckEnable = false;                        // Wait for each Nextion command to be acked before continuing
 bool nextionAckReceived = false;                      // Ack was received
 bool rebootOnp0b1 = false;                            // When true, reboot device on button press of p[0].b[1]
+bool rebootOnLongPress = true;                        // When true, reboot device on long press of any button
+unsigned long rebootOnLongPressTimer = 0;             // Clock for long press reboot timer
+unsigned long rebootOnLongPressTimeout = 10000;       // Timeout value for long press reboot timer
 const unsigned long nextionAckTimeout = 1000;         // Timeout to wait for an ack before throwing error
 unsigned long nextionAckTimer = 0;                    // Timer to track Nextion ack
 const unsigned long telnetInputMax = 128;             // Size of user input buffer for user telnet session
@@ -108,8 +109,8 @@ unsigned int beepCounter;                             // Count the number of bee
 uint8_t beepPin = D2;                                 // define beep pin output
 uint8_t motionPin = 0;                                // GPIO input pin for motion sensor if connected and enabled
 bool motionActive = false;                            // Motion is being detected
-const unsigned long motionLatchTimeout = 2000;        // Latch time for motion sensor
-const unsigned long motionBufferTimeout = 20;        // Trigger threshold time for motion sensor
+const unsigned long motionLatchTimeout = 1000;        // Latch time for motion sensor
+const unsigned long motionBufferTimeout = 100;        // Trigger threshold time for motion sensor
 unsigned long lcdVersion = 0;                         // Int to hold current LCD FW version number
 unsigned long updateLcdAvailableVersion;              // Int to hold the new LCD FW version number
 bool lcdVersionQueryFlag = false;                     // Flag to set if we've queried lcdVersion
@@ -118,7 +119,7 @@ uint8_t lcdBacklightDim = 0;                          // Backlight dimmer value
 bool lcdBacklightOn = 0;                              // Backlight on/off
 bool lcdBacklightQueryFlag = false;                   // Flag to set if we've queried lcdBacklightDim
 bool startupCompleteFlag = false;                     // Startup process has completed
-const unsigned long statusUpdateInterval = 30000;    // Time in msec between publishing MQTT status updates (5 minutes)
+const unsigned long statusUpdateInterval = 300000;    // Time in msec between publishing MQTT status updates (5 minutes)
 unsigned long statusUpdateTimer = 0;                  // Timer for status update
 const unsigned long connectTimeout = 300;             // Timeout for WiFi and MQTT connection attempts in seconds
 const unsigned long reConnectTimeout = 60;            // Timeout for WiFi reconnection attempts in seconds
@@ -193,6 +194,7 @@ void errLeds(void);
 void loadState(void);
 void updateState(void);
 //BME680 ADD end
+
 
 WiFiClientSecure mqttClientSecure;        // TLS-enabled WiFiClient for MQTT
 WiFiClient wifiClient;                    // Standard WiFiClient
@@ -354,7 +356,8 @@ void setup()
   //ADC ADD end
   debugPrintln(F("SYSTEM: System init complete."));
 }
-     //BME680 ADD begin
+
+//BME680 ADD begin
 void bme680Handle(){
 
     if (iaqSensor.run()) {
@@ -380,8 +383,9 @@ float_bme680_compensatedhumidity = iaqSensor.humidity;
 
 }
     //BME680 ADD end
-    
-    
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void loop()
 { // Main execution loop
@@ -399,12 +403,14 @@ void loop()
     debugPrintln(String(F("MQTT: not connected, connecting.")));
     mqttConnect();
   }
-    if ((millis() - statusUpdateTimerBME680) >= statusUpdateIntervalBME680){
+  if ((millis() - statusUpdateTimerBME680) >= statusUpdateIntervalBME680){
   //BME680 ADD begin
   statusUpdateTimerBME680 = millis();
   bme680Handle();
   //BME680 ADD end
   }
+  
+  
   nextionHandleInput();     // Nextion serial communications loop
   mqttClient.loop();        // MQTT client loop
   ArduinoOTA.handle();      // Arduino OTA loop
@@ -774,69 +780,69 @@ void mqttProcessInput(String &strTopic, String &strPayload)
     configSave();
   }
   else if (strTopic == (mqttCommandTopic + "/debugserialenabled") || strTopic == (mqttGroupCommandTopic + "/debugserialenabled"))
-  {                                             // '[...]/device/command/debugserialenabled' -m 'true' == enable serial debug output
+  { // '[...]/device/command/debugserialenabled' -m 'true' == enable serial debug output
     if (strPayload.equalsIgnoreCase("true"))
     {
       debugSerialEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       debugSerialEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/debugtelnetenabled") || strTopic == (mqttGroupCommandTopic + "/debugtelnetenabled"))
-  {                                             // '[...]/device/command/debugtelnetenabled' -m 'true' == enable telnet debug output
+  { // '[...]/device/command/debugtelnetenabled' -m 'true' == enable telnet debug output
     if (strPayload.equalsIgnoreCase("true"))
     {
       debugTelnetEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       debugTelnetEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/mdnsenabled") || strTopic == (mqttGroupCommandTopic + "/mdnsenabled"))
-  {                                             // '[...]/device/command/mdnsenabled' -m 'true' == enable mDNS responder
+  { // '[...]/device/command/mdnsenabled' -m 'true' == enable mDNS responder
     if (strPayload.equalsIgnoreCase("true"))
     {
       mdnsEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       mdnsEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/beepenabled") || strTopic == (mqttGroupCommandTopic + "/beepenabled"))
-  {                                             // '[...]/device/command/beepenabled' -m 'true' == enable beep output on keypress
+  { // '[...]/device/command/beepenabled' -m 'true' == enable beep output on keypress
     if (strPayload.equalsIgnoreCase("true"))
     {
       beepEnabled = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       beepEnabled = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/ignoretouchwhenoff") || strTopic == (mqttGroupCommandTopic + "/ignoretouchwhenoff"))
-  {                                             // '[...]/device/command/ignoretouchwhenoff' -m 'true' == disable actions on keypress
+  { // '[...]/device/command/ignoretouchwhenoff' -m 'true' == disable actions on keypress
     if (strPayload.equalsIgnoreCase("true"))
     {
       ignoreTouchWhenOff = true;
       configSave();
     }
-    else if(strPayload.equalsIgnoreCase("false"))
+    else if (strPayload.equalsIgnoreCase("false"))
     {
       ignoreTouchWhenOff = false;
       configSave();
-    }    
+    }
   }
   else if (strTopic == (mqttCommandTopic + "/lcdupdate") || strTopic == (mqttGroupCommandTopic + "/lcdupdate"))
   { // '[...]/device/command/lcdupdate' -m 'http://192.168.0.10/local/HASwitchPlate.tft' == nextionOtaStartDownload("http://192.168.0.10/local/HASwitchPlate.tft")
@@ -965,17 +971,14 @@ void mqttProcessInput(String &strTopic, String &strPayload)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void mqttStatusUpdate()
-{ // Periodically publish system status
-//ADC ADD begin
+{ 
+  //ADC ADD begin
   uint_voltageraw = analogRead(A0);
   float_voltage = uint_voltageraw / 1023.0;
   float_voltage = float_voltage * 5.9;
   debugPrintln("Sampling Voltage: " + String(float_voltage));
   //ADC ADD end
-
-
-
-   
+  // Periodically publish system status
   String mqttSensorPayload = "{";
   mqttSensorPayload += String(F("\"espVersion\":")) + String(haspVersion) + String(F(","));
   if (updateEspAvailable)
@@ -1094,12 +1097,12 @@ void mqttDiscovery()
 
   if (motionEnabled)
   { // binary_sensor for motion
-    String macAddress = String(espMac[0], HEX) + String(F(":")) + String(espMac[1], HEX) + String(F(":")) + String(espMac[2], HEX) + String(F(":")) + String(espMac[3], HEX) + String(F(":")) + String(espMac[4], HEX) + String(F(":")) + String(espMac[5], HEX);
     String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/binary_sensor/")) + String(haspNode) + String(F("-motion/config"));
     String mqttDiscoveryPayload = String(F("{\"device_class\":\"motion\",\"name\":\"")) + String(haspNode) + String(F(" motion\",\"state_topic\":\"")) + mqttMotionStateTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-motion\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
     mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
     debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
   }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1401,6 +1404,10 @@ void nextionProcessInput()
         debugPrintln(String(F("HMI IN: p[0].b[1] pressed during HASPone configuration, rebooting.")));
         espReset();
       }
+      if (rebootOnLongPress)
+      {
+        rebootOnLongPressTimer = millis();
+      }
     }
     else if (nextionButtonAction == 0x00)
     {
@@ -1431,6 +1438,12 @@ void nextionProcessInput()
           nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
         }
       }
+      if (rebootOnLongPress && (millis() - rebootOnLongPressTimer > rebootOnLongPressTimeout))
+      {
+        debugPrintln(String(F("HMI IN: Button long press, rebooting.")));
+        espReset();
+      }
+      rebootOnLongPressTimer = millis();
     }
   }
   else if (nextionReturnBuffer[0] == 0x66)
@@ -1775,8 +1788,6 @@ void nextionParseJson(const String &strPayload)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void nextionOtaStartDownload(const String &lcdOtaUrl)
 { // Upload firmware to the Nextion LCD via HTTP download
-  // based in large part on code posted by indev2 here:
-  // http://support.iteadstudio.com/support/discussions/topics/11000007686/page/2
 
   uint32_t lcdOtaFileSize = 0;
   String lcdOtaNextionCmd;
@@ -2118,6 +2129,8 @@ void espWifiConnect()
     nextionSendCmd("page 0");
   }
 
+  WiFi.persistent(false);
+  enableWiFiAtBootTime();
   WiFi.macAddress(espMac);            // Read our MAC address and save it to espMac
   WiFi.hostname(haspNode);            // Assign our hostname before connecting to WiFi
   WiFi.setAutoReconnect(true);        // Tell WiFi to autoreconnect if connection has dropped
@@ -2132,7 +2145,9 @@ void espWifiConnect()
     {
       nextionSetAttr("p[0].b[1].txt", "\"WiFi Connecting...\\r " + String(WiFi.SSID()) + "\"");
       unsigned long connectTimer = millis() + 10000;
+
       debugPrintln(String(F("WIFI: Connecting to previously-saved SSID: ")) + String(WiFi.SSID()));
+
       WiFi.begin();
       while ((WiFi.status() != WL_CONNECTED) && (millis() < connectTimer))
       {
@@ -2155,13 +2170,19 @@ void espWifiConnect()
         {
           yield();
         }
+
+        if (WiFi.localIP().toString() == "(IP unset)")
+        { // Check if we have our IP yet
+          debugPrintln(F("WIFI: Failed to lease address from DHCP, disconnecting and trying again"));
+          WiFi.disconnect();
+        }
       }
     }
 
     if (WiFi.status() != WL_CONNECTED)
     { // We gave it a shot, still couldn't connect, so let WiFiManager run to make one last
       // connection attempt and then flip to AP mode to collect credentials from the user.
-
+      WiFi.persistent(true);
       WiFiManagerParameter custom_haspNodeHeader("<br/><b>HASPone Node</b>");
       WiFiManagerParameter custom_haspNode("haspNode", "<br/>Node Name <small>(required: lowercase letters, numbers, and _ only)</small>", haspNode, 15, " maxlength=15 required pattern='[a-z0-9_]*'");
       WiFiManagerParameter custom_groupName("groupName", "Group Name <small>(required)</small>", groupName, 15, " maxlength=15 required");
@@ -2214,7 +2235,7 @@ void espWifiConnect()
 
       // Fetches SSID and pass from EEPROM and tries to connect
       // If it does not connect it starts an access point with the specified name
-      // and goes into a blocking  awaiting configuration.
+      // and goes into a blocking loop awaiting configuration.
       if (!wifiManager.autoConnect(wifiConfigAP, wifiConfigPass))
       { // Reset and try again
         debugPrintln(F("WIFI: Failed to connect and hit timeout"));
@@ -2321,16 +2342,14 @@ void espSetupOta()
                        debugPrintln(F("ESP OTA: update start"));
                        nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r\\r \"");
                        nextionSendCmd("page 0");
-                       nextionSendCmd("vis 4,1");
-                     });
+                       nextionSendCmd("vis 4,1"); });
   ArduinoOTA.onEnd([]()
                    {
                      debugPrintln(F("ESP OTA: update complete"));
                      nextionSetAttr("p[0].b[1].txt", "\"\\rHASPone update:\\r\\r Complete!\\rRestarting.\"");
                      nextionSendCmd("vis 4,1");
                      delay(1000);
-                     espReset();
-                   });
+                     espReset(); });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
                         { nextionUpdateProgress(progress, total); });
   ArduinoOTA.onError([](ota_error_t error)
@@ -2349,8 +2368,7 @@ void espSetupOta()
                        nextionSendCmd("vis 4,0");
                        nextionSetAttr("p[0].b[1].txt", "\"HASPone update:\\r FAILED\\rerror: " + String(error) + "\"");
                        delay(1000);
-                       nextionSendCmd("page " + String(nextionActivePage));
-                     });
+                       nextionSendCmd("page " + String(nextionActivePage)); });
   ArduinoOTA.begin();
   debugPrintln(F("ESP OTA: Over the Air firmware update ready"));
 }
@@ -2730,7 +2748,7 @@ void webHandleNotFound()
 void webHandleRoot()
 { // http://plate01/
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -2983,7 +3001,7 @@ void webHandleRoot()
 void webHandleSaveConfig()
 { // http://plate01/saveConfig
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3179,7 +3197,7 @@ void webHandleSaveConfig()
 void webHandleResetConfig()
 { // http://plate01/resetConfig
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3221,7 +3239,7 @@ void webHandleResetConfig()
 void webHandleResetBacklight()
 { // http://plate01/resetBacklight
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3252,7 +3270,7 @@ void webHandleResetBacklight()
 void webHandleFirmware()
 { // http://plate01/firmware
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3325,7 +3343,7 @@ void webHandleFirmware()
 void webHandleEspFirmware()
 { // http://plate01/espfirmware
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3360,7 +3378,7 @@ void webHandleLcdUpload()
   // Upload firmware to the Nextion LCD via HTTP upload
 
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3594,7 +3612,7 @@ void webHandleLcdUpload()
 void webHandleLcdUpdateSuccess()
 { // http://plate01/lcdOtaSuccess
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3622,7 +3640,7 @@ void webHandleLcdUpdateSuccess()
 void webHandleLcdUpdateFailure()
 { // http://plate01/lcdOtaFailure
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3650,7 +3668,7 @@ void webHandleLcdUpdateFailure()
 void webHandleLcdDownload()
 { // http://plate01/lcddownload
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3679,7 +3697,7 @@ void webHandleLcdDownload()
 void webHandleTftFileSize()
 { // http://plate01/tftFileSize
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3699,7 +3717,7 @@ void webHandleTftFileSize()
 void webHandleReboot()
 { // http://plate01/reboot
   if (configPassword[0] != '\0')
-  { //Request HTTP auth if configPassword is set
+  { // Request HTTP auth if configPassword is set
     if (!webServer.authenticate(configUser, configPassword))
     {
       return webServer.requestAuthentication();
@@ -3809,7 +3827,7 @@ void motionHandle()
     static unsigned long motionBufferTimer = millis(); // Timer for motion sensor buffer
     static bool motionActiveBuffer = motionActive;
     bool motionRead = digitalRead(motionPin);
-    
+
     if (motionRead != motionActiveBuffer)
     { // if we've changed state
       motionBufferTimer = millis();
@@ -4037,7 +4055,7 @@ String printHex8(byte *data, uint8_t length)
   // hex8String.toUpperCase();
   return hex8String;
 }
-/////////////////////////////////////////////////////////////////////////////////
+
 // Helper function definitions
 void checkIaqSensorStatus(void)
 {
