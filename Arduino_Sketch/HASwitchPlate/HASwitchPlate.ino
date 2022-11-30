@@ -26,7 +26,7 @@
 // OUT OF OR IN CONNECTION WITH THE PRODUCT OR THE USE OR OTHER DEALINGS IN THE PRODUCT.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <FS.h>
+#include <LittleFS.h>
 #include <EEPROM.h>
 #include <EspSaveCrash.h>
 #include <ESP8266WiFi.h>
@@ -43,6 +43,14 @@
 #include <MQTT.h>
 #include <SoftwareSerial.h>
 #include <ESP8266Ping.h>
+//BME280 ADD end
+//BME680 ADD begin
+#include "bsec.h"
+//BME680 ADD end
+//MAX44009 ADD begin
+#include <MAX44009.h>
+MAX44009 light;
+//MAX44009 ADD end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // These defaults may be overwritten with values saved by the web interface
@@ -71,7 +79,7 @@ int8_t nextionActivePage = -1;                        // Track active LCD page
 bool lcdConnected = false;                            // Set to true when we've heard something from the LCD
 const char wifiConfigPass[9] = "hasplate";            // First-time config WPA2 password
 const char wifiConfigAP[14] = "HASwitchPlate";        // First-time config SSID
-bool shouldSaveConfig = false;                        // Flag to save json config to SPIFFS
+bool shouldSaveConfig = false;                        // Flag to save json config to LittleFS
 bool nextionReportPage0 = false;                      // If false, don't report page 0 sendme
 const unsigned long updateCheckInterval = 43200000;   // Time in msec between update checks (12 hours)
 unsigned long updateCheckTimer = updateCheckInterval; // Timer for update check
@@ -100,8 +108,8 @@ unsigned int beepCounter;                             // Count the number of bee
 uint8_t beepPin = D2;                                 // define beep pin output
 uint8_t motionPin = 0;                                // GPIO input pin for motion sensor if connected and enabled
 bool motionActive = false;                            // Motion is being detected
-const unsigned long motionLatchTimeout = 1000;        // Latch time for motion sensor
-const unsigned long motionBufferTimeout = 100;        // Trigger threshold time for motion sensor
+const unsigned long motionLatchTimeout = 2000;        // Latch time for motion sensor
+const unsigned long motionBufferTimeout = 20;        // Trigger threshold time for motion sensor
 unsigned long lcdVersion = 0;                         // Int to hold current LCD FW version number
 unsigned long updateLcdAvailableVersion;              // Int to hold the new LCD FW version number
 bool lcdVersionQueryFlag = false;                     // Flag to set if we've queried lcdVersion
@@ -110,7 +118,7 @@ uint8_t lcdBacklightDim = 0;                          // Backlight dimmer value
 bool lcdBacklightOn = 0;                              // Backlight on/off
 bool lcdBacklightQueryFlag = false;                   // Flag to set if we've queried lcdBacklightDim
 bool startupCompleteFlag = false;                     // Startup process has completed
-const unsigned long statusUpdateInterval = 300000;    // Time in msec between publishing MQTT status updates (5 minutes)
+const unsigned long statusUpdateInterval = 30000;    // Time in msec between publishing MQTT status updates (5 minutes)
 unsigned long statusUpdateTimer = 0;                  // Timer for status update
 const unsigned long connectTimeout = 300;             // Timeout for WiFi and MQTT connection attempts in seconds
 const unsigned long reConnectTimeout = 60;            // Timeout for WiFi reconnection attempts in seconds
@@ -150,6 +158,41 @@ const unsigned long nextionSpeeds[] = {2400,
                                        512000,
                                        921600};                                       // Valid serial speeds for Nextion communication
 const uint8_t nextionSpeedsLength = sizeof(nextionSpeeds) / sizeof(nextionSpeeds[0]); // Size of our list of speeds
+//ADC ADD begin
+unsigned int uint_voltageraw = 0;
+float float_voltage = 0.0;
+//ADC ADD end
+//BME680 ADD begin
+const uint8_t bsec_config_iaq[] = {
+#include "config/generic_33v_3s_4d/bsec_iaq.txt"
+};
+
+#define STATE_SAVE_PERIOD	UINT32_C(360 * 60 * 1000) // 360 minutes - 4 times a day
+// Create an object of the class Bsec
+Bsec iaqSensor;
+uint8_t bsecState[BSEC_MAX_STATE_BLOB_SIZE] = {0};
+uint16_t stateUpdateCounter = 0;
+float float_bme680_rawtemperature = 0;
+float float_bme680_rawpressure = 0;
+float float_bme680_rawhumidity = 0;
+float float_bme680_rawgasresistor = 0;
+float float_bme680_iaq = 0;
+float float_bme680_staticiaq = 0;
+float float_bme680_iaqaccuracy = 0;
+float float_bme680_co2equivalent = 0;
+float float_bme680_breathvocequivalent = 0;
+float float_bme680_compensatedtemperature = 0;
+float float_bme680_compensatedhumidity = 0;
+String outputBME680;
+unsigned long statusUpdateIntervalBME680 = 2000;
+unsigned long statusUpdateTimerBME680 = 0;
+// Helper functions declarations
+// Helper functions declarations
+void checkIaqSensorStatus(void);
+void errLeds(void);
+void loadState(void);
+void updateState(void);
+//BME680 ADD end
 
 WiFiClientSecure mqttClientSecure;        // TLS-enabled WiFiClient for MQTT
 WiFiClient wifiClient;                    // Standard WiFiClient
@@ -262,10 +305,83 @@ void setup()
     telnetServer.begin();
     debugPrintln(String(F("TELNET: debug server enabled at telnet:")) + WiFi.localIP().toString());
   }
+  //BME680 ADD begin
+  EEPROM.begin(BSEC_MAX_STATE_BLOB_SIZE + 1); // 1st address for the length
+  Wire.begin();
 
+  iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
+  outputBME680 = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
+  debugPrintln(String(outputBME680));
+  checkIaqSensorStatus();
+
+  iaqSensor.setConfig(bsec_config_iaq);
+  checkIaqSensorStatus();
+
+  loadState();
+  
+  bsec_virtual_sensor_t sensorList1[5] = {
+    BSEC_OUTPUT_RAW_GAS,
+    BSEC_OUTPUT_IAQ,
+    BSEC_OUTPUT_STATIC_IAQ,
+    BSEC_OUTPUT_CO2_EQUIVALENT,
+    BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+  };
+
+  iaqSensor.updateSubscription(sensorList1, 5, BSEC_SAMPLE_RATE_ULP);
+  checkIaqSensorStatus();
+  
+  bsec_virtual_sensor_t sensorList2[5] = {
+    BSEC_OUTPUT_RAW_TEMPERATURE,
+    BSEC_OUTPUT_RAW_PRESSURE,
+    BSEC_OUTPUT_RAW_HUMIDITY,
+    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+  };
+
+  iaqSensor.updateSubscription(sensorList2, 5, BSEC_SAMPLE_RATE_LP);
+  checkIaqSensorStatus();
+  
+
+  //BME680 ADD end
+  //MAX44009 ADD begin
+  if(light.begin())
+  {
+    debugPrintln(String(F("Could not find a valid MAX44009 sensor, check wiring!")));
+  }
+  //MAX44009 ADD end
+  //ADC ADD begin
+  pinMode(A0, INPUT);
+  //ADC ADD end
   debugPrintln(F("SYSTEM: System init complete."));
 }
+     //BME680 ADD begin
+void bme680Handle(){
 
+    if (iaqSensor.run()) {
+  debugPrintln(String(F("Sampling bme680")));
+      float_bme680_rawtemperature = iaqSensor.rawTemperature;
+      
+float_bme680_rawpressure = iaqSensor.pressure;
+float_bme680_rawhumidity = iaqSensor.rawHumidity;
+float_bme680_rawgasresistor = iaqSensor.gasResistance;
+float_bme680_iaq = iaqSensor.iaq;
+float_bme680_iaqaccuracy = iaqSensor.iaqAccuracy;
+float_bme680_staticiaq = iaqSensor.staticIaq;
+float_bme680_co2equivalent = iaqSensor.co2Equivalent;
+float_bme680_breathvocequivalent = iaqSensor.breathVocEquivalent;
+float_bme680_compensatedtemperature = iaqSensor.temperature;
+float_bme680_compensatedhumidity = iaqSensor.humidity;
+       updateState();
+
+  } else {
+    checkIaqSensorStatus();
+  }
+
+
+}
+    //BME680 ADD end
+    
+    
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void loop()
 { // Main execution loop
@@ -282,6 +398,12 @@ void loop()
   { // Check MQTT connection
     debugPrintln(String(F("MQTT: not connected, connecting.")));
     mqttConnect();
+  }
+    if ((millis() - statusUpdateTimerBME680) >= statusUpdateIntervalBME680){
+  //BME680 ADD begin
+  statusUpdateTimerBME680 = millis();
+  bme680Handle();
+  //BME680 ADD end
   }
   nextionHandleInput();     // Nextion serial communications loop
   mqttClient.loop();        // MQTT client loop
@@ -844,6 +966,16 @@ void mqttProcessInput(String &strTopic, String &strPayload)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void mqttStatusUpdate()
 { // Periodically publish system status
+//ADC ADD begin
+  uint_voltageraw = analogRead(A0);
+  float_voltage = uint_voltageraw / 1023.0;
+  float_voltage = float_voltage * 5.9;
+  debugPrintln("Sampling Voltage: " + String(float_voltage));
+  //ADC ADD end
+
+
+
+   
   String mqttSensorPayload = "{";
   mqttSensorPayload += String(F("\"espVersion\":")) + String(haspVersion) + String(F(","));
   if (updateEspAvailable)
@@ -882,6 +1014,25 @@ void mqttStatusUpdate()
   mqttSensorPayload += String(F("\"heapFragmentation\":")) + String(ESP.getHeapFragmentation()) + String(F(","));
   mqttSensorPayload += String(F("\"heapMaxFreeBlockSize\":")) + String(ESP.getMaxFreeBlockSize()) + String(F(","));
   mqttSensorPayload += String(F("\"espCore\":\"")) + String(ESP.getCoreVersion()) + String(F("\""));
+  //bme680 add begin
+  mqttSensorPayload += String(F(",")) + String(F("\"bme680_rawtemperature\":")) + String(float_bme680_rawtemperature) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_rawpressure\":")) + String(float_bme680_rawpressure) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_rawhumidity\":")) + String(float_bme680_rawhumidity) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_rawgasresistor\":")) + String(float_bme680_rawgasresistor) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_iaq\":")) + String(float_bme680_iaq) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_staticiaq\":")) + String(float_bme680_staticiaq) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_iaqaccuracy\":")) + String(float_bme680_iaqaccuracy) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_co2equivalent\":")) + String(float_bme680_co2equivalent) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_breathvocequivalent\":")) + String(float_bme680_breathvocequivalent) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_compensatedtemperature\":")) + String(float_bme680_compensatedtemperature) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_compensatedhumidity\":")) + String(float_bme680_compensatedhumidity) + String(F(","));
+  //bme680 add end
+  //max44009 add begin
+  mqttSensorPayload += String(F("\"lux\":")) + String(light.get_lux()) + String(F(","));
+  //max44009 add end
+  //ADC add begin
+  mqttSensorPayload += String(F("\"adc\":")) + String(float_voltage) + String(F(""));
+  //ADC add end
   mqttSensorPayload += "}";
 
   // Publish sensor JSON
@@ -2063,7 +2214,7 @@ void espWifiConnect()
 
       // Fetches SSID and pass from EEPROM and tries to connect
       // If it does not connect it starts an access point with the specified name
-      // and goes into a blocking loop awaiting configuration.
+      // and goes into a blocking  awaiting configuration.
       if (!wifiManager.autoConnect(wifiConfigAP, wifiConfigPass))
       { // Reset and try again
         debugPrintln(F("WIFI: Failed to connect and hit timeout"));
@@ -2280,15 +2431,15 @@ void espReset()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configRead()
-{ // Read saved config.json from SPIFFS
-  debugPrintln(F("SPIFFS: mounting SPIFFS"));
-  if (SPIFFS.begin())
+{ // Read saved config.json from LittleFS
+  debugPrintln(F("LittleFS: mounting LittleFS"));
+  if (LittleFS.begin())
   {
-    if (SPIFFS.exists("/config.json"))
+    if (LittleFS.exists("/config.json"))
     { // File exists, reading and loading
-      debugPrintln(F("SPIFFS: reading /config.json"));
+      debugPrintln(F("LittleFS: reading /config.json"));
       // debugPrintFile("/config.json");
-      File configFile = SPIFFS.open("/config.json", "r");
+      File configFile = LittleFS.open("/config.json", "r");
       if (configFile)
       {
         DynamicJsonDocument jsonConfigValues(1536);
@@ -2296,7 +2447,7 @@ void configRead()
 
         if (jsonError)
         { // Couldn't parse the saved config
-          debugPrintln(String(F("SPIFFS: [ERROR] Failed to parse /config.json: ")) + String(jsonError.c_str()));
+          debugPrintln(String(F("LittleFS: [ERROR] Failed to parse /config.json: ")) + String(jsonError.c_str()));
         }
         else
         {
@@ -2342,7 +2493,7 @@ void configRead()
           }
           if (strcmp(hassDiscovery, "") == 0)
           { // Cover off any edge case where this value winds up being empty
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty hassDiscovery value, setting to 'homeassistant'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has empty hassDiscovery value, setting to 'homeassistant'"));
             strcpy(hassDiscovery, "homeassistant");
           }
           if (!jsonConfigValues["nextionBaud"].isNull())
@@ -2351,7 +2502,7 @@ void configRead()
           }
           if (strcmp(nextionBaud, "") == 0)
           { // Cover off any edge case where this value winds up being empty
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty nextionBaud value, setting to '115200'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has empty nextionBaud value, setting to '115200'"));
             strcpy(nextionBaud, "115200");
           }
           if (!jsonConfigValues["nextionMaxPages"].isNull())
@@ -2360,7 +2511,7 @@ void configRead()
           }
           if (nextionMaxPages < 1)
           { // Cover off any edge case where this value winds up being zero or negative
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has nextionMaxPages value of zero or negative, setting to '11'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has nextionMaxPages value of zero or negative, setting to '11'"));
             nextionMaxPages = 11;
           }
           if (!jsonConfigValues["motionPinConfig"].isNull())
@@ -2435,36 +2586,36 @@ void configRead()
           }
           String jsonConfigValuesStr;
           serializeJson(jsonConfigValues, jsonConfigValuesStr);
-          debugPrintln(String(F("SPIFFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
+          debugPrintln(String(F("LittleFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
         }
       }
       else
       {
-        debugPrintln(F("SPIFFS: [ERROR] Failed to read /config.json"));
+        debugPrintln(F("LittleFS: [ERROR] Failed to read /config.json"));
       }
     }
     else
     {
-      debugPrintln(F("SPIFFS: [WARNING] /config.json not found, will be created on first config save"));
+      debugPrintln(F("LittleFS: [WARNING] /config.json not found, will be created on first config save"));
     }
   }
   else
   {
-    debugPrintln(F("SPIFFS: [ERROR] Failed to mount FS"));
+    debugPrintln(F("LittleFS: [ERROR] Failed to mount FS"));
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configSaveCallback()
 { // Callback notifying us of the need to save config
-  debugPrintln(F("SPIFFS: Configuration changed, flagging for save"));
+  debugPrintln(F("LittleFS: Configuration changed, flagging for save"));
   shouldSaveConfig = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configSave()
 { // Save the custom parameters to config.json
-  debugPrintln(F("SPIFFS: Saving config"));
+  debugPrintln(F("LittleFS: Saving config"));
   DynamicJsonDocument jsonConfigValues(2048);
 
   jsonConfigValues["mqttServer"] = mqttServer;
@@ -2487,30 +2638,30 @@ void configSave()
   jsonConfigValues["beepEnabled"] = beepEnabled;
   jsonConfigValues["ignoreTouchWhenOff"] = ignoreTouchWhenOff;
 
-  debugPrintln(String(F("SPIFFS: mqttServer = ")) + String(mqttServer));
-  debugPrintln(String(F("SPIFFS: mqttPort = ")) + String(mqttPort));
-  debugPrintln(String(F("SPIFFS: mqttUser = ")) + String(mqttUser));
-  debugPrintln(String(F("SPIFFS: mqttPassword = ")) + String(mqttPassword));
-  debugPrintln(String(F("SPIFFS: mqttTlsEnabled = ")) + String(mqttTlsEnabled));
-  debugPrintln(String(F("SPIFFS: mqttFingerprint = ")) + String(mqttFingerprint));
-  debugPrintln(String(F("SPIFFS: haspNode = ")) + String(haspNode));
-  debugPrintln(String(F("SPIFFS: groupName = ")) + String(groupName));
-  debugPrintln(String(F("SPIFFS: configUser = ")) + String(configUser));
-  debugPrintln(String(F("SPIFFS: configPassword = ")) + String(configPassword));
-  debugPrintln(String(F("SPIFFS: hassDiscovery = ")) + String(hassDiscovery));
-  debugPrintln(String(F("SPIFFS: nextionBaud = ")) + String(nextionBaud));
-  debugPrintln(String(F("SPIFFS: nextionMaxPages = ")) + String(nextionMaxPages));
-  debugPrintln(String(F("SPIFFS: motionPinConfig = ")) + String(motionPinConfig));
-  debugPrintln(String(F("SPIFFS: debugSerialEnabled = ")) + String(debugSerialEnabled));
-  debugPrintln(String(F("SPIFFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
-  debugPrintln(String(F("SPIFFS: mdnsEnabled = ")) + String(mdnsEnabled));
-  debugPrintln(String(F("SPIFFS: beepEnabled = ")) + String(beepEnabled));
-  debugPrintln(String(F("SPIFFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
+  debugPrintln(String(F("LittleFS: mqttServer = ")) + String(mqttServer));
+  debugPrintln(String(F("LittleFS: mqttPort = ")) + String(mqttPort));
+  debugPrintln(String(F("LittleFS: mqttUser = ")) + String(mqttUser));
+  debugPrintln(String(F("LittleFS: mqttPassword = ")) + String(mqttPassword));
+  debugPrintln(String(F("LittleFS: mqttTlsEnabled = ")) + String(mqttTlsEnabled));
+  debugPrintln(String(F("LittleFS: mqttFingerprint = ")) + String(mqttFingerprint));
+  debugPrintln(String(F("LittleFS: haspNode = ")) + String(haspNode));
+  debugPrintln(String(F("LittleFS: groupName = ")) + String(groupName));
+  debugPrintln(String(F("LittleFS: configUser = ")) + String(configUser));
+  debugPrintln(String(F("LittleFS: configPassword = ")) + String(configPassword));
+  debugPrintln(String(F("LittleFS: hassDiscovery = ")) + String(hassDiscovery));
+  debugPrintln(String(F("LittleFS: nextionBaud = ")) + String(nextionBaud));
+  debugPrintln(String(F("LittleFS: nextionMaxPages = ")) + String(nextionMaxPages));
+  debugPrintln(String(F("LittleFS: motionPinConfig = ")) + String(motionPinConfig));
+  debugPrintln(String(F("LittleFS: debugSerialEnabled = ")) + String(debugSerialEnabled));
+  debugPrintln(String(F("LittleFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
+  debugPrintln(String(F("LittleFS: mdnsEnabled = ")) + String(mdnsEnabled));
+  debugPrintln(String(F("LittleFS: beepEnabled = ")) + String(beepEnabled));
+  debugPrintln(String(F("LittleFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
 
-  File configFile = SPIFFS.open("/config.json", "w");
+  File configFile = LittleFS.open("/config.json", "w");
   if (!configFile)
   {
-    debugPrintln(F("SPIFFS: Failed to open config file for writing"));
+    debugPrintln(F("LittleFS: Failed to open config file for writing"));
   }
   else
   {
@@ -2530,8 +2681,8 @@ void configClearSaved()
   nextionSetAttr("dims", "100");
   nextionSendCmd("page 0");
   nextionSetAttr("p[0].b[1].txt", "\"Resetting\\rsystem...\"");
-  debugPrintln(F("RESET: Formatting SPIFFS"));
-  SPIFFS.format();
+  debugPrintln(F("RESET: Formatting LittleFS"));
+  LittleFS.format();
   debugPrintln(F("RESET: Clearing WiFiManager settings..."));
   WiFi.disconnect();
   WiFiManager wifiManager;
@@ -2993,7 +3144,7 @@ void webHandleSaveConfig()
   }
 
   if (shouldSaveConfig)
-  { // Config updated, notify user and trigger write to SPIFFS
+  { // Config updated, notify user and trigger write to LittleFS
 
     webServer.sendContent(F("<meta http-equiv='refresh' content='15;url=/' />"));
     webServer.sendContent_P(HTTP_HEAD_END);
@@ -3658,7 +3809,7 @@ void motionHandle()
     static unsigned long motionBufferTimer = millis(); // Timer for motion sensor buffer
     static bool motionActiveBuffer = motionActive;
     bool motionRead = digitalRead(motionPin);
-
+    
     if (motionRead != motionActiveBuffer)
     { // if we've changed state
       motionBufferTimer = millis();
@@ -3826,20 +3977,20 @@ void debugPrintCrash()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void debugPrintFile(const String &fileName)
 { // Debug output line of text to our debug targets
-  File debugFile = SPIFFS.open(fileName, "r");
+  File debugFile = LittleFS.open(fileName, "r");
   if (debugFile)
   {
     uint16_t lineCount = 1;
     while (debugFile.available())
     {
-      debugPrintln(F("SPIFFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:") + debugFile.readStringUntil('\n'));
+      debugPrintln(F("LittleFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:") + debugFile.readStringUntil('\n'));
       lineCount++;
     }
     debugFile.close();
   }
   else
   {
-    debugPrintln("SPIFFS: Error opening file for read: " + fileName);
+    debugPrintln("LittleFS: Error opening file for read: " + fileName);
   }
 }
 
@@ -3885,4 +4036,104 @@ String printHex8(byte *data, uint8_t length)
   }
   // hex8String.toUpperCase();
   return hex8String;
+}
+/////////////////////////////////////////////////////////////////////////////////
+// Helper function definitions
+void checkIaqSensorStatus(void)
+{
+  if (iaqSensor.status != BSEC_OK) {
+    if (iaqSensor.status < BSEC_OK) {
+      debugPrintln("BSEC error code : " + String(iaqSensor.status));
+      for (int i = 0; i < 1000; i++)
+        errLeds(); /* Halt in case of failure */
+    } else {
+      debugPrintln("BSEC warning code : " + String(iaqSensor.status));
+    }
+  }
+
+  if (iaqSensor.bme680Status != BME680_OK) {
+    if (iaqSensor.bme680Status < BME680_OK) {
+      debugPrintln("BME680 error code : " + String(iaqSensor.bme680Status));
+    for (int i = 0; i < 1000; i++)
+        errLeds(); /* Halt in case of failure */
+    } else {
+      debugPrintln("BME680 warning code : " + String(iaqSensor.bme680Status));
+    }
+  }
+  iaqSensor.status = BSEC_OK;
+}
+
+void errLeds(void)
+{
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
+}
+
+void loadState(void)
+{
+  if (EEPROM.read(0) == BSEC_MAX_STATE_BLOB_SIZE) {
+    // Existing state in EEPROM
+    debugPrintln(F("Reading state from EEPROM"));
+   
+    for (uint8_t i = 0; i < BSEC_MAX_STATE_BLOB_SIZE; i++) {
+      bsecState[i] = EEPROM.read(i + 1);
+      String str = String(bsecState[i], HEX);
+      debugPrintln(str);
+    }
+
+    iaqSensor.setState(bsecState);
+    checkIaqSensorStatus();
+  } else {
+    // Erase the EEPROM with zeroes
+    debugPrintln(F("Erasing EEPROM"));
+
+    for (uint8_t i = 0; i < BSEC_MAX_STATE_BLOB_SIZE + 1; i++)
+      EEPROM.write(i, 0);
+
+    EEPROM.commit();
+  }
+}
+
+void updateState(void)
+{
+  bool update = false;
+  /* Set a trigger to save the state. Here, the state is saved every STATE_SAVE_PERIOD with the first state being saved once the algorithm achieves full calibration, i.e. iaqAccuracy = 3 */
+  if (iaqSensor.iaqAccuracy >= 3) {
+     statusUpdateIntervalBME680 = 30000;
+     debugPrintln(String("statusUpdateIntervalBME680 set to " + String(statusUpdateIntervalBME680)));
+  } else {
+     statusUpdateIntervalBME680 = 2000;
+     debugPrintln(String("statusUpdateIntervalBME680 set to " + String(statusUpdateIntervalBME680)));
+  }
+  if (stateUpdateCounter == 0) {
+    if (iaqSensor.iaqAccuracy >= 3) {
+      update = true;
+      stateUpdateCounter++;
+    } 
+  } else {
+    /* Update every STATE_SAVE_PERIOD milliseconds */
+    if ((stateUpdateCounter * STATE_SAVE_PERIOD) < millis()) {
+      update = true;
+      stateUpdateCounter++;
+    }
+  }
+
+  if (update) {
+    iaqSensor.getState(bsecState);
+    checkIaqSensorStatus();
+
+    debugPrintln(F("Writing state to EEPROM"));
+
+    for (uint8_t i = 0; i < BSEC_MAX_STATE_BLOB_SIZE ; i++) {
+      EEPROM.write(i + 1, bsecState[i]);
+      String str = String(bsecState[i], HEX);
+      debugPrintln(str);
+    }
+
+    EEPROM.write(0, BSEC_MAX_STATE_BLOB_SIZE);
+    EEPROM.commit();
+  }
 }
