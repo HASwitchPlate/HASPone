@@ -119,7 +119,7 @@ uint8_t lcdBacklightDim = 0;                          // Backlight dimmer value
 bool lcdBacklightOn = 0;                              // Backlight on/off
 bool lcdBacklightQueryFlag = false;                   // Flag to set if we've queried lcdBacklightDim
 bool startupCompleteFlag = false;                     // Startup process has completed
-const unsigned long statusUpdateInterval = 300000;    // Time in msec between publishing MQTT status updates (5 minutes)
+const unsigned long statusUpdateInterval = 60000;    // Time in msec between publishing MQTT status updates (5 minutes)
 unsigned long statusUpdateTimer = 0;                  // Timer for status update
 const unsigned long connectTimeout = 300;             // Timeout for WiFi and MQTT connection attempts in seconds
 const unsigned long reConnectTimeout = 60;            // Timeout for WiFi reconnection attempts in seconds
@@ -184,6 +184,7 @@ float float_bme680_co2equivalent = 0;
 float float_bme680_breathvocequivalent = 0;
 float float_bme680_compensatedtemperature = 0;
 float float_bme680_compensatedhumidity = 0;
+String string_bme680_errocode = "0";
 String outputBME680;
 unsigned long statusUpdateIntervalBME680 = 2000;
 unsigned long statusUpdateTimerBME680 = 0;
@@ -1029,6 +1030,7 @@ void mqttStatusUpdate()
   mqttSensorPayload += String(F("\"bme680_breathvocequivalent\":")) + String(float_bme680_breathvocequivalent) + String(F(","));
   mqttSensorPayload += String(F("\"bme680_compensatedtemperature\":")) + String(float_bme680_compensatedtemperature) + String(F(","));
   mqttSensorPayload += String(F("\"bme680_compensatedhumidity\":")) + String(float_bme680_compensatedhumidity) + String(F(","));
+  mqttSensorPayload += String(F("\"bme680_errorcode\":")) + string_bme680_errocode + String(F(","));
   //bme680 add end
   //max44009 add begin
   mqttSensorPayload += String(F("\"lux\":")) + String(light.get_lux()) + String(F(","));
@@ -2993,6 +2995,10 @@ void webHandleRoot()
   webServer.sendContent(String(long(millis() / 1000)));
   webServer.sendContent(F("<br/><b>Last reset: </b>"));
   webServer.sendContent(ESP.getResetInfo());
+  webServer.sendContent(F("<br/><b>Motion Pin: </b>"));
+  webServer.sendContent(String(motionPin));
+  webServer.sendContent(F("<br/><b>Motion Enabled: </b>"));
+  webServer.sendContent(String(motionEnabled));
   webServer.sendContent_P(HTTP_END);
   webServer.sendContent("");
 }
@@ -3828,6 +3834,7 @@ void motionHandle()
     static bool motionActiveBuffer = motionActive;
     bool motionRead = digitalRead(motionPin);
 
+    //debugPrintln("MOTION: Active" + String(motionRead));
     if (motionRead != motionActiveBuffer)
     { // if we've changed state
       motionBufferTimer = millis();
@@ -4061,8 +4068,12 @@ void checkIaqSensorStatus(void)
 {
   if (iaqSensor.status != BSEC_OK) {
     if (iaqSensor.status < BSEC_OK) {
-      debugPrintln("BSEC error code : " + String(iaqSensor.status));
-      for (int i = 0; i < 1000; i++)
+      debugPrintln("BSEC error code 1: " + String(iaqSensor.status));
+      //for (int i = 0; i < 1000; i++)
+      for (uint8_t i = 0; i < BSEC_MAX_STATE_BLOB_SIZE + 1; i++)
+      EEPROM.write(i, 0);
+
+    EEPROM.commit();
         errLeds(); /* Halt in case of failure */
     } else {
       debugPrintln("BSEC warning code : " + String(iaqSensor.status));
@@ -4071,14 +4082,17 @@ void checkIaqSensorStatus(void)
 
   if (iaqSensor.bme680Status != BME680_OK) {
     if (iaqSensor.bme680Status < BME680_OK) {
-      debugPrintln("BME680 error code : " + String(iaqSensor.bme680Status));
-    for (int i = 0; i < 1000; i++)
+      debugPrintln("BME680 error code 2: " + String(iaqSensor.bme680Status));
+      string_bme680_errocode =String(iaqSensor.bme680Status);
+    //for (int i = 0; i < 1000; i++)
         errLeds(); /* Halt in case of failure */
     } else {
       debugPrintln("BME680 warning code : " + String(iaqSensor.bme680Status));
+      string_bme680_errocode =String(iaqSensor.bme680Status);
     }
   }
   iaqSensor.status = BSEC_OK;
+  string_bme680_errocode = "ok";
 }
 
 void errLeds(void)
