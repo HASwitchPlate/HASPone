@@ -1,0 +1,75 @@
+# Example ESPhome configuration for use with the HASPone hardware
+
+substitutions:
+  device_name: "haspone"
+  friendly_name: "HASPone hardware for ESPhome"
+  project_version: "0.0.1"
+  
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: "http://haswitchplate.com"
+  project:
+    name: "esphome.${device_name}"
+    version: ${project_version}
+  on_boot:
+    then:
+    - switch.turn_on: switch_lcdpower # Power up the Nextion on boot
+
+esp8266:
+  board: d1_mini
+
+logger:
+
+api:
+
+ota:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+web_server:
+  port: 80
+
+# HASPone switch controls power to the Nextion. Set HIGH at power on to enable the device at boot.
+switch:
+  - platform: gpio
+    id: switch_lcdpower
+    name: "${friendly_name} Nextion Power"
+    pin: D6 #GPIO12
+    restore_mode: ALWAYS_ON
+    internal: false
+
+# UART for HASPone communication to Nextion. This will utilize software serial and might not work well for TFT updates.
+uart:
+  id: uart_nextion
+  tx_pin: D4 #GPIO2
+  rx_pin: D7 #GPIO13
+  baud_rate: 115200
+
+# Nextion display device
+display:
+  - platform: nextion
+    id: display_nextion
+    uart_id: uart_nextion
+    on_touch:
+      then:
+        lambda: |-
+          ESP_LOGD("nextion.on_touch", "Nextion touch event detected!");
+          ESP_LOGD("nextion.on_touch", "Page Id: %i", page_id);
+          ESP_LOGD("nextion.on_touch", "Component Id: %i", component_id);
+          ESP_LOGD("nextion.on_touch", "Event type: %s", touch_event ? "Press" : "Release");
+
+# Nextion backlight control
+number:
+  - platform: template
+    id: number_brightness
+    name: "${friendly_name} Nextion Brightness"
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 100
+    optimistic: true
+    set_action:
+      - lambda: id(display_nextion)->set_backlight_brightness(x/100);
