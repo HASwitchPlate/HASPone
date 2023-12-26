@@ -6,7 +6,7 @@
 //        Home Automation Switch Plate
 // https://github.com/aderusha/HASwitchPlate
 //
-// Copyright (c) 2023 Allen Derusha allen@derusha.org
+// Copyright (c) 2024 Allen Derusha allen@derusha.org
 //
 // MIT License
 //
@@ -166,13 +166,13 @@ MDNSResponder::hMDNSService hMDNSService; // mDNS
 EspSaveCrash SaveCrash;                   // Save crash details to flash
 
 // URL for auto-update check of "version.json"
-const char UPDATE_URL[] PROGMEM = "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/update/version.json";
+const char UPDATE_URL[] PROGMEM = "https://haswitchplate.com/update/version.json";
 // Additional CSS style to match Hass theme
 const char HASP_STYLE[] PROGMEM = "<style>button{background-color:#03A9F4;}body{width:60%;margin:auto;}input:invalid{border:1px solid red;}input[type=checkbox]{width:20px;}.wrap{text-align:left;display:inline-block;min-width:260px;max-width:1000px}</style>";
 // Default link to compiled Arduino firmware image
-String espFirmwareUrl = "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin";
+String espFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin";
 // Default link to compiled Nextion firmware images
-String lcdFirmwareUrl = "https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/Nextion_HMI/HASwitchPlate.tft";
+String lcdFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.tft";
 
 void setup();
 void loop();
@@ -902,8 +902,8 @@ void mqttProcessInput(String &strTopic, String &strPayload)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void mqttStatusUpdate()
 { // Periodically publish system status
-  String mqttSensorPayload = "{";
-  mqttSensorPayload += String(F("\"espVersion\":")) + String(haspVersion) + String(F(","));
+  String mqttSensorPayload = String(F("{\"espVersion\":"));
+  mqttSensorPayload += String(haspVersion) + String(F(","));
   if (updateEspAvailable)
   {
     mqttSensorPayload += String(F("\"updateEspAvailable\":true,"));
@@ -950,24 +950,23 @@ void mqttStatusUpdate()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void mqttDiscovery()
 { // Publish Home Assistant discovery messages
-
-  String macAddress = String(espMac[0], HEX) + String(F(":")) + String(espMac[1], HEX) + String(F(":")) + String(espMac[2], HEX) + String(F(":")) + String(espMac[3], HEX) + String(F(":")) + String(espMac[4], HEX) + String(F(":")) + String(espMac[5], HEX);
+  const String mqttDiscoveryDevice = String(F("\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"configuration_url\":\"http://")) + WiFi.localIP().toString() + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("},\"origin\":{\"name\":\"HASPone\",\"support_url\":\"https://haswitchplate.com\",\"sw\":")) + String(haspVersion) + String(F("}}"));
 
   // light discovery for backlight
   String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/config"));
-  String mqttDiscoveryPayload = String(F("{\"name\":\"backlight\",\"object_id\":\"")) + String(haspNode) + String(F("_backlight\",\"command_topic\":\"")) + mqttLightCommandTopic + String(F("\",\"state_topic\":\"")) + mqttLightStateTopic + String(F("\",\"brightness_state_topic\":\"")) + mqttLightBrightStateTopic + String(F("\",\"brightness_command_topic\":\"")) + mqttLightBrightCommandTopic + String(F("\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"brightness_scale\":100,\"unique_id\":\"")) + mqttClientId + String(F("-backlight\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  String mqttDiscoveryPayload = String(F("{\"name\":\"backlight\",\"object_id\":\"")) + String(haspNode) + String(F("_backlight\",\"command_topic\":\"")) + mqttLightCommandTopic + String(F("\",\"state_topic\":\"")) + mqttLightStateTopic + String(F("\",\"brightness_state_topic\":\"")) + mqttLightBrightStateTopic + String(F("\",\"brightness_command_topic\":\"")) + mqttLightBrightCommandTopic + String(F("\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"brightness_scale\":100,\"unique_id\":\"")) + mqttClientId + String(F("-backlight\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // sensor discovery for device telemetry
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/sensor/")) + String(haspNode) + String(F("/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"sensor\",\"object_id\":\"")) + String(haspNode) + String(F("_sensor\",\"json_attributes_topic\":\"")) + mqttSensorTopic + String(F("\",\"state_topic\":\"")) + mqttStatusTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-sensor\",\"icon\":\"mdi:cellphone-text\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"sensor\",\"object_id\":\"")) + String(haspNode) + String(F("_sensor\",\"json_attributes_topic\":\"")) + mqttSensorTopic + String(F("\",\"state_topic\":\"")) + mqttStatusTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-sensor\",\"icon\":\"mdi:cellphone-text\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // number discovery for active page
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/number/")) + String(haspNode) + String(F("/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"active page\",\"object_id\":\"")) + String(haspNode) + String(F("_active_page\",\"command_topic\":\"")) + mqttCommandTopic + String(F("/page\",\"state_topic\":\"")) + mqttStateTopic + String(F("/page\",\"step\":1,\"min\":0,\"max\":")) + String(nextionMaxPages) + String(F(",\"retain\":true,\"optimistic\":true,\"icon\":\"mdi:page-next-outline\",\"unique_id\":\"")) + mqttClientId + String(F("-page\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"active page\",\"object_id\":\"")) + String(haspNode) + String(F("_active_page\",\"command_topic\":\"")) + mqttCommandTopic + String(F("/page\",\"state_topic\":\"")) + mqttStateTopic + String(F("/page\",\"step\":1,\"min\":0,\"max\":")) + String(nextionMaxPages) + String(F(",\"retain\":true,\"optimistic\":true,\"icon\":\"mdi:page-next-outline\",\"unique_id\":\"")) + mqttClientId + String(F("-page\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
@@ -977,36 +976,35 @@ void mqttDiscovery()
 
   // rgb light discovery for selectedforegroundcolor
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/selectedforegroundcolor/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"selected foreground color\",\"object_id\":\"")) + String(haspNode) + String(F("_selected_foreground_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedforegroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"selected foreground color\",\"object_id\":\"")) + String(haspNode) + String(F("_selected_foreground_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedforegroundcolor\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // rgb light discovery for selectedbackgroundcolor
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/selectedbackgroundcolor/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"selected background color\",\"object_id\":\"")) + String(haspNode) + String(F("_selected_background_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedbackgroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"selected background color\",\"object_id\":\"")) + String(haspNode) + String(F("_selected_background_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/selectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-selectedbackgroundcolor\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // rgb light discovery for unselectedforegroundcolor
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/unselectedforegroundcolor/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"unselected foreground color\",\"object_id\":\"")) + String(haspNode) + String(F("_unselected_foreground_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedforegroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"unselected foreground color\",\"object_id\":\"")) + String(haspNode) + String(F("_unselected_foreground_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedforegroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedforegroundcolor\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   // rgb light discovery for unselectedbackgroundcolor
   mqttDiscoveryTopic = String(hassDiscovery) + String(F("/light/")) + String(haspNode) + String(F("/unselectedbackgroundcolor/config"));
-  mqttDiscoveryPayload = String(F("{\"name\":\"unselected background color\",\"object_id\":\"")) + String(haspNode) + String(F("_unselected_background_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedbackgroundcolor\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"unselected background color\",\"object_id\":\"")) + String(haspNode) + String(F("_unselected_background_color\",\"command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/switch\",\"state_topic\":\"hasp/")) + String(haspNode) + String(F("/alwayson\",\"rgb_command_topic\":\"hasp/")) + String(haspNode) + String(F("/light/unselectedbackgroundcolor/rgb\",\"rgb_command_template\":\"{{(red|bitwise_and(248)*256)+(green|bitwise_and(252)*8)+(blue|bitwise_and(248)/8)|int }}\",\"retain\":true,\"unique_id\":\"")) + mqttClientId + String(F("-unselectedbackgroundcolor\",")) + mqttDiscoveryDevice;
   mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 
   if (motionEnabled)
   { // binary_sensor for motion
     String mqttDiscoveryTopic = String(hassDiscovery) + String(F("/binary_sensor/")) + String(haspNode) + String(F("-motion/config"));
-    String mqttDiscoveryPayload = String(F("{\"device_class\":\"motion\",\"name\":\"motion\",\"object_id\":\"")) + String(haspNode) + String(F("_motion\",\"state_topic\":\"")) + mqttMotionStateTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-motion\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"device\":{\"identifiers\":[\"")) + mqttClientId + String(F("\"],\"name\":\"")) + String(haspNode) + String(F("\",\"manufacturer\":\"HASwitchPlate\",\"model\":\"HASPone v1.0.0\",\"sw_version\":")) + String(haspVersion) + String(F("}}"));
+    String mqttDiscoveryPayload = String(F("{\"device_class\":\"motion\",\"name\":\"motion\",\"object_id\":\"")) + String(haspNode) + String(F("_motion\",\"state_topic\":\"")) + mqttMotionStateTopic + String(F("\",\"unique_id\":\"")) + mqttClientId + String(F("-motion\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",")) + mqttDiscoveryDevice;
     mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
     debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2287,8 +2285,14 @@ void espStartOta(const String &espOtaUrl)
 
   WiFiUDP::stopAll(); // Keep mDNS responder from breaking things
   delay(1);
+
+  int startHost = espOtaUrl.indexOf("://") + 3;                // Find the end of 'https://'
+  int endHost = espOtaUrl.indexOf('/', startHost);             // Find the next '/' after 'https://'
+  String espOtaHost = espOtaUrl.substring(startHost, endHost); // Extract host
+  String espOtaUri = espOtaUrl.substring(endHost);             // Extract URI
   ESPhttpUpdate.rebootOnUpdate(false);
   ESPhttpUpdate.onProgress(nextionUpdateProgress);
+  ESPhttpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
   t_httpUpdate_return espOtaUrlReturnCode;
   if (espOtaUrl.startsWith(F("https")))
   {
@@ -2297,6 +2301,7 @@ void espStartOta(const String &espOtaUrl)
     wifiEspOtaClientSecure.setInsecure();
     wifiEspOtaClientSecure.setBufferSizes(512, 512);
     espOtaUrlReturnCode = ESPhttpUpdate.update(wifiEspOtaClientSecure, espOtaUrl);
+    wifiEspOtaClientSecure.stop();
   }
   else
   {
@@ -3800,7 +3805,7 @@ void telnetHandleClient()
           telnetClient.stop(); // client disconnected
         }
         telnetClient = telnetServer.accept(); // ready for new client
-        telnetInputIndex = 0;                    // reset input buffer index
+        telnetInputIndex = 0;                 // reset input buffer index
       }
       else
       {
