@@ -76,7 +76,7 @@ bool shouldSaveConfig = false;                        // Flag to save json confi
 bool nextionReportPage0 = false;                      // If false, don't report page 0 sendme
 const unsigned long updateCheckInterval = 43200000;   // Time in msec between update checks (12 hours)
 unsigned long updateCheckTimer = updateCheckInterval; // Timer for update check
-unsigned long updateCheckFirstRun = 60000;            // First-run check offset
+unsigned long updateCheckFirstRun = 30000;            // First-run check offset
 bool updateEspAvailable = false;                      // Flag for update check to report new ESP FW version
 float updateEspAvailableVersion;                      // Float to hold the new ESP FW version number
 bool updateLcdAvailable = false;                      // Flag for update check to report new LCD FW version
@@ -166,13 +166,13 @@ MDNSResponder::hMDNSService hMDNSService; // mDNS
 EspSaveCrash SaveCrash;                   // Save crash details to flash
 
 // URL for auto-update check of "version.json"
-const char UPDATE_URL[] PROGMEM = "https://haswitchplate.com/update/version.json";
+const char UPDATE_URL[] PROGMEM = "https://haswitchplate.com/update/dev/version.json";
 // Additional CSS style to match Hass theme
 const char HASP_STYLE[] PROGMEM = "<style>button{background-color:#03A9F4;}body{width:60%;margin:auto;}input:invalid{border:1px solid red;}input[type=checkbox]{width:20px;}.wrap{text-align:left;display:inline-block;min-width:260px;max-width:1000px}</style>";
 // Default link to compiled Arduino firmware image
-String espFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin";
+String espFirmwareUrl = "https://haswitchplate.com/update/dev/HASwitchPlate.ino.d1_mini.bin";
 // Default link to compiled Nextion firmware images
-String lcdFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.tft";
+String lcdFirmwareUrl = "https://haswitchplate.com/update/dev/HASwitchPlate.tft";
 
 void setup();
 void loop();
@@ -3223,7 +3223,7 @@ void webHandleFirmware()
   {
     webServer.sendContent(F("<font color='green'><b>HASPone LCD update available!</b></font>"));
   }
-  webServer.sendContent(F("<br/><b>Update Nextion LCD from URL</b><small><i> http only</i></small>"));
+  webServer.sendContent(F("<br/><b>Update Nextion LCD from URL</b>"));
   webServer.sendContent(F("<br/><input id='lcdFirmware' name='lcdFirmware' value='"));
   webServer.sendContent(lcdFirmwareUrl);
   webServer.sendContent(F("'><br/><br/><button type='submit'>Update LCD from URL</button></form>"));
