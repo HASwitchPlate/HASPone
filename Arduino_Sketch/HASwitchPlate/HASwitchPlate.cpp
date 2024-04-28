@@ -166,13 +166,13 @@ MDNSResponder::hMDNSService hMDNSService; // mDNS
 EspSaveCrash SaveCrash;                   // Save crash details to flash
 
 // URL for auto-update check of "version.json"
-const char UPDATE_URL[] PROGMEM = "https://haswitchplate.com/update/dev/version.json";
+const char UPDATE_URL[] PROGMEM = "https://haswitchplate.com/update/version.json";
 // Additional CSS style to match Hass theme
 const char HASP_STYLE[] PROGMEM = "<style>button{background-color:#03A9F4;}body{width:60%;margin:auto;}input:invalid{border:1px solid red;}input[type=checkbox]{width:20px;}.wrap{text-align:left;display:inline-block;min-width:260px;max-width:1000px}</style>";
 // Default link to compiled Arduino firmware image
-String espFirmwareUrl = "https://haswitchplate.com/update/dev/HASwitchPlate.ino.d1_mini.bin";
+String espFirmwareUrl = "https://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin";
 // Default link to compiled Nextion firmware images
-String lcdFirmwareUrl = "https://haswitchplate.com/update/dev/HASwitchPlate.tft";
+String lcdFirmwareUrl = "https://haswitchplate.com/update/HASwitchPlate.tft";
 
 void setup();
 void loop();
