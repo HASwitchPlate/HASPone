@@ -120,19 +120,29 @@ blueprint:
       selector:
         entity:
           domain: weather
+    forecast_interval:
+      name: "Forecast interval"
+      description: 'Forecast interval, one of "hourly", "twice daily", or "daily"'
+      default: "daily"
+      selector:
+        select:
+          options:
+            - "hourly"
+            - "twice_daily"
+            - "daily"
     forecast_index:
       name: "Forecast index"
-      description: 'Weather forecasts are provided at intervals determined by your weather source.  The next time interval will be index "0".  Increment this number for future forecasts'
+      description: 'Select a specific forecast, the next time interval will be index "0". Increment this number for future forecasts'
       default: 0
       selector:
         number:
           min: 0
-          max: 10
+          max: 48
           mode: slider
           unit_of_measurement: index
     forecast_attribute:
       name: "Enter the desired forecast attribute"
-      description: 'Type in the name of the desired forecast attribute for your provider.  "condition" is a common attribute for many providers.'
+      description: 'Type in the name of the desired forecast attribute for your provider. "condition" is a common attribute for many providers.'
       default: "condition"
       selector:
         text:
@@ -243,15 +253,16 @@ variables:
   hasppage: !input hasppage
   haspbutton: !input haspbutton
   weather_provider: !input weather_provider
+  forecast_interval: !input forecast_interval
   forecast_index: !input forecast_index
   forecast_attribute: !input forecast_attribute
   prefix: !input prefix
   font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int(default=8) }}'
+  font: '{{ font_select.split(" - ")[0] | int }}'
   xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int(default=1) }}'
+  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
   ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int(default=1) }}'
+  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
   wrap: !input wrap
   title_case: !input title_case
   selected_fgcolor: !input selected_fgcolor
@@ -261,15 +272,6 @@ variables:
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
-  text: >-
-    {%- if prefix|lower != "none" -%}
-      {{ prefix }}
-    {%- endif -%}
-    {%- if title_case -%}
-      {{ state_attr(weather_provider, "forecast")[forecast_index|int(default=0)].get(forecast_attribute)|replace("windy-variant","windy")|replace("clear-night","clear night")|replace("partlycloudy","partly cloudy")|replace("lightning-rainy","lightning & rain")|replace("snowy-rainy","snow & rain") | title }}
-    {%- else -%}
-      {{ state_attr(weather_provider, "forecast")[forecast_index|int(default=0)].get(forecast_attribute)|replace("windy-variant","windy")|replace("clear-night","clear night")|replace("partlycloudy","partly cloudy")|replace("lightning-rainy","lightning & rain")|replace("snowy-rainy","snow & rain") }}
-    {%- endif -%}
   isbr: "{% if wrap == true %}1{% else %}0{% endif %}"
   selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
   selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
@@ -380,6 +382,23 @@ condition:
     value_template: "{{ is_state(haspsensor, 'ON') }}"
 
 action:
+  - service: weather.get_forecasts
+    target:
+      entity_id: !input weather_provider
+    data:
+      type: "{{forecast_interval}}"
+    response_variable: weather_forecast
+  - variables:
+      text: >-
+        {%- if prefix|lower != "none" -%}
+          {{ prefix }}
+        {%- endif -%}
+        {%- if title_case -%}
+          {{ weather_forecast[weather_provider]['forecast'][forecast_index][forecast_attribute]|replace("windy-variant","windy")|replace("clear-night","clear night")|replace("partlycloudy","partly cloudy")|replace("lightning-rainy","lightning & rain")|replace("snowy-rainy","snow & rain") | title }}
+        {%- else -%}
+          {{ weather_forecast[weather_provider]['forecast'][forecast_index][forecast_attribute]|replace("windy-variant","windy")|replace("clear-night","clear night")|replace("partlycloudy","partly cloudy")|replace("lightning-rainy","lightning & rain")|replace("snowy-rainy","snow & rain") }}
+        {%- endif -%}
+
   - choose:
       #########################################################################
       # Display attribute and apply text style when "RUN ACTIONS" is pressed by the user
