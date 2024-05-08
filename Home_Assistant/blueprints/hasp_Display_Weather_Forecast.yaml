@@ -122,7 +122,7 @@ blueprint:
           domain: weather
     forecast_interval:
       name: "Forecast interval"
-      description: 'Forecast interval, one of "hourly", "twice daily", or "daily"'
+      description: 'Forecast interval, one of "hourly", "twice daily", or "daily". Not all weather providers will offer all options.'
       default: "daily"
       selector:
         select:
