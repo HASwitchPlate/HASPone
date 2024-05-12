@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone Remove MQTT discovery messages"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 

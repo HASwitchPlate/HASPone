@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[8].b[9] The slider button on page 8 displays a volume control"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 

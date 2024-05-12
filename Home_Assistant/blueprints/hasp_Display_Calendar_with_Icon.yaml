@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays the month + date with a calendar icon"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
