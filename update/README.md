@@ -8,6 +8,7 @@ Files here are used for the auto-update routine which will periodically check Gi
 
 If you need to downgrade for whatever reason, paste the link below into the "Update ESP8266 from URL" dialog under "Update Firmware".
 
+* **HASPone 1.05** `https://raw.githubusercontent.com/HASwitchPlate/HASPone/570eefcb901c8eb40947a5fa53b8760ae21612f2/Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin`
 * **HASPone 1.04** `https://raw.githubusercontent.com/HASwitchPlate/HASPone/f20474d8f705f9dc08ac3c8c1d5c3de324d1e6fe/Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin`
 * **HASPone 1.03** `https://raw.githubusercontent.com/HASwitchPlate/HASPone/2a8df65334f8b694676e4e2d75cdc7e6daac9b4e/Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin`
 * **HASPone 1.02** `https://raw.githubusercontent.com/HASwitchPlate/HASPone/2098a87c3b6910992a1b425628f7b1b8735487db/Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin`
