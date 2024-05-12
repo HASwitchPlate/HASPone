@@ -1,0 +1,1216 @@
+blueprint:
+  name: "HASP p[x].b[y] displays color swatches"
+  description: |
+
+    ## Blueprint Version: `1.06.00`
+
+    ## Description
+
+    Display color select swatches and dimmer for RGB light control
+
+    ![Preview](https://raw.githubusercontent.com/HASwitchPlate/HASPone/blueprint-dev/images/hasp_Display_Color_Swatches.png)
+
+    Creates a labeled button somewhere on pages 1 through 10.  When pressed, user is shown a set of 12 color swatches along with dimmer controls.  When complete, user selects "return" to navigate back to the previous page.
+
+    ---
+
+    # ⚠️ WARNING ⚠️
+    
+    ## All HASPone blueprints must be updated to version 1.05 or later before deploying this blueprint!
+    
+    ---
+
+    ## HASP Page and Button Reference
+
+    The images below show each available HASP page along with the layout of available button objects.
+
+    <details>
+
+    | Page 0 | Pages 1-3 | Pages 4-5 |
+    |--------|-----------|-----------|
+    | ![Page 0](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p0_Init_Screen.png) | ![Pages 1-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p1-p3_4buttons.png) | ![Pages 4-5](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p4-p5_3sliders.png) |
+
+    | Page 6 | Page 7 | Page 8 |
+    |--------|--------|--------|
+    | ![Page 6](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p6_8buttons.png) | ![Page 7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p7_12buttons.png) | ![Page 8](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p8_5buttons+1slider.png) |
+
+    | Page 9 | Page 10 | Page 11 |
+    |--------|---------|---------|
+    | ![Page 9](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p9_9buttons.png) | ![Page 10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p10_5buttons.png) | ![Page 11](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_p11_1button+1slider.png)
+
+    </details>
+
+    ## HASP Font Reference
+
+    <details>
+
+    The Nextion display supports monospaced and proportional fonts.  For monospace fonts, the HASP project includes [Consolas](https://docs.microsoft.com/en-us/typography/font-list/consolas) monospace in 4 sizes, [Webdings](https://en.wikipedia.org/wiki/Webdings#Character_set) in 1 size, and [Google's "Noto Sans"](https://github.com/googlefonts/noto-fonts) proportional in 5 sizes
+
+    | Font | Name              | Characters per line | Lines per button |
+    | :--- | :---------------- | :-------------------| :--------------- |
+    | 0    | Consolas 24       | 20 characters       | 2 lines          |
+    | 1    | Consolas 32       | 15 characters       | 2 lines          |
+    | 2    | Consolas 48       | 10 characters       | 1 line           |
+    | 3    | Consolas 80       | 6 characters        | 1 line           |
+    | 4    | Webdings 56       | 8 characters        | 1 line           |
+    | 5    | Noto Sans 24      | Proportional        | 2 lines          |
+    | 6    | Noto Sans 32      | Proportional        | 2 lines          |
+    | 7    | Noto Sans 48      | Proportional        | 1 line           |
+    | 8    | Noto Sans 64      | Proportional        | 1 line           |
+    | 9    | Noto Sans 80      | Proportional        | 1 line           |
+    | 10   | Noto Sans Bold 80 | Proportional        | 1 line           |
+
+    ### Icons
+
+    Fonts 5-10 also include [1400+ icons which you can copy and paste from here](https://htmlpreview.github.io/?https://github.com/HASwitchPlate/HASPone/blob/main/images/hasp-fontawesome5.html)
+
+    ### Font examples
+
+    ![HASP Fonts 0-3](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_0-3.png) ![HASP Fonts 4-7](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_4-7.png) ![HASP Fonts 8-10](https://raw.githubusercontent.com/HASwitchPlate/HASPone/main/images/NextionUI_Fonts_8-10.png)
+
+    </details>
+
+    ## Nextion color codes
+
+    <details>
+
+    The Nextion environment utilizes RGB 565 encoding.  [Use this handy convertor](https://nodtem66.github.io/nextion-hmi-color-convert/index.html) to select your colors and convert to the RGB 565 format.
+
+    Here are some example colors:
+
+    | Color  | Code  |
+    |--------|-------|
+    | White  | 65535 |
+    | Black  | 0     |
+    | Grey   | 25388 |
+    | Red    | 63488 |
+    | Green  | 2016  |
+    | Blue   | 31    |
+    | Yellow | 65504 |
+    | Orange | 64512 |
+    | Brown  | 48192 |
+
+    </details>
+
+  domain: automation
+  input:
+    haspdevice:
+      name: "HASP Device"
+      description: "Select the HASP device"
+      selector:
+        device:
+          integration: mqtt
+          manufacturer: "HASwitchPlate"
+          model: "HASPone v1.0.0"
+    hasppage:
+      name: "HASP Page"
+      description: "Select the HASP page (1-11) for this button.  Refer to the HASP Page and Button reference above."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 11
+          mode: slider
+          unit_of_measurement: page
+    haspbutton:
+      name: "HASP Button"
+      description: "Select the HASP button.  Refer to the HASP Page and Button reference above."
+      default: 4
+      selector:
+        number:
+          min: 4
+          max: 15
+          mode: slider
+          unit_of_measurement: button
+    text:
+      name: "Button text"
+      description: "Enter text to be displayed on the button."
+      default: "Color Light"
+      selector:
+        text:
+    colorlight:
+      name: "Color-capable Light to control"
+      description: "Select a light device which supports color"
+      selector:
+        entity:
+          domain: light
+    colors:
+      name: "Colors"
+      description: "Define the color shown on the display and the value sent to the controlled light for each of the 12 available buttons. `nextion_color` defines the Nextion Color Code sent to the HASPone device. `color_mode` defines the light.turn_on color mode parameter used. `color_value` is the color information sent to the light"
+      default:
+        button01:
+          nextion_color: 65098
+          color_mode: rgb_color
+          color_value:
+            - 255
+            - 202
+            - 85
+        button02:
+          nextion_color: 53021
+          color_mode: rgb_color
+          color_value:
+            - 206
+            - 228
+            - 239
+        button03:
+          nextion_color: 12953
+          color_mode: rgb_color
+          color_value:
+            - 50
+            - 80
+            - 206
+        button04:
+          nextion_color: 51655
+          color_mode: rgb_color
+          color_value:
+            - 204
+            - 58
+            - 58
+        button05:
+          nextion_color: 65400
+          color_mode: rgb_color
+          color_value:
+            - 255
+            - 238
+            - 199
+        button06:
+          nextion_color: 59294
+          color_mode: rgb_color
+          color_value:
+            - 230
+            - 240
+            - 244
+        button07:
+          nextion_color: 35965
+          color_mode: rgb_color
+          color_value:
+            - 137
+            - 142
+            - 239
+        button08:
+          nextion_color: 41561
+          color_mode: rgb_color
+          color_value:
+            - 164
+            - 73
+            - 206
+        button09:
+          nextion_color: 65501
+          color_mode: rgb_color
+          color_value:
+            - 255
+            - 250
+            - 238
+        button10:
+          nextion_color: 65535
+          color_mode: rgb_color
+          color_value:
+            - 255
+            - 255
+            - 251
+        button11:
+          nextion_color: 3372
+          color_mode: rgb_color
+          color_value:
+            - 15
+            - 165
+            - 104
+        button12:
+          nextion_color: 41065
+          color_mode: rgb_color
+          color_value:
+            - 165
+            - 15
+            - 76
+      selector:
+        object:
+    font_select:
+      name: "Font"
+      description: "Select the font for the displayed text.  Refer to the HASP Font Reference above."
+      default: "8 - Noto Sans 64"
+      selector:
+        select:
+          options:
+            - "0 - Consolas 24"
+            - "1 - Consolas 32"
+            - "2 - Consolas 48"
+            - "3 - Consolas 80"
+            - "4 - Webdings 56"
+            - "5 - Noto Sans 24"
+            - "6 - Noto Sans 32"
+            - "7 - Noto Sans 48"
+            - "8 - Noto Sans 64"
+            - "9 - Noto Sans 80"
+            - "10 - Noto Sans Bold 80"
+    xcen_select:
+      name: "Text horizontal alignment"
+      description: "Horizontal text alignment: 0=Left 1=Center 2=Right"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Left aligned"
+            - "1 - Centered"
+            - "2 - Right aligned"
+    ycen_select:
+      name: "Text vertical alignment"
+      description: "Vertical text alignment: 0=Top 1=Center 2=Bottom"
+      default: "1 - Centered"
+      selector:
+        select:
+          options:
+            - "0 - Top aligned"
+            - "1 - Centered"
+            - "2 - Bottom aligned"
+    wrap:
+      name: "Text wrap"
+      description: "Enable line-wrapping text if too long to fit in the button."
+      default: false
+      selector:
+        boolean:
+    text_enable:
+      name: "Text enabled"
+      description: "Enable text and styling on selected button.  Disable this if using some other blueprint to label this button."
+      default: true
+      selector:
+        boolean:
+    icon_on:
+      name: '"On" state icon'
+      description: 'Enter the icon to be shown when the selected entity is "on"'
+      default: ""
+      selector:
+        text:
+    icon_off:
+      name: '"Off" state icon'
+      description: 'Enter the icon to be shown when the selected entity is "off"'
+      default: ""
+      selector:
+        text:
+    selected_fgcolor:
+      name: "Button selected foreground color"
+      description: 'Selected foreground color in Nextion RGB565 format for the control and return buttons (see "Nextion color codes" above for reference). -1 = Current theme selected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    selected_bgcolor:
+      name: "Button selected background color"
+      description: 'Selected background color in Nextion RGB565 format for the control and return buttons (see "Nextion color codes" above for reference). -1 = Current theme selected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_fgcolor:
+      name: "Button unselected foreground color"
+      description: 'Unselected foreground color in Nextion RGB565 format for the control and return buttons (see "Nextion color codes" above for reference). -1 = Current theme unselected foreground color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    unselected_bgcolor:
+      name: "Button unselected background color"
+      description: 'Unselected background color in Nextion RGB565 format for the control and return buttons (see "Nextion color codes" above for reference). -1 = Current theme unselected background color.'
+      default: -1
+      selector:
+        number:
+          min: -1
+          max: 65535
+          mode: slider
+    discoveryprefix:
+      name: "Home Assistant MQTT discovery prefix"
+      description: 'In nearly all cases this should be "homeassistant"'
+      default: "homeassistant"
+      selector:
+        text:
+
+mode: parallel
+max_exceeded: silent
+
+variables:
+  haspdevice: !input haspdevice
+  hasppage: !input hasppage
+  haspbutton: !input haspbutton
+  text: !input text
+  font_select: !input font_select
+  font: '{{ font_select.split(" - ")[0] | int }}'
+  xcen_select: !input xcen_select
+  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  ycen_select: !input ycen_select
+  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  wrap: !input wrap
+  isbr: "{% if wrap == true %}1{% else %}0{% endif %}"
+  text_enable: !input text_enable
+  colorlight: !input colorlight
+  colors: !input colors
+  icon_on: !input icon_on
+  icon_off: !input icon_off
+  icon: '{% if states(colorlight) == "on" %}{{icon_on}}{% else %}{{icon_off}}{% endif %}'
+  selected_fgcolor: !input selected_fgcolor
+  selected_bgcolor: !input selected_bgcolor
+  unselected_fgcolor: !input unselected_fgcolor
+  unselected_bgcolor: !input unselected_bgcolor
+  discoveryprefix: !input discoveryprefix
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
+  commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  jsoncommandtopic: '{{ "hasp/" ~ haspname ~ "/command/json" }}'
+  activepage: >-
+    {%- set activepage = namespace() -%}
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^number\..*_active_page(?:_\d+|)$") -%}
+        {%- set activepage.entity=entity -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ states(activepage.entity) | int(default=-1) }}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  haspClientId: '{{state_attr(haspsensor, "haspClientID")}}'
+  haspMac: '{{state_attr(haspsensor, "haspMac")}}'
+  haspManufacturer: '{{state_attr(haspsensor, "haspManufacturer")}}'
+  haspModel: '{{state_attr(haspsensor, "haspModel")}}'
+  sw_version: '{{state_attr(haspsensor, "espVersion")}}'
+  helper: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_returnpage_helper(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  helperActiveColorLight: '{{state_attr(helper, "activeEntity")}}'
+  helperSourceAutomation: '{{state_attr(helper, "sourceAutomation")}}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+  selectedfg: >-
+    {%- if (selected_fgcolor|int) >= 0 -%}
+      {{ selected_fgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_selected_foreground_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
+  selectedbg: >-
+    {%- if (selected_bgcolor|int) >= 0 -%}
+      {{ selected_bgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_selected_background_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
+  unselectedfg: >-
+    {%- if (unselected_fgcolor|int) >= 0 -%}
+      {{ unselected_fgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_unselected_foreground_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
+  unselectedbg: >-
+    {%- if (unselected_bgcolor|int) >= 0 -%}
+      {{ unselected_bgcolor }}
+    {%- else -%}
+      {%- set color = namespace() -%}
+      {%- for entity in device_entities(haspdevice) -%}
+        {%- if entity|regex_search("^light\..*_unselected_background_color(?:_\d+|)$") -%}
+          {%- set color.source=entity -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set brightness = state_attr(color.source, "brightness")|int(default=255) / 255 -%}
+      {%- set red=(state_attr(color.source, "rgb_color")[0] * brightness)|int(default=0) -%}
+      {%- set green=(state_attr(color.source, "rgb_color")[1] * brightness)|int(default=0) -%}
+      {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
+      {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
+    {%- endif -%}
+  brightness: '{% if state_attr(colorlight,"brightness") is none %}0{% else %}{{state_attr(colorlight,"brightness")}}{% endif %}'
+
+trigger_variables:
+  haspdevice: !input haspdevice
+  haspname: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{- entity|regex_replace(find="^sensor\.", replace="", ignorecase=true)|regex_replace(find="_sensor(?:_\d+|)$", replace="", ignorecase=true) -}}
+      {%- endif -%}
+    {%- endfor -%}
+  haspsensor: >-
+    {%- for entity in device_entities(haspdevice) -%}
+      {%- if entity|regex_search("^sensor\..+_sensor(?:_\d+|)$") -%}
+        {{ entity }}
+      {%- endif -%}
+    {%- endfor -%}
+  jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
+  selectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedforegroundcolor/rgb" }}'
+  selectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/selectedbackgroundcolor/rgb" }}'
+  unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
+  unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+  - platform: mqtt
+    topic: "{{jsontopic}}"
+  - platform: mqtt
+    topic: "{{selectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{selectedbgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedfgtopic}}"
+  - platform: mqtt
+    topic: "{{unselectedbgtopic}}"
+  - platform: state
+    entity_id: !input colorlight
+
+condition:
+  - condition: template
+    value_template: "{{ is_state(haspsensor, 'ON') }}"
+
+action:
+  - choose:
+      #########################################################################
+      # RUN ACTIONS or Home Assistant Startup or HASP Connect
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{
+                (trigger is not defined)
+              or
+                (trigger.platform is none)
+              or
+                ((trigger.platform == 'homeassistant') and (trigger.event == 'start'))
+              or
+                ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
+              }}
+        sequence:
+          # Create returnpage helper
+          - service: mqtt.publish
+            data:
+              topic: "{{discoveryprefix}}/sensor/{{haspname}}/returnpage/config"
+              payload: >-
+                {"name":"{{haspname}} returnpage helper",
+                "json_attributes_topic":"hasp/{{haspname}}/returnpage/command",
+                "state_topic":"hasp/{{haspname}}/status",
+                "availability":{"topic":"hasp/{{haspname}}/alwayson","payload_available":"ON"},
+                "retain":true,
+                "optimistic":true,
+                "min":1,
+                "max":10,
+                "icon":"mdi:palette",
+                "unique_id":"{{haspClientId}}-returnpage",
+                "device":{
+                "identifiers":["{{haspClientId}}"],
+                "name":"{{haspname}}",
+                "manufacturer":"{{haspManufacturer}}",
+                "model":"{{haspModel}}",
+                "sw_version":{{sw_version}}
+                }}
+              retain: true
+          # Make sure returnpage is available
+          - service: mqtt.publish
+            data:
+              topic: "hasp/{{haspname}}/alwayson"
+              payload: "ON"
+              retain: true
+          - choose:
+              #########################################################################
+              # Display text and apply text style on source button
+              - conditions:
+                  - condition: template
+                    value_template: "{{ text_enable }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{jsoncommandtopic}}"
+                      payload: >-
+                        [
+                        "{{haspobject}}.font={{font}}",
+                        "{{haspobject}}.xcen={{xcen}}",
+                        "{{haspobject}}.ycen={{ycen}}",
+                        "{{haspobject}}.isbr={{isbr}}",
+                        "{{haspobject}}.pco={{selectedfg}}",
+                        "{{haspobject}}.bco={{selectedbg}}",
+                        "{{haspobject}}.pco2={{unselectedfg}}",
+                        "{{haspobject}}.bco2={{unselectedbg}}",
+                        "{{haspobject}}.txt=\"{{text}}\""
+                        ]
+      #########################################################################
+      # Colorlight brightness has changed
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{
+                (trigger.platform == 'state')
+              and
+                (trigger.entity_id == colorlight)
+              and
+                (trigger.from_state.attributes.brightness is defined)
+              and
+                (trigger.to_state.attributes.brightness is defined)
+              and
+                (trigger.from_state.attributes.brightness != trigger.to_state.attributes.brightness)
+              and
+                (activepage == 11)
+              and
+                (helperSourceAutomation == this.entity_id)
+              }}
+        sequence:
+          # Update slider
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload: '["p[11].b[5].val={{state_attr(colorlight,"brightness")}}"]'
+      #########################################################################
+      # Colorlight state has changed
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{
+                (trigger.platform == 'state')
+              and
+                (trigger.entity_id == colorlight)
+              and
+                (trigger.from_state.state is defined)
+              and
+                (trigger.to_state.state is defined)
+              and
+                (trigger.from_state.state != trigger.to_state.state)
+              and
+                (activepage == 11)
+              and
+                (helperSourceAutomation == this.entity_id)
+              }}
+        sequence:
+          # Update button and slider
+          - service: mqtt.publish
+            data:
+              topic: "{{jsoncommandtopic}}"
+              payload:  >-
+                [
+                "p[11].b[4].txt=\"{{icon}}\"",
+                {% if is_state(colorlight,'on') %}
+                  "p[11].b[4].pco={{selectedfg}}",
+                  "p[11].b[4].bco={{selectedbg}}",
+                  "p[11].b[4].pco2={{unselectedfg}}",
+                  "p[11].b[4].bco2={{unselectedbg}}",
+                {% else %}
+                  "p[11].b[4].pco={{unselectedfg}}",
+                  "p[11].b[4].bco={{unselectedbg}}",
+                  "p[11].b[4].pco2={{selectedfg}}",
+                  "p[11].b[4].bco2={{selectedbg}}",
+                {% endif %}
+                "p[11].b[5].val={{brightness}}"
+                ]
+      #########################################################################
+      # Catch MQTT events
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.platform == "mqtt" }}'
+        sequence:
+          - choose:
+              #########################################################################
+              # Catch incoming JSON messages
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (trigger.topic == jsontopic) and trigger.payload_json is defined }}"
+                sequence:
+                  - choose:
+                      #########################################################################
+                      # Source button was pressed, record returnpage helper info and change to page 11
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (trigger.payload_json.event_type == "button_short_release")
+                              and
+                                (trigger.payload_json.event == haspobject)
+                              and
+                                (trigger.payload_json.value == "OFF")
+                              }}
+                        sequence:
+                          - service: mqtt.publish
+                            data:
+                              topic: "{{jsoncommandtopic}}"
+                              payload: >-
+                                [
+                                "p[11].b[4].txt=\"{{icon}}\"",
+                                {% if is_state(colorlight,'on') %}
+                                  "p[11].b[4].pco={{selectedfg}}",
+                                  "p[11].b[4].bco={{selectedbg}}",
+                                  "p[11].b[4].pco2={{unselectedfg}}",
+                                  "p[11].b[4].bco2={{unselectedbg}}",
+                                {% else %}
+                                  "p[11].b[4].pco={{unselectedfg}}",
+                                  "p[11].b[4].bco={{unselectedbg}}",
+                                  "p[11].b[4].pco2={{selectedfg}}",
+                                  "p[11].b[4].bco2={{selectedbg}}",
+                                {% endif %}
+                                "p[11].b[5].val={{brightness}}",
+                                "p[11].b[5].pco={{selectedbg}}",
+                                "p[11].b[5].bco={{unselectedbg}}",
+                                "p[11].b[5].bco1={{unselectedbg}}",
+                                "page 11"
+                                ]
+                          # push current automation instance and entity to returnpage sensor
+                          - service: mqtt.publish
+                            data:
+                              topic: "hasp/{{haspname}}/returnpage/command"
+                              payload: >-
+                                {
+                                "activeEntity":"{{colorlight}}",
+                                "sourceAutomation":"{{this.entity_id}}"
+                                }
+                      #########################################################################
+                      # Page changed to our page, so place the color swatches on the screen.
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (trigger.payload_json.event == "page")
+                              and
+                                (trigger.payload_json.value == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              }}
+                        sequence:
+                          - service: mqtt.publish
+                            data:
+                              topic: "{{jsoncommandtopic}}"
+                              payload: >-
+                                [
+                                "sendxy=1",
+                                "fill 0,63,59,51,{{colors['button01']['nextion_color']}}",
+                                "fill 60,63,59,51,{{colors['button02']['nextion_color']}}",
+                                "fill 120,63,59,51,{{colors['button03']['nextion_color']}}",
+                                "fill 180,63,60,51,{{colors['button04']['nextion_color']}}",
+                                "fill 0,115,59,51,{{colors['button05']['nextion_color']}}",
+                                "fill 60,115,59,51,{{colors['button06']['nextion_color']}}",
+                                "fill 120,115,59,51,{{colors['button07']['nextion_color']}}",
+                                "fill 180,115,60,51,{{colors['button08']['nextion_color']}}",
+                                "fill 0,167,59,51,{{colors['button09']['nextion_color']}}",
+                                "fill 60,167,59,51,{{colors['button10']['nextion_color']}}",
+                                "fill 120,167,59,51,{{colors['button11']['nextion_color']}}",
+                                "fill 180,167,60,51,{{colors['button12']['nextion_color']}}",
+                                "fill 0,219,240,51,{{selectedbg}}"
+                                ]
+                          - service: mqtt.publish
+                            data:
+                              topic: "{{jsoncommandtopic}}"
+                              payload: >-
+                                [
+                                "xstr 10,215,90,60,8,{{selectedfg}},0,0,0,3,\"\"",
+                                "xstr 75,210,230,60,8,{{selectedfg}},0,0,0,3,\"Return\""
+                                ]
+                      #########################################################################
+                      # Page changed to some other page, clean up after ourselves
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (trigger.payload_json.event == "page")
+                              and
+                                (trigger.payload_json.value != 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              }}
+                        sequence:
+                          - service: mqtt.publish
+                            data:
+                              topic: "hasp/{{haspname}}/returnpage/command"
+                              payload: "{}"
+                      #########################################################################
+                      # Power button button was pressed, toggle power on colorlight
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_release")
+                              and
+                                (trigger.payload_json.event == "p[11].b[4]")
+                              and
+                                (trigger.payload_json.value == "OFF")
+                              }}
+                        sequence:
+                          - service: light.toggle
+                            target:
+                              entity_id: "{{colorlight}}"
+                      #########################################################################
+                      # Dimmer slider was moved, send brightness value to colorlight
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event == "p[11].b[5].val")
+                              and
+                                (trigger.payload_json.value is defined)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data:
+                              brightness: "{{trigger.payload_json.value|int(default=0)}}"
+
+                      #########################################################################
+                      # Return button was pressed, return user to original page and disable touch events
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "OFF")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 219)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 270)
+                              }}
+                        sequence:
+                          - service: mqtt.publish
+                            data:
+                              topic: "{{jsoncommandtopic}}"
+                              payload: '["page {{hasppage}}","sendxy=0"]'
+                      #########################################################################
+                      # button01 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 63)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 114)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 0)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 59)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button01"]["color_mode"]}}": {{colors["button01"]["color_value"]}} }'
+                      #########################################################################
+                      # button02 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 63)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 114)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 60)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 119)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button02"]["color_mode"]}}": {{colors["button02"]["color_value"]}} }'
+                      #########################################################################
+                      # button03 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 63)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 114)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 120)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 179)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button03"]["color_mode"]}}": {{colors["button03"]["color_value"]}} }'
+                      #########################################################################
+                      # button04 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 63)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 114)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 180)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 240)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button04"]["color_mode"]}}": {{colors["button04"]["color_value"]}} }'
+                      #########################################################################
+                      # button05 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 115)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 166)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 0)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 59)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button05"]["color_mode"]}}": {{colors["button05"]["color_value"]}} }'
+                      #########################################################################
+                      # button06 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 115)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 166)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 60)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 119)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button06"]["color_mode"]}}": {{colors["button06"]["color_value"]}} }'
+                      #########################################################################
+                      # button07 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 115)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 166)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 120)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 179)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button07"]["color_mode"]}}": {{colors["button07"]["color_value"]}} }'
+                      #########################################################################
+                      # button08 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 115)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 166)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 180)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 240)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button08"]["color_mode"]}}": {{colors["button08"]["color_value"]}} }'
+                      #########################################################################
+                      # button09 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 167)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 218)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 0)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 59)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button09"]["color_mode"]}}": {{colors["button09"]["color_value"]}} }'
+                      #########################################################################
+                      # button10 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 167)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 218)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 60)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 119)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button10"]["color_mode"]}}": {{colors["button10"]["color_value"]}} }'
+                      #########################################################################
+                      # button11 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 167)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 218)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 120)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 179)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button11"]["color_mode"]}}": {{colors["button11"]["color_value"]}} }'
+                      #########################################################################
+                      # button12 was pressed, send color command
+                      - conditions:
+                          - condition: template
+                            value_template: >-
+                              {{
+                                (activepage == 11)
+                              and
+                                (helperSourceAutomation == this.entity_id)
+                              and
+                                (trigger.payload_json.event_type == "button_short_press")
+                              and
+                                (trigger.payload_json.event == "touchxy")
+                              and
+                                (trigger.payload_json.touch_event == "ON")
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) >= 167)
+                              and
+                                (trigger.payload_json.touchy|int(default=-1) <= 218)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) >= 180)
+                              and
+                                (trigger.payload_json.touchx|int(default=-1) <= 240)
+                              }}
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{colorlight}}"
+                            data: '{ "{{colors["button12"]["color_mode"]}}": {{colors["button12"]["color_value"]}} }'
+              #########################################################################
+              # Theme: Apply selected foreground color when it changes.
+              # Any change to the button will remove the overlaid icon.
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco"
+                      payload: "{{trigger.payload}}"
+
+              #########################################################################
+              # Theme: Apply selected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco"
+                      payload: "{{trigger.payload}}"
+
+              #########################################################################
+              # Theme: Apply unselected foreground color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.pco2"
+                      payload: "{{trigger.payload}}"
+              #########################################################################
+              # Theme: Apply unselected background color on change
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                sequence:
+                  - service: mqtt.publish
+                    data:
+                      topic: "{{commandtopic}}.bco2"
+                      payload: "{{trigger.payload}}"

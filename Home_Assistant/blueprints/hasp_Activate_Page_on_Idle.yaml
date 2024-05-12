@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone activates a selected page after a specified period of inactivity"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -122,7 +122,7 @@ condition:
 
 action:
   - delay:
-      seconds: "{{idletime|int}}"
+      seconds: "{{idletime|int(default=30)}}"
 
   - condition: template
     value_template: >-

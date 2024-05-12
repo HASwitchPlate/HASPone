@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays a toggle button"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -268,6 +268,12 @@ blueprint:
       default: false
       selector:
         boolean:
+    text_enable:
+      name: "Text enabled"
+      description: "Enable text, font, and colors. If disabled, no output will be sent to the button but the toggle actions will still be activated on press. Useful to combine with other blueprints that might place output on this button."
+      default: true
+      selector:
+        boolean:
 
 mode: parallel
 max_exceeded: silent
@@ -294,12 +300,13 @@ variables:
   off_fgcolor: !input off_fgcolor
   off_bgcolor: !input off_bgcolor
   font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int }}'
+  font: '{{ font_select.split(" - ")[0] | int(default=8) }}'
   xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  xcen: '{{ xcen_select.split(" - ")[0] | int(default=1) }}'
   ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  ycen: '{{ ycen_select.split(" - ")[0] | int(default=1) }}'
   wrap: !input wrap
+  text_enable: !input text_enable
   haspobject: '{{ "p[" ~ hasppage ~ "].b[" ~ haspbutton ~ "]" }}'
   commandtopic: '{{ "hasp/" ~ haspname ~ "/command/" ~ haspobject }}'
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
@@ -429,6 +436,8 @@ action:
               or
                 ((trigger.platform == 'template') and (trigger.entity_id == haspsensor) and (trigger.to_state.state == 'ON'))
               -}}
+
+
         sequence:
           - service: mqtt.publish
             data:
@@ -450,7 +459,7 @@ action:
       # Update display if our entity has changed state
       - conditions: # Update display if our entity has changed state
           - condition: template
-            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == entity) }}'
+            value_template: '{{ (trigger.platform == "state") and (trigger.entity_id == entity) and (text_enable == true) }}'
         sequence:
           - service: mqtt.publish
             data:
@@ -493,7 +502,7 @@ action:
               # Theme: Apply selected foreground color when it changes
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedfgtopic) and (text_enable == true) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -503,7 +512,7 @@ action:
               # Theme: Apply selected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == selectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == selectedbgtopic) and (text_enable == true) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -513,7 +522,7 @@ action:
               # Theme: Apply unselected foreground color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedfgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedfgtopic) and (text_enable == true) }}"
                 sequence:
                   - service: mqtt.publish
                     data:
@@ -523,7 +532,7 @@ action:
               # Theme: Apply unselected background color on change
               - conditions:
                   - condition: template
-                    value_template: "{{ trigger.topic == unselectedbgtopic }}"
+                    value_template: "{{ (trigger.topic == unselectedbgtopic) and (text_enable == true) }}"
                 sequence:
                   - service: mqtt.publish
                     data:

@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays the current temperature from a weather provider with icon and colors"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -224,10 +224,10 @@ variables:
     {%- if roundtemp == true -%}
       {{- state_attr(weather_provider, "temperature") | round(default=0) -}}
     {%- else -%}
-      {{- state_attr(weather_provider, "temperature") -}}
+      {{- state_attr(weather_provider, "temperature") | float(default=0) -}}
     {%- endif -%}
   icon: >-
-    {%- set temp = temperature|int -%}
+    {%- set temp = temperature|int(default=0) -%}
     {%- if temp <= thermometer_quarter_threshold|int -%}
       
     {%- elif temp < thermometer_half_threshold|int -%}
@@ -310,7 +310,7 @@ variables:
     {%- set blue=(state_attr(color.source, "rgb_color")[2] * brightness)|int(default=0) -%}
     {{ (red|bitwise_and(248)*256) + (green|bitwise_and(252)*8) + (blue|bitwise_and(248)/8)|int }}
   tempcolor: >-
-    {%- set temp = temperature|int -%}
+    {%- set temp = temperature|int(default=0) -%}
     {%- if temp <= thermometer_quarter_threshold|int -%}
       {%- set color = thermometer_empty_color -%}
     {%- elif temp < thermometer_half_threshold|int -%}

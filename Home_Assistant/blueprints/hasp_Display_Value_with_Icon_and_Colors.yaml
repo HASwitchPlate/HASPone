@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays the value of a given entity with icons and colors"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 

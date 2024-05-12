@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone Theme Light on Dark Blue"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     ## Description
 
@@ -52,7 +52,7 @@ variables:
     {%- endfor -%}
   selected_foreground_brightness: "255"
   selected_foreground_color: "[255, 255, 255]"
-  selected_background_brightness: "1"
+  selected_background_brightness: "32"
   selected_background_color: "[0, 0, 255]"
   unselected_foreground_brightness: "224"
   unselected_foreground_color: "[255, 255, 255]"

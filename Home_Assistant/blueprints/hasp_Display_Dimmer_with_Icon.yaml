@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays a dimmer with a toggle on/off icon"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -144,11 +144,11 @@ variables:
   text_on: !input text_on
   text_off: !input text_off
   font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int }}'
+  font: '{{ font_select.split(" - ")[0] | int(default=6) }}'
   xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  xcen: '{{ xcen_select.split(" - ")[0] | int(default=1) }}'
   ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  ycen: '{{ ycen_select.split(" - ")[0] | int(default=1) }}'
   wrap: !input wrap
   icon_on: !input icon_on
   icon_off: !input icon_off

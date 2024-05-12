@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays the state or attribute value of an entity"
   description: |
 
-    ## Blueprint Version: `1.05.00`
+    ## Blueprint Version: `1.06.00`
 
     # Description
 
@@ -239,11 +239,11 @@ variables:
   prefix: !input prefix
   suffix: !input suffix
   font_select: !input font_select
-  font: '{{ font_select.split(" - ")[0] | int }}'
+  font: '{{ font_select.split(" - ")[0] | int(default=8) }}'
   xcen_select: !input xcen_select
-  xcen: '{{ xcen_select.split(" - ")[0] | int }}'
+  xcen: '{{ xcen_select.split(" - ")[0] | int(default=1) }}'
   ycen_select: !input ycen_select
-  ycen: '{{ ycen_select.split(" - ")[0] | int }}'
+  ycen: '{{ ycen_select.split(" - ")[0] | int(default=1) }}'
   wrap: !input wrap
   title_case: !input title_case
   selected_fgcolor: !input selected_fgcolor
@@ -391,7 +391,7 @@ action:
       # Display attribute and apply text style
       - conditions:
           - condition: template
-            value_template: >- 
+            value_template: >-
               {{-
                 (trigger is not defined)
               or
@@ -474,4 +474,3 @@ action:
                     data:
                       topic: "{{commandtopic}}.bco2"
                       payload: "{{trigger.payload}}"
-
