@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Arduino.h>
-#include <FS.h>
+#include <LittleFS.h>
 #include <EEPROM.h>
 #include <EspSaveCrash.h>
 #include <ESP8266WiFi.h>
@@ -72,7 +72,7 @@ int8_t nextionActivePage = -1;                        // Track active LCD page
 bool lcdConnected = false;                            // Set to true when we've heard something from the LCD
 const char wifiConfigPass[9] = "hasplate";            // First-time config WPA2 password
 const char wifiConfigAP[14] = "HASwitchPlate";        // First-time config SSID
-bool shouldSaveConfig = false;                        // Flag to save json config to SPIFFS
+bool shouldSaveConfig = false;                        // Flag to save json config to LittleFS
 bool nextionReportPage0 = false;                      // If false, don't report page 0 sendme
 const unsigned long updateCheckInterval = 43200000;   // Time in msec between update checks (12 hours)
 unsigned long updateCheckTimer = updateCheckInterval; // Timer for update check
@@ -2358,15 +2358,15 @@ void espReset()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configRead()
-{ // Read saved config.json from SPIFFS
-  debugPrintln(F("SPIFFS: mounting SPIFFS"));
-  if (SPIFFS.begin())
+{ // Read saved config.json from LittleFS
+  debugPrintln(F("LittleFS: mounting LittleFS"));
+  if (LittleFS.begin())
   {
-    if (SPIFFS.exists("/config.json"))
+    if (LittleFS.exists("/config.json"))
     { // File exists, reading and loading
-      debugPrintln(F("SPIFFS: reading /config.json"));
+      debugPrintln(F("LittleFS: reading /config.json"));
       // debugPrintFile("/config.json");
-      File configFile = SPIFFS.open("/config.json", "r");
+      File configFile = LittleFS.open("/config.json", "r");
       if (configFile)
       {
         JsonDocument jsonConfigValues;
@@ -2374,7 +2374,7 @@ void configRead()
 
         if (jsonError)
         { // Couldn't parse the saved config
-          debugPrintln(String(F("SPIFFS: [ERROR] Failed to parse /config.json: ")) + String(jsonError.c_str()));
+          debugPrintln(String(F("LittleFS: [ERROR] Failed to parse /config.json: ")) + String(jsonError.c_str()));
         }
         else
         {
@@ -2420,7 +2420,7 @@ void configRead()
           }
           if (strcmp(hassDiscovery, "") == 0)
           { // Cover off any edge case where this value winds up being empty
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty hassDiscovery value, setting to 'homeassistant'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has empty hassDiscovery value, setting to 'homeassistant'"));
             strcpy(hassDiscovery, "homeassistant");
           }
           if (!jsonConfigValues["nextionBaud"].isNull())
@@ -2429,7 +2429,7 @@ void configRead()
           }
           if (strcmp(nextionBaud, "") == 0)
           { // Cover off any edge case where this value winds up being empty
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has empty nextionBaud value, setting to '115200'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has empty nextionBaud value, setting to '115200'"));
             strcpy(nextionBaud, "115200");
           }
           if (!jsonConfigValues["nextionMaxPages"].isNull())
@@ -2438,7 +2438,7 @@ void configRead()
           }
           if (nextionMaxPages < 1)
           { // Cover off any edge case where this value winds up being zero or negative
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has nextionMaxPages value of zero or negative, setting to '11'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has nextionMaxPages value of zero or negative, setting to '11'"));
             nextionMaxPages = 11;
           }
           if (!jsonConfigValues["motionPinConfig"].isNull())
@@ -2518,47 +2518,47 @@ void configRead()
           }
           if (rebootOnLongPressTimeout < 0)
           { // Cover off any edge case where this value winds up being negative
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has rebootOnLongPressTimeout value negative, setting to '10000'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has rebootOnLongPressTimeout value negative, setting to '10000'"));
             rebootOnLongPressTimeout = 10000;
           }
           if (rebootOnLongPressTimeout > 99000)
           { // Cover off any edge case where this value winds up being too high
-            debugPrintln(F("SPIFFS: [WARNING] /config.json has rebootOnLongPressTimeout value too high, setting to '10000'"));
+            debugPrintln(F("LittleFS: [WARNING] /config.json has rebootOnLongPressTimeout value too high, setting to '10000'"));
             rebootOnLongPressTimeout = 10000;
           }
 
           String jsonConfigValuesStr;
           serializeJson(jsonConfigValues, jsonConfigValuesStr);
-          debugPrintln(String(F("SPIFFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
+          debugPrintln(String(F("LittleFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
         }
       }
       else
       {
-        debugPrintln(F("SPIFFS: [ERROR] Failed to read /config.json"));
+        debugPrintln(F("LittleFS: [ERROR] Failed to read /config.json"));
       }
     }
     else
     {
-      debugPrintln(F("SPIFFS: [WARNING] /config.json not found, will be created on first config save"));
+      debugPrintln(F("LittleFS: [WARNING] /config.json not found, will be created on first config save"));
     }
   }
   else
   {
-    debugPrintln(F("SPIFFS: [ERROR] Failed to mount FS"));
+    debugPrintln(F("LittleFS: [ERROR] Failed to mount FS"));
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configSaveCallback()
 { // Callback notifying us of the need to save config
-  debugPrintln(F("SPIFFS: Configuration changed, flagging for save"));
+  debugPrintln(F("LittleFS: Configuration changed, flagging for save"));
   shouldSaveConfig = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void configSave()
 { // Save the custom parameters to config.json
-  debugPrintln(F("SPIFFS: Saving config"));
+  debugPrintln(F("LittleFS: Saving config"));
   JsonDocument jsonConfigValues;
 
   jsonConfigValues["mqttServer"] = mqttServer;
@@ -2582,31 +2582,31 @@ void configSave()
   jsonConfigValues["ignoreTouchWhenOff"] = ignoreTouchWhenOff;
   jsonConfigValues["rebootOnLongPressTimeout"] = rebootOnLongPressTimeout;
 
-  debugPrintln(String(F("SPIFFS: mqttServer = ")) + String(mqttServer));
-  debugPrintln(String(F("SPIFFS: mqttPort = ")) + String(mqttPort));
-  debugPrintln(String(F("SPIFFS: mqttUser = ")) + String(mqttUser));
-  debugPrintln(String(F("SPIFFS: mqttPassword = ")) + String(mqttPassword));
-  debugPrintln(String(F("SPIFFS: mqttTlsEnabled = ")) + String(mqttTlsEnabled));
-  debugPrintln(String(F("SPIFFS: mqttFingerprint = ")) + String(mqttFingerprint));
-  debugPrintln(String(F("SPIFFS: haspNode = ")) + String(haspNode));
-  debugPrintln(String(F("SPIFFS: groupName = ")) + String(groupName));
-  debugPrintln(String(F("SPIFFS: configUser = ")) + String(configUser));
-  debugPrintln(String(F("SPIFFS: configPassword = ")) + String(configPassword));
-  debugPrintln(String(F("SPIFFS: hassDiscovery = ")) + String(hassDiscovery));
-  debugPrintln(String(F("SPIFFS: nextionBaud = ")) + String(nextionBaud));
-  debugPrintln(String(F("SPIFFS: nextionMaxPages = ")) + String(nextionMaxPages));
-  debugPrintln(String(F("SPIFFS: motionPinConfig = ")) + String(motionPinConfig));
-  debugPrintln(String(F("SPIFFS: debugSerialEnabled = ")) + String(debugSerialEnabled));
-  debugPrintln(String(F("SPIFFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
-  debugPrintln(String(F("SPIFFS: mdnsEnabled = ")) + String(mdnsEnabled));
-  debugPrintln(String(F("SPIFFS: beepEnabled = ")) + String(beepEnabled));
-  debugPrintln(String(F("SPIFFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
-  debugPrintln(String(F("SPIFFS: rebootOnLongPressTimeout = ")) + String(rebootOnLongPressTimeout));
+  debugPrintln(String(F("LittleFS: mqttServer = ")) + String(mqttServer));
+  debugPrintln(String(F("LittleFS: mqttPort = ")) + String(mqttPort));
+  debugPrintln(String(F("LittleFS: mqttUser = ")) + String(mqttUser));
+  debugPrintln(String(F("LittleFS: mqttPassword = ")) + String(mqttPassword));
+  debugPrintln(String(F("LittleFS: mqttTlsEnabled = ")) + String(mqttTlsEnabled));
+  debugPrintln(String(F("LittleFS: mqttFingerprint = ")) + String(mqttFingerprint));
+  debugPrintln(String(F("LittleFS: haspNode = ")) + String(haspNode));
+  debugPrintln(String(F("LittleFS: groupName = ")) + String(groupName));
+  debugPrintln(String(F("LittleFS: configUser = ")) + String(configUser));
+  debugPrintln(String(F("LittleFS: configPassword = ")) + String(configPassword));
+  debugPrintln(String(F("LittleFS: hassDiscovery = ")) + String(hassDiscovery));
+  debugPrintln(String(F("LittleFS: nextionBaud = ")) + String(nextionBaud));
+  debugPrintln(String(F("LittleFS: nextionMaxPages = ")) + String(nextionMaxPages));
+  debugPrintln(String(F("LittleFS: motionPinConfig = ")) + String(motionPinConfig));
+  debugPrintln(String(F("LittleFS: debugSerialEnabled = ")) + String(debugSerialEnabled));
+  debugPrintln(String(F("LittleFS: debugTelnetEnabled = ")) + String(debugTelnetEnabled));
+  debugPrintln(String(F("LittleFS: mdnsEnabled = ")) + String(mdnsEnabled));
+  debugPrintln(String(F("LittleFS: beepEnabled = ")) + String(beepEnabled));
+  debugPrintln(String(F("LittleFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
+  debugPrintln(String(F("LittleFS: rebootOnLongPressTimeout = ")) + String(rebootOnLongPressTimeout));
 
-  File configFile = SPIFFS.open("/config.json", "w");
+  File configFile = LittleFS.open("/config.json", "w");
   if (!configFile)
   {
-    debugPrintln(F("SPIFFS: Failed to open config file for writing"));
+    debugPrintln(F("LittleFS: Failed to open config file for writing"));
   }
   else
   {
@@ -2626,8 +2626,8 @@ void configClearSaved()
   nextionSetAttr("dims", "100");
   nextionSendCmd("page 0");
   nextionSetAttr("p[0].b[1].txt", "\"Resetting\\rsystem...\"");
-  debugPrintln(F("RESET: Formatting SPIFFS"));
-  SPIFFS.format();
+  debugPrintln(F("RESET: Formatting LittleFS"));
+  LittleFS.format();
   debugPrintln(F("RESET: Clearing WiFiManager settings..."));
   WiFi.disconnect();
   WiFiManager wifiManager;
@@ -3098,7 +3098,7 @@ void webHandleSaveConfig()
   }
 
   if (shouldSaveConfig)
-  { // Config updated, notify user and trigger write to SPIFFS
+  { // Config updated, notify user and trigger write to LittleFS
 
     webServer.sendContent(F("<meta http-equiv='refresh' content='15;url=/' />"));
     webServer.sendContent_P(HTTP_HEAD_END);
@@ -3931,20 +3931,20 @@ void debugPrintCrash()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void debugPrintFile(const String &fileName)
 { // Debug output line of text to our debug targets
-  File debugFile = SPIFFS.open(fileName, "r");
+  File debugFile = LittleFS.open(fileName, "r");
   if (debugFile)
   {
     uint16_t lineCount = 1;
     while (debugFile.available())
     {
-      debugPrintln(F("SPIFFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:") + debugFile.readStringUntil('\n'));
+      debugPrintln(F("LittleFS: file:") + fileName + F(" line:") + String(lineCount) + F(" data:") + debugFile.readStringUntil('\n'));
       lineCount++;
     }
     debugFile.close();
   }
   else
   {
-    debugPrintln("SPIFFS: Error opening file for read: " + fileName);
+    debugPrintln("LittleFS: Error opening file for read: " + fileName);
   }
 }
 
