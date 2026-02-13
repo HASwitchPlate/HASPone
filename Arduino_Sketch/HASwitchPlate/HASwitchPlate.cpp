@@ -64,7 +64,7 @@ char motionPinConfig[3] = "0";
 char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-const float haspVersion = 1.06;                       // Current HASPone software release version
+const float haspVersion = 1.07;                       // Current HASPone software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
@@ -1306,7 +1306,7 @@ void nextionProcessInput()
         debugPrintln(String(F("HMI IN: p[0].b[1] pressed during HASPone configuration, rebooting.")));
         espReset();
       }
-      if (rebootOnLongPress)
+      if (rebootOnLongPressTimeout > 0)
       {
         rebootOnLongPressTimer = millis();
       }
@@ -1340,7 +1340,7 @@ void nextionProcessInput()
           nextionGetAttr("p[" + nextionPage + "].b[" + nextionButtonID + "].val");
         }
       }
-      if (rebootOnLongPress && (millis() - rebootOnLongPressTimer > rebootOnLongPressTimeout))
+      if (rebootOnLongPressTimeout != 0 && (millis() - rebootOnLongPressTimer > rebootOnLongPressTimeout))
       {
         debugPrintln(String(F("HMI IN: Button long press, rebooting.")));
         espReset();
@@ -1669,12 +1669,12 @@ void nextionGetAttr(const String &hmiAttribute)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void nextionParseJson(const String &strPayload)
 { // Parse an incoming JSON array into individual Nextion commands
-  DynamicJsonDocument nextionCommands(mqttMaxPacketSize + 1024);
+  JsonDocument nextionCommands;
   DeserializationError jsonError = deserializeJson(nextionCommands, strPayload);
 
   if (jsonError)
   { // Couldn't parse incoming JSON command
-    String jsonErrorDescription = String(F("Failed to parse incoming JSON command with error:")) + String(jsonError.c_str()) + String(F(" memoryUsage: ")) + String(nextionCommands.memoryUsage()) + String(F(" capacity: ")) + String(nextionCommands.capacity());
+    String jsonErrorDescription = String(F("Failed to parse incoming JSON command with error:")) + String(jsonError.c_str()) + String(F(" memoryUsage: "));
     debugPrintln(String(F("MQTT: [ERROR] ")) + jsonErrorDescription);
     mqttClient.publish(mqttStateJSONTopic, String(F("{\"event\":\"jsonError\",\"event_source\":\"nextionParseJson()\",\"event_description\":\"")) + jsonErrorDescription + String(F("\"}")));
   }
@@ -2369,7 +2369,7 @@ void configRead()
       File configFile = SPIFFS.open("/config.json", "r");
       if (configFile)
       {
-        DynamicJsonDocument jsonConfigValues(1536);
+        JsonDocument jsonConfigValues;
         DeserializationError jsonError = deserializeJson(jsonConfigValues, configFile);
 
         if (jsonError)
@@ -2511,6 +2511,22 @@ void configRead()
               ignoreTouchWhenOff = false;
             }
           }
+
+          if (!jsonConfigValues["rebootOnLongPressTimeout"].isNull())
+          {
+            rebootOnLongPressTimeout = jsonConfigValues["rebootOnLongPressTimeout"];
+          }
+          if (rebootOnLongPressTimeout < 0)
+          { // Cover off any edge case where this value winds up being negative
+            debugPrintln(F("SPIFFS: [WARNING] /config.json has rebootOnLongPressTimeout value negative, setting to '10000'"));
+            rebootOnLongPressTimeout = 10000;
+          }
+          if (rebootOnLongPressTimeout > 99000)
+          { // Cover off any edge case where this value winds up being too high
+            debugPrintln(F("SPIFFS: [WARNING] /config.json has rebootOnLongPressTimeout value too high, setting to '10000'"));
+            rebootOnLongPressTimeout = 10000;
+          }
+
           String jsonConfigValuesStr;
           serializeJson(jsonConfigValues, jsonConfigValuesStr);
           debugPrintln(String(F("SPIFFS: read ")) + String(configFile.size()) + String(F(" bytes and parsed json:")) + jsonConfigValuesStr);
@@ -2543,7 +2559,7 @@ void configSaveCallback()
 void configSave()
 { // Save the custom parameters to config.json
   debugPrintln(F("SPIFFS: Saving config"));
-  DynamicJsonDocument jsonConfigValues(2048);
+  JsonDocument jsonConfigValues;
 
   jsonConfigValues["mqttServer"] = mqttServer;
   jsonConfigValues["mqttPort"] = mqttPort;
@@ -2564,6 +2580,7 @@ void configSave()
   jsonConfigValues["mdnsEnabled"] = mdnsEnabled;
   jsonConfigValues["beepEnabled"] = beepEnabled;
   jsonConfigValues["ignoreTouchWhenOff"] = ignoreTouchWhenOff;
+  jsonConfigValues["rebootOnLongPressTimeout"] = rebootOnLongPressTimeout;
 
   debugPrintln(String(F("SPIFFS: mqttServer = ")) + String(mqttServer));
   debugPrintln(String(F("SPIFFS: mqttPort = ")) + String(mqttPort));
@@ -2584,6 +2601,7 @@ void configSave()
   debugPrintln(String(F("SPIFFS: mdnsEnabled = ")) + String(mdnsEnabled));
   debugPrintln(String(F("SPIFFS: beepEnabled = ")) + String(beepEnabled));
   debugPrintln(String(F("SPIFFS: ignoreTouchWhenOff = ")) + String(ignoreTouchWhenOff));
+  debugPrintln(String(F("SPIFFS: rebootOnLongPressTimeout = ")) + String(rebootOnLongPressTimeout));
 
   File configFile = SPIFFS.open("/config.json", "w");
   if (!configFile)
@@ -2806,7 +2824,10 @@ void webHandleRoot()
   {
     webServer.sendContent(F(" checked='checked'"));
   }
-  webServer.sendContent(F("><br/><hr><button type='submit'>save settings</button></form>"));
+
+  webServer.sendContent(F("'><br/><b>Hold timeout in msec</b> <i><small>(required, defaults to \"10000\", 0 disables it)</small></i><input id='rebootOnLongPressTimeout' required name='rebootOnLongPressTimeout' type='number' maxlength=6 placeholder='rebootOnLongPressTimeout' value='"));
+  webServer.sendContent(String(rebootOnLongPressTimeout));
+  webServer.sendContent(F("'><br/><hr><button type='submit'>save settings</button></form>"));
 
   if (updateEspAvailable)
   {
@@ -3068,6 +3089,12 @@ void webHandleSaveConfig()
   { // ignoreTouchWhenOff was enabled but should now be disabled
     shouldSaveConfig = true;
     ignoreTouchWhenOff = false;
+  }
+
+  if ((webServer.arg("rebootOnLongPressTimeout") != String(rebootOnLongPressTimeout)) && (webServer.arg("rebootOnLongPressTimeout").toInt() < 99000) && (webServer.arg("rebootOnLongPressTimeout").toInt() >= 0))
+  {
+    shouldSaveConfig = true;
+    rebootOnLongPressTimeout = webServer.arg("rebootOnLongPressTimeout").toInt();
   }
 
   if (shouldSaveConfig)
@@ -3671,7 +3698,7 @@ bool updateCheck()
     return false;
   }
 
-  DynamicJsonDocument updateJson(2048);
+  JsonDocument updateJson;
   DeserializationError jsonError = deserializeJson(updateJson, updateClient.getString());
   updateClient.end();
 
