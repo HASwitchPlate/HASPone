@@ -6,7 +6,7 @@
 //        Home Automation Switch Plate
 // https://github.com/aderusha/HASwitchPlate
 //
-// Copyright (c) 2024 Allen Derusha allen@derusha.org
+// Copyright (c) 2026 Allen Derusha allen@derusha.org
 //
 // MIT License
 //
@@ -64,7 +64,7 @@ char motionPinConfig[3] = "0";
 char nextionBaud[7] = "115200";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-const float haspVersion = 1.08;                       // Current HASPone software release version
+const float haspVersion = 1.09;                       // Current HASPone software release version
 const uint16_t mqttMaxPacketSize = 2048;              // Size of buffer for incoming MQTT message
 byte nextionReturnBuffer[128];                        // Byte array to pass around data coming from the panel
 uint8_t nextionReturnIndex = 0;                       // Index for nextionReturnBuffer
