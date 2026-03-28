@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone dims the backlight with the sun"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 
@@ -85,7 +85,7 @@ variables:
   lightcommandtopic: "{{ 'hasp/' ~ haspname ~ '/brightness/set' }}"
 
 trigger:
-  - platform: state
+  - trigger: state
     entity_id: sun.sun
     attribute: elevation
 

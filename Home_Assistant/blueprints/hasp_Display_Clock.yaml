@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] displays a clock"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 
@@ -254,19 +254,19 @@ trigger_variables:
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
 
 trigger:
-  - platform: time_pattern
+  - trigger: time_pattern
     seconds: 0
-  - platform: template
+  - trigger: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
-  - platform: homeassistant
+  - trigger: homeassistant
     event: start
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{selectedfgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{selectedbgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{unselectedfgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{unselectedbgtopic}}"
 
 condition:

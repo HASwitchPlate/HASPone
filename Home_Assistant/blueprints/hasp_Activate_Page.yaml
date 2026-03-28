@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] activates a page"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 
@@ -107,7 +107,7 @@ trigger_variables:
   buttonjsonpayload: '{"event_type":"button_short_release","event":"{{haspobject}}","value":"OFF"}'
 
 trigger:
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{jsontopic}}"
     payload: "{{buttonjsonpayload}}"
 

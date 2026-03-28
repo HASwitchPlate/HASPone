@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone dim the display screen after a specified period of inactivity"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 
@@ -83,7 +83,7 @@ trigger_variables:
   jsontopic: '{{ "hasp/" ~ haspname ~ "/state/json" }}'
 
 trigger:
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{jsontopic}}"
 
 condition:

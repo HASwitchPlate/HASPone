@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone activates a selected page after a specified period of inactivity"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 

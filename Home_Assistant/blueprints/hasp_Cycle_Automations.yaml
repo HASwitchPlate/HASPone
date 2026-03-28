@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[x].b[y] cycles through multiple automations"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     ## Description
 
@@ -249,13 +249,13 @@ trigger_variables:
   buttonjsonpayload: '{"event_type":"button_short_press","event":"{{haspobject}}","value":"ON"}'
 
 trigger:
-  - platform: template
+  - trigger: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
-  - platform: homeassistant
+  - trigger: homeassistant
     event: start
-  - platform: event
+  - trigger: event
     event_type: automation_reloaded
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{jsontopic}}"
     payload: "{{buttonjsonpayload}}"
 

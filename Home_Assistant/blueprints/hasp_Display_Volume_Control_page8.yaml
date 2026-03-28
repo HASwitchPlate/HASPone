@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone p[8].b[9] The slider button on page 8 displays a volume control"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 
@@ -105,17 +105,17 @@ trigger_variables:
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
 
 trigger:
-  - platform: state
+  - trigger: state
     entity_id: !input volumeentity
-  - platform: homeassistant
+  - trigger: homeassistant
     event: start
-  - platform: template
+  - trigger: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{volumetopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{unselectedfgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{unselectedbgtopic}}"
 
 condition:

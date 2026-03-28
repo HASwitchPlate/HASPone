@@ -2,7 +2,7 @@ blueprint:
   name: "HASPone create device triggers"
   description: |
 
-    ## Blueprint Version: `1.06.00`
+    ## Blueprint Version: `1.08.00`
 
     # Description
 
@@ -84,9 +84,9 @@ trigger_variables:
     {%- endfor -%}
 
 trigger:
-  - platform: template
+  - trigger: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
-  - platform: homeassistant
+  - trigger: homeassistant
     event: start
 
 condition:
