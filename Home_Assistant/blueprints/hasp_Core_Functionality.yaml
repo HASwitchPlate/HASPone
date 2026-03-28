@@ -336,20 +336,20 @@ trigger_variables:
   unselectedfgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedforegroundcolor/rgb" }}'
   unselectedbgtopic: '{{ "hasp/" ~ haspname ~ "/light/unselectedbackgroundcolor/rgb" }}'
 
-trigger:
-  - platform: template
+triggers:
+  - trigger: template
     value_template: "{{ is_state(haspsensor, 'ON') }}"
-  - platform: homeassistant
+  - trigger: homeassistant
     event: start
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{jsontopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{selectedfgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{selectedbgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{unselectedfgtopic}}"
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{unselectedbgtopic}}"
 
 condition:
