@@ -415,7 +415,7 @@ action:
                   - service: mqtt.publish
                     data:
                       topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{fgcolor}},0,1,1,3,\"{{icon}}\"","delay=1","vis {{dimmerbutton}},1"]'
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\"","delay=1","vis {{dimmerbutton}},1"]'
               #########################################################################
               # Theme: Apply unselected foreground color on change
               - conditions:
@@ -432,7 +432,7 @@ action:
                   - service: mqtt.publish
                     data:
                       topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{fgcolor}},0,1,1,3,\"{{icon}}\"","delay=1","vis {{dimmerbutton}},1"]'
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\"","delay=1","vis {{dimmerbutton}},1"]'
               #########################################################################
               # Theme: Apply unselected background color on change
               - conditions:
@@ -449,4 +449,4 @@ action:
                   - service: mqtt.publish
                     data:
                       topic: "{{jsoncommandtopic}}"
-                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{fgcolor}},0,1,1,3,\"{{icon}}\"","delay=1","vis {{dimmerbutton}},1"]'
+                      payload: '["delay=1","xstr {{xpos}},{{ypos}},{{iconwidth}},{{iconheight}},{{iconfont}},{{selectedfg}},0,1,1,3,\"{{icon}}\"","delay=1","vis {{dimmerbutton}},1"]'
