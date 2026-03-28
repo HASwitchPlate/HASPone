@@ -1615,7 +1615,7 @@ void nextionSetAttr(const String &hmiAttribute, const String &hmiValue)
     nextionAckReceived = false;
     nextionAckTimer = millis();
 
-    while ((!nextionAckReceived) || (millis() - nextionAckTimer > nextionAckTimeout))
+    while ((!nextionAckReceived) && (millis() - nextionAckTimer < nextionAckTimeout))
     {
       nextionHandleInput();
     }
@@ -1648,7 +1648,7 @@ void nextionGetAttr(const String &hmiAttribute)
     nextionAckReceived = false;
     nextionAckTimer = millis();
 
-    while ((!nextionAckReceived) || (millis() - nextionAckTimer > nextionAckTimeout))
+    while ((!nextionAckReceived) && (millis() - nextionAckTimer < nextionAckTimeout))
     {
       nextionHandleInput();
     }
@@ -2000,7 +2000,7 @@ void nextionReset()
   if (lcdConnected)
   {
     debugPrintln(F("HMI: Rebooting LCD completed"));
-    if (nextionActivePage)
+    if (nextionActivePage >= 0)
     {
       nextionSendCmd("page " + String(nextionActivePage));
     }
@@ -2191,7 +2191,7 @@ void espWifiConnect()
   nextionSetAttr("p[0].b[1].font", "6");
   nextionSetAttr("p[0].b[1].txt", "\"WiFi Connected!\\r " + String(WiFi.SSID()) + "\\rIP: " + WiFi.localIP().toString() + "\"");
   debugPrintln(String(F("WIFI: Connected successfully and assigned IP: ")) + WiFi.localIP().toString());
-  if (nextionActivePage)
+  if (nextionActivePage >= 0)
   {
     nextionSendCmd("page " + String(nextionActivePage));
   }
@@ -2721,7 +2721,7 @@ void webHandleRoot()
     webServer.sendContent(mqttUser);
   }
   webServer.sendContent(F("'><br/><b>MQTT Password</b> <i><small>(optional)</small></i><input id='mqttPassword' name='mqttPassword' type='password' maxlength=127 placeholder='mqttPassword' value='"));
-  if (strcmp(mqttUser, "") != 0)
+  if (strcmp(mqttPassword, "") != 0)
   {
     webServer.sendContent(F("********"));
   }
@@ -3802,7 +3802,7 @@ void beepHandle()
     {
       beepState = false;         // Turn it off
       beepPrevMillis = millis(); // Remember the time
-      analogWrite(beepPin, 254); // start beep for beepOnTime
+      analogWrite(beepPin, 0);   // stop beep for beepOnTime
       if (beepCounter > 0)
       { // Update the beep counter.
         beepCounter--;
@@ -3812,7 +3812,7 @@ void beepHandle()
     {
       beepState = true;          // turn it on
       beepPrevMillis = millis(); // Remember the time
-      analogWrite(beepPin, 0);   // stop beep for beepOffTime
+      analogWrite(beepPin, 254); // start beep for beepOffTime
     }
   }
 }
