@@ -1,6 +1,6 @@
 {
     "d1_mini": {
-        "version": "1.06",
+        "version": "1.08",
         "firmware": "https://haswitchplate.com/update/main/HASwitchPlate.ino.d1_mini.bin"
     },
     "NX3224T024_011R": {
