@@ -101,8 +101,8 @@ trigger_variables:
   targetpage: !input targetpage
   pagejsonpayload: '{"event":"page","value":{{targetpage}}}'
 
-trigger:
-  - platform: mqtt
+triggers:
+  - trigger: mqtt
     topic: "{{jsontopic}}"
 
 condition:
