@@ -171,9 +171,9 @@ const char UPDATE_URL[] PROGMEM = "https://haswitchplate.com/update/version.json
 // Additional CSS style to match Hass theme
 const char HASP_STYLE[] PROGMEM = "<style>button{background-color:#03A9F4;}body{width:60%;margin:auto;}input:invalid{border:1px solid red;}input[type=checkbox]{width:20px;}.wrap{text-align:left;display:inline-block;min-width:260px;max-width:1000px}</style>";
 // Default link to compiled Arduino firmware image
-String espFirmwareUrl = "https://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin";
+String espFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin";
 // Default link to compiled Nextion firmware images
-String lcdFirmwareUrl = "https://haswitchplate.com/update/HASwitchPlate.tft";
+String lcdFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.tft";
 
 void setup();
 void loop();
@@ -2017,8 +2017,13 @@ void nextionReset()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void nextionUpdateProgress(const unsigned int &progress, const unsigned int &total)
 {
+  static uint8_t lastPercent = 255;
   uint8_t progressPercent = (float(progress) / float(total)) * 100;
-  nextionSetAttr("p[0].b[4].val", String(progressPercent));
+  if (progressPercent != lastPercent)
+  {
+    lastPercent = progressPercent;
+    nextionSetAttr("p[0].b[4].val", String(progressPercent));
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2299,28 +2304,31 @@ void espStartOta(const String &espOtaUrl)
   nextionSendCmd("vis 4,1");
 
   WiFiUDP::stopAll(); // Keep mDNS responder from breaking things
+  if (mqttClient.connected())
+  {
+    mqttClient.disconnect();
+  }
+  mqttClientSecure.stop();
+  mqttClientSecure.setBufferSizes(0, 0); // Free MQTT TLS buffers
+  telnetClient.stop();
+  webServer.stop();
   delay(1);
 
-  int startHost = espOtaUrl.indexOf("://") + 3;                // Find the end of 'https://'
-  int endHost = espOtaUrl.indexOf('/', startHost);             // Find the next '/' after 'https://'
-  String espOtaHost = espOtaUrl.substring(startHost, endHost); // Extract host
-  String espOtaUri = espOtaUrl.substring(endHost);             // Extract URI
+  debugPrintln(String(F("ESPFW: Attempting firmware update from: ")) + espOtaUrl);
+
   ESPhttpUpdate.rebootOnUpdate(false);
   ESPhttpUpdate.onProgress(nextionUpdateProgress);
   ESPhttpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
   t_httpUpdate_return espOtaUrlReturnCode;
   if (espOtaUrl.startsWith(F("https")))
   {
-    debugPrintln(String(F("ESPFW: Attempting firmware update from HTTPS host: ")) + espOtaUrl);
     WiFiClientSecure wifiEspOtaClientSecure;
     wifiEspOtaClientSecure.setInsecure();
-    wifiEspOtaClientSecure.setBufferSizes(512, 512);
+    wifiEspOtaClientSecure.setBufferSizes(4096, 512);
     espOtaUrlReturnCode = ESPhttpUpdate.update(wifiEspOtaClientSecure, espOtaUrl);
-    wifiEspOtaClientSecure.stop();
   }
   else
   {
-    debugPrintln(String(F("ESPFW: Attempting firmware update from HTTP host: ")) + espOtaUrl);
     espOtaUrlReturnCode = ESPhttpUpdate.update(wifiClient, espOtaUrl);
   }
 
@@ -3699,23 +3707,70 @@ void webHandleReboot()
 bool updateCheck()
 { // firmware update check
   WiFiClientSecure wifiUpdateClientSecure;
-  HTTPClient updateClient;
   debugPrintln(String(F("UPDATE: Checking update URL: ")) + FPSTR(UPDATE_URL));
 
-  wifiUpdateClientSecure.setInsecure();
-  wifiUpdateClientSecure.setBufferSizes(512, 512);
-  updateClient.begin(wifiUpdateClientSecure, UPDATE_URL);
+  // Parse host and path from UPDATE_URL
+  String url = FPSTR(UPDATE_URL);
+  String host = url.substring(url.indexOf("://") + 3);
+  String path = host.substring(host.indexOf('/'));
+  host = host.substring(0, host.indexOf('/'));
 
-  int httpCode = updateClient.GET(); // start connection and send HTTP header
-  if (httpCode != HTTP_CODE_OK)
+  wifiUpdateClientSecure.setInsecure();
+  wifiUpdateClientSecure.setBufferSizes(1024, 512);
+  wifiUpdateClientSecure.setTimeout(10000);
+
+  if (!wifiUpdateClientSecure.connect(host.c_str(), 443))
   {
-    debugPrintln(String(F("UPDATE: Update check failed: ")) + updateClient.errorToString(httpCode));
+    debugPrintln(String(F("UPDATE: TLS connect failed, error: ")) + String(wifiUpdateClientSecure.getLastSSLError()));
+    return false;
+  }
+
+  wifiUpdateClientSecure.print(String(F("GET ")) + path + String(F(" HTTP/1.0\r\nHost: ")) + host + String(F("\r\nConnection: close\r\nUser-Agent: HASPone\r\nAccept-Encoding: identity\r\n\r\n")));
+
+  // Parse HTTP headers to get content length
+  int contentLength = 0;
+  while (wifiUpdateClientSecure.connected() || wifiUpdateClientSecure.available())
+  {
+    String line = wifiUpdateClientSecure.readStringUntil('\n');
+    String lineLower = line;
+    lineLower.toLowerCase();
+    if (lineLower.startsWith("content-length:"))
+    {
+      contentLength = lineLower.substring(15).toInt();
+    }
+    if (line == "\r")
+    {
+      break;
+    }
+  }
+
+  // Read exactly contentLength bytes
+  String payload;
+  if (contentLength > 0)
+  {
+    payload.reserve(contentLength);
+    while (payload.length() < (unsigned int)contentLength && (wifiUpdateClientSecure.connected() || wifiUpdateClientSecure.available()))
+    {
+      if (wifiUpdateClientSecure.available())
+      {
+        payload += (char)wifiUpdateClientSecure.read();
+      }
+      else
+      {
+        yield();
+      }
+    }
+  }
+  wifiUpdateClientSecure.stop();
+
+  if (payload.length() == 0)
+  {
+    debugPrintln(F("UPDATE: Empty response body"));
     return false;
   }
 
   JsonDocument updateJson;
-  DeserializationError jsonError = deserializeJson(updateJson, updateClient.getString());
-  updateClient.end();
+  DeserializationError jsonError = deserializeJson(updateJson, payload);
 
   if (jsonError)
   { // Couldn't parse the returned JSON, so bail
