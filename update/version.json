@@ -1,18 +1,18 @@
 {
     "d1_mini": {
-        "version": "1.08",
-        "firmware": "https://haswitchplate.com/update/main/HASwitchPlate.ino.d1_mini.bin"
+        "version": "1.09",
+        "firmware": "https://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin"
     },
     "NX3224T024_011R": {
         "version": 3,
-        "firmware": "https://haswitchplate.com/update/main/HASwitchPlate.tft"
+        "firmware": "https://haswitchplate.com/update/HASwitchPlate.tft"
     },
     "NX3224K024_011R": {
         "version": 3,
-        "firmware": "https://haswitchplate.com/update/main/HASwitchPlate-Enhanced.tft"
+        "firmware": "https://haswitchplate.com/update/HASwitchPlate-Enhanced.tft"
     },
     "NX3224F024_011R": {
         "version": 3,
-        "firmware": "https://haswitchplate.com/update/main/HASwitchPlate-Discovery.tft"
+        "firmware": "https://haswitchplate.com/update/HASwitchPlate-Discovery.tft"
     }
 }
