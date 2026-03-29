@@ -83,6 +83,7 @@ bool updateLcdAvailable = false;                      // Flag for update check t
 unsigned long debugTimer = 0;                         // Clock for debug performance profiling
 bool debugSerialEnabled = true;                       // Enable USB serial debug output
 const unsigned long debugSerialBaud = 115200;         // Desired baud rate for serial debug output
+SoftwareSerial debugSerial(-1, 1);                    // -1==nc for RX, 1==TX pin
 bool debugTelnetEnabled = false;                      // Enable telnet debug output
 bool nextionBufferOverrun = false;                    // Set to true if an overrun error was encountered
 bool nextionAckEnable = false;                        // Wait for each Nextion command to be acked before continuing
@@ -3879,7 +3880,6 @@ void debugPrintln(const String &debugText)
   {
     Serial.print(debugTimeText);
     Serial.println(debugText);
-    SoftwareSerial debugSerial(-1, 1); // -1==nc for RX, 1==TX pin
     debugSerial.begin(debugSerialBaud);
     debugSerial.print(debugTimeText);
     debugSerial.println(debugText);
@@ -3903,9 +3903,8 @@ void debugPrint(const String &debugText)
   // happens.  Far better to put everything into a line and send it all out in one packet using
   // debugPrintln.
   if (debugSerialEnabled)
-    Serial.print(debugText);
   {
-    SoftwareSerial debugSerial(-1, 1); // -1==nc for RX, 1==TX pin
+    Serial.print(debugText);
     debugSerial.begin(debugSerialBaud);
     debugSerial.print(debugText);
     debugSerial.flush();
@@ -3922,7 +3921,6 @@ void debugPrint(const String &debugText)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void debugPrintCrash()
 {                                    // Debug output line of text to our debug targets
-  SoftwareSerial debugSerial(-1, 1); // -1==nc for RX, 1==TX pin
   debugSerial.begin(debugSerialBaud);
   SaveCrash.print(debugSerial);
   SaveCrash.clear();
