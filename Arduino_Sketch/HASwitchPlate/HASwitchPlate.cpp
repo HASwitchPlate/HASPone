@@ -2067,6 +2067,9 @@ void espWifiConnect()
         WiFi.mode(WIFI_OFF); // Force the radio off, and then
         delay(100);
         WiFi.mode(WIFI_STA); // toggle it back on again
+        WiFi.hostname(haspNode);
+        WiFi.setAutoReconnect(true);
+        WiFi.setSleepMode(WIFI_NONE_SLEEP);
         connectTimer = millis() + connectTime;
         WiFi.begin();
         while ((WiFi.status() != WL_CONNECTED) && (millis() < connectTimer))
@@ -2204,8 +2207,19 @@ void espWifiConnect()
 void espWifiReconnect()
 { // Existing WiFi connection dropped, try to reconnect
   debugPrintln(F("Reconnecting to WiFi network..."));
+  WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(wifiSSID, wifiPass);
+  WiFi.hostname(haspNode);
+  WiFi.setAutoReconnect(true);
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  if (String(wifiSSID) == "")
+  {
+    WiFi.begin();
+  }
+  else
+  {
+    WiFi.begin(wifiSSID, wifiPass);
+  }
 
   unsigned long wifiReconnectTimer = millis();
   while (WiFi.status() != WL_CONNECTED)
