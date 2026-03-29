@@ -300,6 +300,7 @@ void setup()
 
   if (mdnsEnabled)
   { // Setup mDNS service discovery if enabled
+    MDNS.begin(haspNode);
     hMDNSService = MDNS.addService(haspNode, "http", "tcp", 80);
     if (debugTelnetEnabled)
     {
@@ -307,6 +308,10 @@ void setup()
     }
     MDNS.addServiceTxt(hMDNSService, "app_name", "HASwitchPlate");
     MDNS.addServiceTxt(hMDNSService, "app_version", String(haspVersion).c_str());
+    char macStr[18];
+    snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", espMac[0], espMac[1], espMac[2], espMac[3], espMac[4], espMac[5]);
+    MDNS.addServiceTxt(hMDNSService, "mac", macStr);
+    MDNS.addServiceTxt(hMDNSService, "mqtt_server", mqttServer);
     MDNS.update();
   }
 
