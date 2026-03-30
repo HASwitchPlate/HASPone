@@ -136,6 +136,10 @@ String mqttLightStateTopic;                           // MQTT topic for outgoing
 String mqttLightBrightCommandTopic;                   // MQTT topic for incoming panel backlight dimmer commands
 String mqttLightBrightStateTopic;                     // MQTT topic for outgoing panel backlight dimmer state
 String mqttMotionStateTopic;                          // MQTT topic for outgoing motion sensor state
+String mqttUpdateEspStateTopic;                       // MQTT topic for ESP update entity state
+String mqttUpdateEspCommandTopic;                     // MQTT topic for ESP update entity install command
+String mqttUpdateLcdStateTopic;                       // MQTT topic for LCD update entity state
+String mqttUpdateLcdCommandTopic;                     // MQTT topic for LCD update entity install command
 String nextionModel;                                  // Record reported model number of LCD panel
 const byte nextionSuffix[] = {0xFF, 0xFF, 0xFF};      // Standard suffix for Nextion commands
 uint8_t nextionMaxPages = 11;                         // Maximum number of pages in Nextion project
@@ -174,12 +178,16 @@ const char HASP_STYLE[] PROGMEM = "<style>button{background-color:#03A9F4;}body{
 String espFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.ino.d1_mini.bin";
 // Default link to compiled Nextion firmware images
 String lcdFirmwareUrl = "http://haswitchplate.com/update/HASwitchPlate.tft";
+// Release notes URLs populated from version.json
+String espReleaseUrl = "https://github.com/HASwitchPlate/HASPone/releases/latest";
+String lcdReleaseUrl = "https://github.com/HASwitchPlate/HASPone/releases/latest";
 
 void setup();
 void loop();
 void mqttConnect();
 void mqttProcessInput(String &strTopic, String &strPayload);
 void mqttStatusUpdate();
+void mqttUpdateState();
 void mqttDiscovery();
 void nextionHandleInput();
 void nextionProcessInput();
@@ -373,6 +381,7 @@ void loop()
     { // Publish new status if updateCheck() worked and reset the timer
       statusUpdateTimer = millis();
       mqttStatusUpdate();
+      mqttUpdateState();
     }
   }
 }
@@ -446,6 +455,10 @@ void mqttConnect()
   mqttLightBrightCommandTopic = "hasp/" + String(haspNode) + "/brightness/set";
   mqttLightBrightStateTopic = "hasp/" + String(haspNode) + "/brightness/state";
   mqttMotionStateTopic = "hasp/" + String(haspNode) + "/motion/state";
+  mqttUpdateEspStateTopic = "hasp/" + String(haspNode) + "/update/esp";
+  mqttUpdateEspCommandTopic = "hasp/" + String(haspNode) + "/update/esp/install";
+  mqttUpdateLcdStateTopic = "hasp/" + String(haspNode) + "/update/lcd";
+  mqttUpdateLcdCommandTopic = "hasp/" + String(haspNode) + "/update/lcd/install";
 
   const String mqttCommandSubscription = mqttCommandTopic + "/#";
   const String mqttGroupCommandSubscription = mqttGroupCommandTopic + "/#";
@@ -504,9 +517,20 @@ void mqttConnect()
       {
         debugPrintln(String(F("MQTT: subscribed to ")) + mqttLightBrightSubscription);
       }
+      if (mqttClient.subscribe(mqttUpdateEspCommandTopic))
+      {
+        debugPrintln(String(F("MQTT: subscribed to ")) + mqttUpdateEspCommandTopic);
+      }
+      if (mqttClient.subscribe(mqttUpdateLcdCommandTopic))
+      {
+        debugPrintln(String(F("MQTT: subscribed to ")) + mqttUpdateLcdCommandTopic);
+      }
 
       // Publish discovery configuration
       mqttDiscovery();
+
+      // Publish update entity state
+      mqttUpdateState();
 
       // Publish backlight status
       if (lcdBacklightOn)
@@ -903,6 +927,16 @@ void mqttProcessInput(String &strTopic, String &strPayload)
     mqttClient.publish(mqttStateJSONTopic, String(F("{\"event_type\":\"hasp_device\",\"event\":\"online\"}")));
     debugPrintln(String(F("MQTT OUT: '")) + mqttStateJSONTopic + String(F(" : {\"event_type\":\"hasp_device\",\"event\":\"online\"}")));
   }
+  else if (strTopic == mqttUpdateEspCommandTopic && strPayload == "INSTALL")
+  { // Home Assistant update entity triggered ESP firmware install
+    debugPrintln(F("MQTT: ESP update install triggered from HA"));
+    espStartOta(espFirmwareUrl);
+  }
+  else if (strTopic == mqttUpdateLcdCommandTopic && strPayload == "INSTALL")
+  { // Home Assistant update entity triggered LCD firmware install
+    debugPrintln(F("MQTT: LCD update install triggered from HA"));
+    nextionOtaStartDownload(lcdFirmwareUrl);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -951,6 +985,38 @@ void mqttStatusUpdate()
   // Publish sensor JSON
   mqttClient.publish(mqttSensorTopic, mqttSensorPayload, true, 1);
   debugPrintln(String(F("MQTT OUT: '")) + mqttSensorTopic + String(F("' : '")) + mqttSensorPayload + String(F("'")));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void mqttUpdateState()
+{ // Publish update entity state for ESP and LCD firmware
+  // ESP update state
+  String espUpdatePayload = String(F("{\"installed_version\":\"")) + String(haspVersion) + String(F("\",\"latest_version\":\""));
+  if (updateEspAvailable)
+  {
+    espUpdatePayload += String(updateEspAvailableVersion);
+  }
+  else
+  {
+    espUpdatePayload += String(haspVersion);
+  }
+  espUpdatePayload += String(F("\",\"title\":\"HASPone ESP8266 firmware\",\"release_url\":\"")) + espReleaseUrl + String(F("\"}"));
+  mqttClient.publish(mqttUpdateEspStateTopic, espUpdatePayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttUpdateEspStateTopic + String(F("' : '")) + espUpdatePayload + String(F("'")));
+
+  // LCD update state
+  String lcdUpdatePayload = String(F("{\"installed_version\":\"")) + String(lcdVersion) + String(F("\",\"latest_version\":\""));
+  if (updateLcdAvailable)
+  {
+    lcdUpdatePayload += String(updateLcdAvailableVersion);
+  }
+  else
+  {
+    lcdUpdatePayload += String(lcdVersion);
+  }
+  lcdUpdatePayload += String(F("\",\"title\":\"HASPone Nextion LCD firmware\",\"release_url\":\"")) + lcdReleaseUrl + String(F("\"}"));
+  mqttClient.publish(mqttUpdateLcdStateTopic, lcdUpdatePayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttUpdateLcdStateTopic + String(F("' : '")) + lcdUpdatePayload + String(F("'")));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1011,6 +1077,18 @@ void mqttDiscovery()
     mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
     debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
   }
+
+  // update discovery for ESP firmware
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/update/")) + String(haspNode) + String(F("-esp/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"ESP8266 firmware\",\"default_entity_id\":\"")) + String(haspNode) + String(F("_esp8266_firmware\",\"state_topic\":\"")) + mqttUpdateEspStateTopic + String(F("\",\"command_topic\":\"")) + mqttUpdateEspCommandTopic + String(F("\",\"payload_install\":\"INSTALL\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",\"entity_category\":\"config\",\"icon\":\"mdi:cellphone-arrow-down\",\"unique_id\":\"")) + mqttClientId + String(F("-update-esp\",")) + mqttDiscoveryDevice;
+  mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
+
+  // update discovery for LCD firmware
+  mqttDiscoveryTopic = String(hassDiscovery) + String(F("/update/")) + String(haspNode) + String(F("-lcd/config"));
+  mqttDiscoveryPayload = String(F("{\"name\":\"Nextion LCD firmware\",\"default_entity_id\":\"")) + String(haspNode) + String(F("_nextion_lcd_firmware\",\"state_topic\":\"")) + mqttUpdateLcdStateTopic + String(F("\",\"command_topic\":\"")) + mqttUpdateLcdCommandTopic + String(F("\",\"payload_install\":\"INSTALL\",\"availability_topic\":\"")) + mqttStatusTopic + String(F("\",\"payload_available\":\"ON\",\"payload_not_available\":\"OFF\",\"entity_category\":\"config\",\"icon\":\"mdi:tablet-dashboard\",\"unique_id\":\"")) + mqttClientId + String(F("-update-lcd\",")) + mqttDiscoveryDevice;
+  mqttClient.publish(mqttDiscoveryTopic, mqttDiscoveryPayload, true, 1);
+  debugPrintln(String(F("MQTT OUT: '")) + mqttDiscoveryTopic + String(F("' : '")) + String(mqttDiscoveryPayload) + String(F("'")));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3790,6 +3868,10 @@ bool updateCheck()
       updateEspAvailableVersion = updateJson["d1_mini"]["version"].as<float>();
       debugPrintln(String(F("UPDATE: updateEspAvailableVersion: ")) + String(updateEspAvailableVersion));
       espFirmwareUrl = updateJson["d1_mini"]["firmware"].as<String>();
+      if (!updateJson["d1_mini"]["release_url"].isNull())
+      {
+        espReleaseUrl = updateJson["d1_mini"]["release_url"].as<String>();
+      }
       if (updateEspAvailableVersion > haspVersion)
       {
         updateEspAvailable = true;
@@ -3801,6 +3883,10 @@ bool updateCheck()
       updateLcdAvailableVersion = updateJson[nextionModel]["version"].as<int>();
       debugPrintln(String(F("UPDATE: updateLcdAvailableVersion: ")) + String(updateLcdAvailableVersion));
       lcdFirmwareUrl = updateJson[nextionModel]["firmware"].as<String>();
+      if (!updateJson[nextionModel]["release_url"].isNull())
+      {
+        lcdReleaseUrl = updateJson[nextionModel]["release_url"].as<String>();
+      }
       if (updateLcdAvailableVersion > lcdVersion)
       {
         updateLcdAvailable = true;
