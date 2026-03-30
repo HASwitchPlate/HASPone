@@ -1,10 +1,23 @@
 # Example ESPhome configuration for use with the HASPone hardware
+#
+# NOTE ON UART: The HASPone PCB connects the Nextion to GPIO2 (TX) and GPIO13 (RX).
+# These pins span two different hardware UARTs (UART1 TX-only and UART0-swapped RX),
+# so ESPHome must use SoftwareSerial here. The Arduino firmware works around this by
+# using Serial1 for TX and Serial.swap() for RX independently - a trick ESPHome's
+# Nextion component cannot replicate since it requires a single UART instance.
+#
+# TFT updates over SoftwareSerial may be unreliable at high baud rates. For Nextion
+# firmware flashing, use the Nextion Editor with a USB-TTL adapter directly, or use
+# the Arduino firmware's built-in OTA update mechanism.
+#
+# Logging is sent over the network (API + web_server) rather than USB serial, since
+# UART0 default pins (GPIO1/GPIO3) conflict with the Nextion after boot.
 
 substitutions:
   device_name: "haspone"
   friendly_name: "HASPone hardware for ESPhome"
-  project_version: "0.0.1"
-  
+  project_version: "0.0.2"
+
 esphome:
   name: ${device_name}
   friendly_name: ${friendly_name}
@@ -19,20 +32,26 @@ esphome:
 esp8266:
   board: d1_mini
 
+# Disable serial logging - UART0 default pins conflict with Nextion,
+# and there's no spare hardware UART for USB output.
+# Logs are available via the web UI (http://<device-ip>) and ESPHome dashboard (API).
 logger:
+  baud_rate: 0
 
 api:
 
 ota:
+  - platform: esphome
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
+# Web UI provides device logs, controls, and status at http://<device-ip>
 web_server:
   port: 80
 
-# HASPone switch controls power to the Nextion. Set HIGH at power on to enable the device at boot.
+# HASPone switch controls power to the Nextion via a MOSFET on the PCB.
 switch:
   - platform: gpio
     id: switch_lcdpower
@@ -41,7 +60,9 @@ switch:
     restore_mode: ALWAYS_ON
     internal: false
 
-# UART for HASPone communication to Nextion. This will utilize software serial and might not work well for TFT updates.
+# UART for Nextion communication.
+# GPIO2 (UART1 HW TX) + GPIO13 (UART0-swapped HW RX) = SoftwareSerial in ESPHome.
+# 115200 is the most reliable baud rate for SoftwareSerial on ESP8266.
 uart:
   id: uart_nextion
   tx_pin: D4 #GPIO2
