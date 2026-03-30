@@ -9,6 +9,12 @@ HASPone now registers as an updatable device in Home Assistant. When a firmware 
 - Release notes link is included in each update card, configurable per-release via `version.json`
 - Update availability is checked automatically every 12 hours
 
+## Fix for breaking changes in Home Assistant MQTT entity naming
+
+Big thanks to @SylvainGa for the 1.07 and 1.08 releases, fixing a breaking change in Home Assistant: https://github.com/HASwitchPlate/HASPone/commit/68df52da6bd4ba3a4f2c9e98dcf1b7bcd363443b
+
+**All blueprints will need to be updated!** - make sure to copy down all files from `Home_Assistant/blueprints/*.yaml` into your Home Assistant installation.
+
 ## Bug Fixes
 
 ### Fixed Nextion ACK timeout logic
