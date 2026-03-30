@@ -97,6 +97,7 @@ All firmware entries now include a `release_url` field pointing to the GitHub re
 
 | File | Description |
 |------|-------------|
+| `Home_Assistant/blueprints/*.yaml` | New blueprints as of v1.08 for breaking changes in Home Assistant |
 | `Arduino_Sketch/HASwitchPlate/HASwitchPlate.cpp` | All firmware changes above |
 | `Arduino_Sketch/HASwitchPlate.ino.d1_mini.bin` | Compiled firmware binary |
 | `Arduino_Sketch/debug/HASwitchPlate.ino.d1_mini.elf` | Debug symbols |
