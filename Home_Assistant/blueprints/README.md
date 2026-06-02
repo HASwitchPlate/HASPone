@@ -86,6 +86,14 @@ A HASPone button displays a dimmer control on page 4 and 5 with a toggle on/off 
 
 ---
 
+### Display Fan Speed with Icon
+
+[![Display Fan Speed with Icon](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Fan_Speed_with_Icon.yaml)
+
+A HASPone button displays a fan speed control on page 4 and 5 with a toggle on/off icon to the left.
+
+---
+
 ### Display Entity State or Attribute
 
 [![Display Entity State or Attribute](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FHASwitchPlate%2FHASPone%2Fblob%2Fmain%2FHome_Assistant%2Fblueprints%2Fhasp_Display_Entity_State_or_Attribute.yaml)
